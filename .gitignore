@@ -53,6 +53,9 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 
+# Coverage report built by coverage.sh
+[Cc]overage/
+
 # Reference material (copyrighted book chapters and papers)
 references/
 
