@@ -8,7 +8,8 @@ namespace Gaia.Core.Considerations
         /// <inheritdoc />
         public override bool Init(AiCreationData creationData)
         {
-            throw new NotImplementedException();
+            // Configurations cannot presently be loaded successfully.
+            return false;
         }
 
         /// <inheritdoc />

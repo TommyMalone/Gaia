@@ -60,7 +60,8 @@ namespace Gaia.Core.Options
             }
 
             EnsureDefaultTuning();
-            return true;
+            // Configurations cannot presently be loaded successfully.
+            return false;
         }
 
         /// <summary>Load the configuration from data. Not yet implemented.</summary>

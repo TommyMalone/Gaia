@@ -10,7 +10,8 @@ namespace Gaia.Core.Reasoner
         /// <inheritdoc />
         public override bool Init(AiCreationData creationData)
         {
-            return true;
+            // Configurations cannot presently be loaded successfully.
+            return false;
         }
 
         /// <inheritdoc />
