@@ -24,8 +24,8 @@
         /// <summary>Produces a random integer within the given range.</summary>
         /// <param name="minInclusive">The lower bound, which may be returned.</param>
         /// <param name="maxExclusive">
-        ///     The upper bound, which is never returned. Must not be below minInclusive. Bounds that are equal return
-        ///     that value.
+        ///     The upper bound, which is never returned. Must not be below minInclusive. Bounds that are
+        ///     equal return that value.
         /// </param>
         /// <returns>A value at or above minInclusive and below maxExclusive.</returns>
         /// <exception cref="ArgumentOutOfRangeException">minInclusive is above maxExclusive.</exception>

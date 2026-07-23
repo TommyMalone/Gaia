@@ -9,10 +9,6 @@ namespace Gaia.Core.Considerations
         /// <summary>The considerations in the set, in the order they were added.</summary>
         private readonly List<ConsiderationBase> _considerations = new();
 
-        // Fraction of the best weight an option must reach to survive screening.
-        // 0 disables the check
-        private float _weightScreeningFactor;
-
         public float Addend { get; private set; }
         public float Multiplier { get; private set; }
 
@@ -25,8 +21,7 @@ namespace Gaia.Core.Considerations
         public float Weight => PassesScreening ? UnscreenedWeight : 0f;
         public float Rank => UnscreenedRank;
 
-        private bool PassesScreening =>
-            UnscreenedRank >= ScreeningRank && UnscreenedWeight >= ScreeningWeight * _weightScreeningFactor;
+        private bool PassesScreening => UnscreenedRank >= ScreeningRank && UnscreenedWeight >= ScreeningWeight;
 
         public bool IsSelected { get; private set; }
 
@@ -35,7 +30,8 @@ namespace Gaia.Core.Considerations
 
         public bool Init(AiCreationData creationData)
         {
-            return true;
+            // Configurations cannot presently be loaded successfully.
+            return false;
         }
 
         public void Calculate()

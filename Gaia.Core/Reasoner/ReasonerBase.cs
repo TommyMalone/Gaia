@@ -13,7 +13,10 @@ namespace Gaia.Core.Reasoner
     /// <seealso>"Modular AI", Section 8.5.3, Listing 8.3</seealso>
     public abstract class ReasonerBase
     {
-        protected readonly List<OptionBase> _options = new();
+        /// <summary>The options this reasoner chooses among, in the order they were added.</summary>
+        protected readonly List<OptionBase> Options = new();
+
+        /// <summary>True while the reasoner is allowed to decide.</summary>
         public bool IsEnabled { get; private set; }
 
         /// <summary>The option this reasoner is currently running, or null if it is running none.</summary>
@@ -36,13 +39,13 @@ namespace Gaia.Core.Reasoner
         /// <param name="option">The option to add.</param>
         public void AddOption(OptionBase option)
         {
-            _options.Add(option);
+            Options.Add(option);
         }
 
         /// <summary>Clears the current set of options.</summary>
         public void Clear()
         {
-            _options.Clear();
+            Options.Clear();
         }
 
         /// <summary>
@@ -108,7 +111,7 @@ namespace Gaia.Core.Reasoner
         /// <summary>Calls Calculate on every option in Options.</summary>
         private void EvaluateOptions()
         {
-            foreach (OptionBase option in _options)
+            foreach (OptionBase option in Options)
             {
                 option.Calculate();
             }

@@ -17,10 +17,9 @@ namespace Gaia.Core.Reasoner
         /// <inheritdoc />
         protected override void Think()
         {
-            base.Think();
-            OptionBase chosenOption = null;
+            OptionBase? chosenOption = null;
 
-            foreach (OptionBase option in _options)
+            foreach (OptionBase option in Options)
             {
                 if (option.IsValid)
                 {
