@@ -1,5 +1,4 @@
 ﻿using Gaia.Core.Considerations;
-using Gaia.Core.Options;
 using Gaia.Core.Reasoner;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Temp;
@@ -24,15 +23,30 @@ public class DualUtilityReasonerSpec
     public void BuildReasoner()
     {
         _executed = new List<string>();
+
         _dualUtilityReasoner = new DualUtilityReasoner();
+        _dualUtilityReasoner.Enable();
 
-        _firstOptionConsideration = new StubConsideration();
-        _secondOptionConsideration = new StubConsideration();
+        // A roll of 0 always lands on the first surviving option. A test whose answer has to change when the step it
+        // covers is skipped sets its own roll instead.
+        _dualUtilityReasoner.RandomSource = new FixedRandomSource(0f);
 
-        // A neutral Tuning contributes nothing, but its presence stops Init from adding the default one with an
-        // addend of 1. That keeps each option's weight exactly what its stub consideration reports.
-        _firstOptionTuning = new TuningConsideration(WeightValues.Neutral);
-        _secondOptionTuning = new TuningConsideration(WeightValues.Neutral);
+        // A neutral TuningConsideration contributes nothing, but its presence stops Init from adding the default one
+        // with an addend of 1. That keeps each option's weight exactly what its StubConsideration reports.
+        // TuningConsideration holds no per-option state, so one instance can sit in every option.
+        TuningConsideration neutralTuning = new(WeightValues.Neutral);
+
+        _firstConsideration = new StubConsideration(WeightValues.Neutral);
+        _secondConsideration = new StubConsideration(WeightValues.Neutral);
+
+        RecordAction firstRecordAction = new("First", _executed);
+        RecordAction secondRecordAction = new("Second", _executed);
+
+        StubOption firstOption = new([_firstConsideration, neutralTuning], [firstRecordAction]);
+        StubOption secondOption = new([_secondConsideration, neutralTuning], [secondRecordAction]);
+
+        _dualUtilityReasoner.AddOption(firstOption);
+        _dualUtilityReasoner.AddOption(secondOption);
 
         _vetoedWithALargeAddend = new WeightValues(50f, 0f, float.MinValue);
 
@@ -45,11 +59,10 @@ public class DualUtilityReasonerSpec
 
     private List<string> _executed;
 
-    private StubConsideration _firstOptionConsideration;
-    private StubConsideration _secondOptionConsideration;
+    private DualUtilityReasoner _dualUtilityReasoner;
 
-    private TuningConsideration _firstOptionTuning;
-    private TuningConsideration _secondOptionTuning;
+    private StubConsideration _firstConsideration;
+    private StubConsideration _secondConsideration;
 
     private WeightValues _vetoedWithALargeAddend;
 
@@ -59,38 +72,23 @@ public class DualUtilityReasonerSpec
     private WeightValues _highRankButLight;
     private WeightValues _lowRankButHeavy;
 
-    private DualUtilityReasoner _dualUtilityReasoner;
-
     [Test]
     public void SkipsOptionsThatAreVetoed()
     {
-        _firstOptionConsideration.Set(_vetoedWithALargeAddend);
-        _secondOptionConsideration.Set(_lightWeight);
-
-        _dualUtilityReasoner.RandomSource = new FixedRandomSource(0f);
-
-        _dualUtilityReasoner.AddOption(TestHelpers.BuildOption("Vetoed", _executed, _firstOptionConsideration,
-            _firstOptionTuning));
-        _dualUtilityReasoner.AddOption(TestHelpers.BuildOption("Valid", _executed, _secondOptionConsideration,
-            _secondOptionTuning));
+        // Step 1. A multiplier of 0 zeroes the weight no matter how large the addend is.
+        _firstConsideration.Set(_vetoedWithALargeAddend);
+        _secondConsideration.Set(_lightWeight);
 
         _dualUtilityReasoner.Update();
 
-        Assert.That(_executed, Is.EqualTo(new[] { "Valid.Select", "Valid.Update" }));
+        Assert.That(_executed, Is.EqualTo(new[] { "Second.Select", "Second.Update" }));
     }
 
     [Test]
     public void SelectsNothingWhenEveryOptionIsVetoed()
     {
-        _firstOptionConsideration.Set(_vetoedWithALargeAddend);
-        _secondOptionConsideration.Set(_vetoedWithALargeAddend);
-
-        _dualUtilityReasoner.RandomSource = new FixedRandomSource(0f);
-
-        _dualUtilityReasoner.AddOption(TestHelpers.BuildOption("First", _executed, _firstOptionConsideration,
-            _firstOptionTuning));
-        _dualUtilityReasoner.AddOption(TestHelpers.BuildOption("Second", _executed, _secondOptionConsideration,
-            _secondOptionTuning));
+        _firstConsideration.Set(_vetoedWithALargeAddend);
+        _secondConsideration.Set(_vetoedWithALargeAddend);
 
         _dualUtilityReasoner.Update();
 
@@ -105,106 +103,83 @@ public class DualUtilityReasonerSpec
     [Test]
     public void IgnoresLowerRanksNoMatterHowMuchTheyWeigh()
     {
-        _firstOptionConsideration.Set(_highRankButLight);
-        _secondOptionConsideration.Set(_lowRankButHeavy);
+        // Step 2. Rank is a hard tier boundary, so the option weighing a hundred times more never gets considered.
+        // The 0.5 roll is chosen so that the answer changes if this step is skipped. With rank elimination the total
+        // weight is First's 1 and any roll selects First. Without it the total is 101, and a roll of 0.5 lands at
+        // 50.5, inside Second's share.
+        _firstConsideration.Set(_highRankButLight);
+        _secondConsideration.Set(_lowRankButHeavy);
 
-        _dualUtilityReasoner.RandomSource = new FixedRandomSource(0f);
-
-        _dualUtilityReasoner.AddOption(TestHelpers.BuildOption("HighRank", _executed, _firstOptionConsideration,
-            _firstOptionTuning));
-        _dualUtilityReasoner.AddOption(TestHelpers.BuildOption("LowRank", _executed, _secondOptionConsideration,
-            _secondOptionTuning));
+        _dualUtilityReasoner.RandomSource = new FixedRandomSource(0.5f);
 
         _dualUtilityReasoner.Update();
 
-        Assert.That(_executed, Is.EqualTo(new[] { "HighRank.Select", "HighRank.Update" }));
+        Assert.That(_executed, Is.EqualTo(new[] { "First.Select", "First.Update" }));
     }
 
     [Test]
     public void DiscardsSurvivorsFarBelowTheBestWeight()
     {
-        _firstOptionConsideration.Set(_heavyWeight);
-        _secondOptionConsideration.Set(_lightWeight);
+        // Step 3. The 0.95 roll is chosen so that the answer changes if this step is skipped. With a
+        // WeightScreeningFactor of 0.5, the threshold is 3 * 0.5 = 1.5, Second's weight of 1 is dropped, and the
+        // total falls to 3. A roll of 0.95 lands at 2.85, inside First's share. Without
+        // screening, Second survives, the total is 4, and the same roll lands at 3.8, which is Second's. A roll of 0
+        // would take First either way and so would pass even if screening were deleted outright.
+        _firstConsideration.Set(_heavyWeight);
+        _secondConsideration.Set(_lightWeight);
 
-        // The 0.95 roll is chosen so that the answer changes if step 3 is skipped, which is what gives this test its
-        // teeth.
-        // With screening, the threshold is 3 * 0.5 = 1.5, Light's weight of 1 is dropped, and the total falls to 3.  A
-        // roll of 0.95 lands at 2.85, inside Heavy's share. Without screening, Light survives, the total is 4, and the
-        // same roll lands at 3.8, which is Light's. A roll of 0 would take Heavy either way and so would pass even if
-        // screening were deleted outright.
         _dualUtilityReasoner.RandomSource = new FixedRandomSource(0.95f);
-
-        // Screen light from the valid options.
         _dualUtilityReasoner.WeightScreeningFactor = 0.5f;
-
-        OptionBase heavy = TestHelpers.BuildOption("Heavy", _executed, _firstOptionConsideration, _firstOptionTuning);
-        _dualUtilityReasoner.AddOption(heavy);
-
-        OptionBase light = TestHelpers.BuildOption("Light", _executed, _secondOptionConsideration, _secondOptionTuning);
-        _dualUtilityReasoner.AddOption(light);
 
         _dualUtilityReasoner.Update();
 
-        Assert.That(_executed, Is.EqualTo(new[] { "Heavy.Select", "Heavy.Update" }));
+        Assert.That(_executed, Is.EqualTo(new[] { "First.Select", "First.Update" }));
     }
 
     [Test]
     public void LandsOnTheHeavierOptionForALowRoll()
     {
-        _firstOptionConsideration.Set(_heavyWeight);
-        _secondOptionConsideration.Set(_lightWeight);
-
-        _dualUtilityReasoner.RandomSource = new FixedRandomSource(0f);
-
-        _dualUtilityReasoner.AddOption(TestHelpers.BuildOption("Heavy", _executed, _firstOptionConsideration,
-            _firstOptionTuning));
-        _dualUtilityReasoner.AddOption(TestHelpers.BuildOption("Light", _executed, _secondOptionConsideration,
-            _secondOptionTuning));
+        // Step 4. Weights of 3 and 1 give a total of 4. A roll of 0 falls inside First's share of [0, 3).
+        _firstConsideration.Set(_heavyWeight);
+        _secondConsideration.Set(_lightWeight);
 
         _dualUtilityReasoner.Update();
 
-        Assert.That(_executed, Is.EqualTo(new[] { "Heavy.Select", "Heavy.Update" }));
+        Assert.That(_executed, Is.EqualTo(new[] { "First.Select", "First.Update" }));
     }
 
     [Test]
     public void LandsOnTheLighterOptionForAHighRoll()
     {
-        _firstOptionConsideration.Set(_heavyWeight);
-        _secondOptionConsideration.Set(_lightWeight);
+        // Step 4 again. The same two options, so First owns the roll range [0, 3) and Second owns [3, 4). A roll of
+        // 0.9 lands at 3.6, inside Second's share. A roll landing on either side of the boundary at 3 is what shows
+        // selection actually walks the accumulated weights instead of always taking the first candidate.
+        _firstConsideration.Set(_heavyWeight);
+        _secondConsideration.Set(_lightWeight);
 
-        // Weights of 3 and 1 give a total of 4, so Heavy owns the roll range [0, 3) and Light owns [3, 4). A roll of
-        // 0.9 lands at 3.6, inside Light's share. Together with the low-roll test this brackets the boundary at 3 from
-        // both sides, which is what shows selection actually walks the accumulated weights instead of always taking the
-        // first candidate.
         _dualUtilityReasoner.RandomSource = new FixedRandomSource(0.9f);
-
-        _dualUtilityReasoner.AddOption(TestHelpers.BuildOption("Heavy", _executed, _firstOptionConsideration,
-            _firstOptionTuning));
-        _dualUtilityReasoner.AddOption(TestHelpers.BuildOption("Light", _executed, _secondOptionConsideration,
-            _secondOptionTuning));
 
         _dualUtilityReasoner.Update();
 
-        Assert.That(_executed, Is.EqualTo(new[] { "Light.Select", "Light.Update" }));
+        Assert.That(_executed, Is.EqualTo(new[] { "Second.Select", "Second.Update" }));
     }
 
     [Test]
     public void KeepsTheSameOptionSelectedAcrossTicks()
     {
-        _firstOptionConsideration.Set(_heavyWeight);
-        _secondOptionConsideration.Set(_lightWeight);
-
-        _dualUtilityReasoner.RandomSource = new FixedRandomSource(0f);
-
-        _dualUtilityReasoner.AddOption(TestHelpers.BuildOption("Heavy", _executed, _firstOptionConsideration,
-            _firstOptionTuning));
-        _dualUtilityReasoner.AddOption(TestHelpers.BuildOption("Light", _executed, _secondOptionConsideration,
-            _secondOptionTuning));
+        // Selection is re-run every tick. With nothing changing and a fixed roll the same option wins again, so it
+        // is updated a second time rather than torn down and restarted.
+        _firstConsideration.Set(_heavyWeight);
+        _secondConsideration.Set(_lightWeight);
 
         _dualUtilityReasoner.Update();
 
         _dualUtilityReasoner.Update();
 
-        Assert.That(_executed, Is.EqualTo(new[] { "Heavy.Select", "Heavy.Update", "Heavy.Update" }));
+        Assert.That(_executed, Is.EqualTo(new[]
+        {
+            "First.Select", "First.Update",
+            "First.Update",
+        }));
     }
 }

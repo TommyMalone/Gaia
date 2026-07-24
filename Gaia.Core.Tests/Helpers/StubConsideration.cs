@@ -10,6 +10,12 @@ namespace Gaia.Core.Tests.Helpers;
 /// </summary>
 internal sealed class StubConsideration : ConsiderationBase
 {
+    /// <summary>Creates a consideration that reports the given weights until Set changes them.</summary>
+    internal StubConsideration(WeightValues weights)
+    {
+        Weights = weights;
+    }
+
     /// <summary>Reports the given Weights from here on.</summary>
     internal void Set(WeightValues weights)
     {
