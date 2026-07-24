@@ -1,5 +1,5 @@
 ﻿using Gaia.Core.Options;
-using Gaia.Core.Services;
+using Gaia.Core.Services.Random;
 using Gaia.Core.Temp;
 
 namespace Gaia.Core.Reasoner

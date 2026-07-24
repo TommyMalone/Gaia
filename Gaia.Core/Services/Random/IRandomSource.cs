@@ -1,4 +1,6 @@
-﻿namespace Gaia.Core.Services
+﻿using System;
+
+namespace Gaia.Core.Services.Random
 {
     /// <summary>
     ///     Supplies the random values used by reasoners that select between options by chance. Injected rather than

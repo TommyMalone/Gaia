@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Gaia.Core.Services
+﻿namespace Gaia.Core.Services.Random
 {
     /// <summary>
     ///     The default random source, backed by System.Random. Construct with a seed to reproduce a run, or without one
@@ -8,18 +6,18 @@ namespace Gaia.Core.Services
     /// </summary>
     public sealed class SystemRandomSource : IRandomSource
     {
-        private readonly Random _random;
+        private readonly System.Random _random;
 
         /// <summary>Creates a source seeded from the clock.</summary>
         public SystemRandomSource()
         {
-            _random = new Random();
+            _random = new System.Random();
         }
 
         /// <param name="seed">A seed value. The same seed produces the same sequence of values.</param>
         public SystemRandomSource(int seed)
         {
-            _random = new Random(seed);
+            _random = new System.Random(seed);
         }
 
         /// <inheritdoc />

@@ -1,4 +1,4 @@
-﻿namespace Gaia.Core.Services
+﻿namespace Gaia.Core.Services.Random
 {
     /// <summary>A random source that always returns the same value, which makes weighted selection deterministic.</summary>
     public sealed class FixedRandomSource : IRandomSource

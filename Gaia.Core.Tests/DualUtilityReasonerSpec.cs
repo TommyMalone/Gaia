@@ -1,7 +1,7 @@
 ﻿using Gaia.Core.Considerations;
 using Gaia.Core.Options;
 using Gaia.Core.Reasoner;
-using Gaia.Core.Services;
+using Gaia.Core.Services.Random;
 using Gaia.Core.Temp;
 using Gaia.Core.Tests.Helpers;
 
