@@ -54,6 +54,12 @@ namespace Gaia.Core.Reasoner
         public void Enable()
         {
             IsEnabled = true;
+            OnEnable();
+        }
+
+        /// <summary>Called after the reasoner is enabled, so that subclasses can reset whatever state a run starts from.</summary>
+        protected virtual void OnEnable()
+        {
         }
 
         /// <summary>
@@ -64,6 +70,15 @@ namespace Gaia.Core.Reasoner
         {
             IsEnabled = false;
             SelectOption(null);
+            OnDisable();
+        }
+
+        /// <summary>
+        ///     Called after the reasoner is disabled and SelectedOption has been deselected, so that subclasses can clean up
+        ///     whatever state a run leaves behind.
+        /// </summary>
+        protected virtual void OnDisable()
+        {
         }
 
         /// <summary>Sets SelectedOption. If null no option is selected.</summary>
@@ -86,10 +101,13 @@ namespace Gaia.Core.Reasoner
         /// <summary>Sense, Think, Act.</summary>
         public void Update()
         {
-            Sense();
-            EvaluateOptions();
-            Think();
-            Act();
+            if (IsEnabled)
+            {
+                Sense();
+                EvaluateOptions();
+                Think();
+                Act();
+            }
         }
 
         /// <summary>The perception phase of the cycle. Nothing is sensed yet, so the method is empty.</summary>
