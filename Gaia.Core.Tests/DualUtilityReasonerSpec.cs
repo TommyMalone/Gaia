@@ -10,7 +10,8 @@ namespace Gaia.Core.Tests;
 ///     Covers DualUtilityReasoner's four selection steps: discard options with no weight, keep only the highest rank
 ///     tier, discard survivors that fall too far below the best weight, then choose among what is left at random in
 ///     proportion to weight. Each option's numbers come from a stub consideration set by hand, and the random source is
-///     fixed, so each test pins down one step rather than sampling a distribution.
+///     fixed, so each test pins down one step rather than sampling a distribution. Expected logs are grouped a tick per
+///     line.
 /// </summary>
 /// <remarks>
 ///     Each option's numbers come from a <see cref="StubConsideration" /> set by hand, and the random source is fixed,
@@ -178,8 +179,10 @@ public class DualUtilityReasonerSpec
 
         Assert.That(_executed, Is.EqualTo(new[]
         {
+            // @formatter:off
             "First.Select", "First.Update",
             "First.Update",
+            // @formatter:on
         }));
     }
 }

@@ -7,8 +7,9 @@ namespace Gaia.Core.Tests;
 /// <summary>
 ///     Covers RuleBasedReasoner's selection logic, which walks its options in the order they were added and takes the
 ///     first valid one, where valid means a weight above zero. Weight and rank play no part beyond that, which is what
-///     separates this reasoner from the dual utility one. Considerations are stubbed rather than queried from a world, so
-///     a failure here points at the reasoner rather than at a consideration.
+///     separates this reasoner from the dual utility one. Considerations are stubbed rather than queried from a world,
+///     so a failure here points at the reasoner rather than at a consideration. Expected logs are grouped a tick per
+///     line.
 /// </summary>
 /// <remarks>
 ///     Considerations are stubbed rather than queried from a world, so a failure here points at the reasoner rather
@@ -129,8 +130,10 @@ public class RuleBasedReasonerSpec
 
         Assert.That(_executed, Is.EqualTo(new[]
         {
+            // @formatter:off
             "First.Select", "First.Update",
             "First.Update",
+            // @formatter:on
         }));
     }
 
@@ -149,8 +152,10 @@ public class RuleBasedReasonerSpec
         // updated on the tick that swaps them.
         Assert.That(_executed, Is.EqualTo(new[]
         {
+            // @formatter:off
             "Second.Select", "Second.Update",
             "Second.Deselect", "First.Select", "First.Update",
+            // @formatter:on
         }));
     }
 
@@ -165,8 +170,10 @@ public class RuleBasedReasonerSpec
 
         Assert.That(_executed, Is.EqualTo(new[]
         {
+            // @formatter:off
             "First.Select", "First.Update",
             "First.Deselect", "Second.Select", "Second.Update",
+            // @formatter:on
         }));
     }
 }
