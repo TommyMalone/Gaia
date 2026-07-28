@@ -24,7 +24,7 @@ namespace Gaia.Core.Reasoner
 
         /// <summary>
         ///     True while SelectedOption is null, since a reasoner running nothing has nothing left to finish.
-        ///     SubreasonerAction reads this to report its own IsDone.
+        ///     <see cref="SubreasonerAction" /> reads this to report its own IsDone.
         /// </summary>
         public virtual bool IsDone()
         {
@@ -49,7 +49,7 @@ namespace Gaia.Core.Reasoner
         }
 
         /// <summary>
-        ///     Enables the reasoner. Called by SubreasonerAction.Select and Brain.Enable.
+        ///     Enables the reasoner. Called by <see cref="SubreasonerAction.Select" /> and Brain.Enable.
         /// </summary>
         public void Enable()
         {
@@ -63,7 +63,7 @@ namespace Gaia.Core.Reasoner
         }
 
         /// <summary>
-        ///     Disables the reasoner. Called by SubreasonerAction.Deselect and
+        ///     Disables the reasoner. Called by <see cref="SubreasonerAction.Deselect" /> and
         ///     Brain.Disable.
         /// </summary>
         public void Disable()
