@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Gaia.Core.Actions;
 using Gaia.Core.Considerations;
+using Gaia.Core.Reasoners;
 using Gaia.Core.Temp;
 
 namespace Gaia.Core.Options

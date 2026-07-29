@@ -2,7 +2,7 @@
 using Gaia.Core.Services.Random;
 using Gaia.Core.Temp;
 
-namespace Gaia.Core.Reasoner
+namespace Gaia.Core.Reasoners
 {
     /// <summary>
     ///     A reasoner that narrows its options to the highest rank, screens out the ones far below the best weight, and

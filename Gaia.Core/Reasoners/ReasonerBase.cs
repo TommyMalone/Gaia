@@ -4,7 +4,7 @@ using Gaia.Core.Considerations;
 using Gaia.Core.Options;
 using Gaia.Core.Temp;
 
-namespace Gaia.Core.Reasoner
+namespace Gaia.Core.Reasoners
 {
     /// <summary>
     ///     A decision maker that chooses among a set of options and keeps one selected until something ends it. Each

@@ -1,5 +1,5 @@
-﻿using Gaia.Core.Reasoner;
-using Gaia.Core.Temp;
+﻿using Gaia.Core.Reasoners;
+using Gaia.Core.Considerations;
 using Gaia.Core.Tests.Helpers;
 
 namespace Gaia.Core.Tests;

@@ -1,7 +1,7 @@
 ﻿using Gaia.Core.Options;
 using Gaia.Core.Temp;
 
-namespace Gaia.Core.Reasoner
+namespace Gaia.Core.Reasoners
 {
     /// <summary>
     ///     A reasoner that runs its options one at a time, in the order they were added, moving on when the selected
