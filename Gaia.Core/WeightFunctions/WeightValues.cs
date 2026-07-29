@@ -1,4 +1,4 @@
-﻿namespace Gaia.Core.Considerations
+﻿namespace Gaia.Core.WeightFunctions
 {
     public readonly struct WeightValues
     {

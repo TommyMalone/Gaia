@@ -1,8 +1,8 @@
 ﻿using Gaia.Core.Reasoners;
-using Gaia.Core.Considerations;
 using Gaia.Core.Tests.Helpers;
+using Gaia.Core.WeightFunctions;
 
-namespace Gaia.Core.Tests;
+namespace Gaia.Core.Tests.Reasoners;
 
 /// <summary>
 ///     Covers SequenceReasoner, which runs its options one at a time in the order they were added and moves on when

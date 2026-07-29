@@ -1,9 +1,9 @@
 ﻿using Gaia.Core.Actions;
 using Gaia.Core.Reasoners;
-using Gaia.Core.Considerations;
 using Gaia.Core.Tests.Helpers;
+using Gaia.Core.WeightFunctions;
 
-namespace Gaia.Core.Tests;
+namespace Gaia.Core.Tests.Actions.AbstractActions;
 
 /// <summary>
 ///     Covers SubreasonerAction, the component that turns a flat decision into a hierarchy by holding a reasoner of

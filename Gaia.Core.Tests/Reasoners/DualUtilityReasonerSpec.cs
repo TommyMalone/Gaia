@@ -1,10 +1,10 @@
 ﻿using Gaia.Core.Considerations;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Random;
-using Gaia.Core.Temp;
 using Gaia.Core.Tests.Helpers;
+using Gaia.Core.WeightFunctions;
 
-namespace Gaia.Core.Tests;
+namespace Gaia.Core.Tests.Reasoners;
 
 /// <summary>
 ///     Covers DualUtilityReasoner's four selection steps: discard options with no weight, keep only the highest rank

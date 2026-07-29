@@ -1,8 +1,8 @@
 ﻿using Gaia.Core.Reasoners;
-using Gaia.Core.Considerations;
 using Gaia.Core.Tests.Helpers;
+using Gaia.Core.WeightFunctions;
 
-namespace Gaia.Core.Tests;
+namespace Gaia.Core.Tests.Reasoners;
 
 /// <summary>
 ///     Covers RuleBasedReasoner's selection logic, which walks its options in the order they were added and takes the

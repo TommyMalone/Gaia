@@ -1,6 +1,6 @@
 ﻿using Gaia.Core.Services.Time;
 
-namespace Gaia.Core.Tests;
+namespace Gaia.Core.Tests.Services.Time;
 
 /// <summary>Covers <see cref="Seconds" />.</summary>
 [TestFixture]
