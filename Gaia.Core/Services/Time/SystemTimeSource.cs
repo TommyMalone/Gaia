@@ -2,9 +2,7 @@
 
 namespace Gaia.Core.Services.Time
 {
-    /// <summary>
-    ///     A clock backed by real elapsed time, for a host that has no clock of its own to feed in.
-    /// </summary>
+    /// <summary>A clock backed by real elapsed time, for a host that has no clock of its own to feed in.</summary>
     public sealed class SystemTimeSource : ITimeSource
     {
         private readonly Stopwatch _stopwatch = Stopwatch.StartNew();

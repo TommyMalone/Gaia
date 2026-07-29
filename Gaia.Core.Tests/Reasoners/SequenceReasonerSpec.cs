@@ -6,9 +6,9 @@ namespace Gaia.Core.Tests.Reasoners;
 
 /// <summary>
 ///     Covers SequenceReasoner, which runs its options one at a time in the order they were added and moves on when
-///     the current one reports that it is done. It behaves much like a sequence node in a behavior tree. Unlike the
-///     other reasoners it always executes every option, so the weights their considerations report play no part in
-///     which option runs.
+///     the current one reports that it is done. It behaves much like a sequence node in a behavior tree. Unlike the other
+///     reasoners it always executes every option, so the weights their considerations report play no part in which
+///     option runs.
 /// </summary>
 /// <remarks>
 ///     The fixture is three options, each holding a single <see cref="RecordAction" /> whose

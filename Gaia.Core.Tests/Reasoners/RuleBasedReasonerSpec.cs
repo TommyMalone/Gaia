@@ -7,9 +7,8 @@ namespace Gaia.Core.Tests.Reasoners;
 /// <summary>
 ///     Covers RuleBasedReasoner's selection logic, which walks its options in the order they were added and takes the
 ///     first valid one, where valid means a weight above zero. Weight and rank play no part beyond that, which is what
-///     separates this reasoner from the dual utility one. Considerations are stubbed rather than queried from a world,
-///     so a failure here points at the reasoner rather than at a consideration. Expected logs are grouped a tick per
-///     line.
+///     separates this reasoner from the dual utility one. Considerations are stubbed rather than queried from a world, so
+///     a failure here points at the reasoner rather than at a consideration. Expected logs are grouped a tick per line.
 /// </summary>
 /// <remarks>
 ///     Considerations are stubbed rather than queried from a world, so a failure here points at the reasoner rather

@@ -8,8 +8,8 @@ namespace Gaia.Core.Tests.Actions.AbstractActions;
 /// <summary>
 ///     Covers SubreasonerAction, the component that turns a flat decision into a hierarchy by holding a reasoner of
 ///     its own. Every test but one shares the same tree: a root reasoner with two options, each carrying a recording
-///     action and a subreasoner action, and each subreasoner holding two options of its own. The exception builds its
-///     own tree, three levels deep. Expected logs are grouped a tick per line.
+///     action and a subreasoner action, and each subreasoner holding two options of its own. The exception builds its own
+///     tree, three levels deep. Expected logs are grouped a tick per line.
 /// </summary>
 /// <remarks>
 ///     Every test but one shares the same tree, which is a root reasoner with two options, each carrying a
