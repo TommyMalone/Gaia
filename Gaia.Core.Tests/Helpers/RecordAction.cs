@@ -14,10 +14,18 @@ internal sealed class RecordAction : ActionBase
     private readonly List<string> _log;
     private readonly string _name;
 
+    private bool _isDone = true;
+
     internal RecordAction(string name, List<string> log)
     {
         _name = name;
         _log = log;
+    }
+
+    /// <summary>Whatever SetDone last set. True until it is called.</summary>
+    public override bool IsDone()
+    {
+        return _isDone;
     }
 
     /// <inheritdoc />
@@ -43,6 +51,12 @@ internal sealed class RecordAction : ActionBase
     public override void Update()
     {
         Record("Update");
+    }
+
+    /// <summary>Replaces the done flag from here on.</summary>
+    internal void SetDone(bool isDone)
+    {
+        _isDone = isDone;
     }
 
     /// <summary>Appends the entry for the given phase to the log, as "Name.Phase".</summary>
