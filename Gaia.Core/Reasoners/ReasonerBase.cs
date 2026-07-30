@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using Gaia.Core.Actions;
 using Gaia.Core.Considerations;
 using Gaia.Core.Options;
@@ -90,7 +91,8 @@ namespace Gaia.Core.Reasoners
                 return;
             }
 
-            // Should maybe verify the provided option is null or contained in the reasoner's options.
+            Debug.Assert(option == null || Options.Contains(option),
+                "The option is not one of this reasoner's options.");
 
             SelectedOption?.Deselect();
             SelectedOption = option;
