@@ -6,6 +6,11 @@ using Gaia.Core.Temp;
 
 namespace Gaia.Core.Options
 {
+    /// <summary>
+    ///     One thing an AI could choose to do, pairing the considerations that score it with the actions that run if it
+    ///     is chosen.
+    /// </summary>
+    /// <seealso>"Modular AI", Section 8.3.1, Listing 8.11</seealso>
     public abstract class OptionBase
     {
         private readonly List<ActionBase> _actions = new();
@@ -14,22 +19,39 @@ namespace Gaia.Core.Options
         /// <summary>True while this option is the one its reasoner has selected.</summary>
         public bool IsSelected { get; private set; }
 
-        public float Weight => _considerations.Weight;
+        /// <summary>
+        ///     The weight the reasoner acts on, which is what the considerations added up to, or 0 if the option fell short
+        ///     of either ScreeningRank or ScreeningWeight.
+        /// </summary>
+        public float Weight => PassesScreening ? _considerations.Weight : 0f;
+
+        /// <summary>The highest rank the considerations reported.</summary>
         public float Rank => _considerations.Rank;
+
         /// <summary>True if this option can be selected, which is whenever its Weight is above 0.</summary>
         public bool IsValid => Weight > 0f;
 
-        public float ScreeningWeight
-        {
-            get => _considerations.ScreeningWeight;
-            set => _considerations.ScreeningWeight = value;
-        }
+        /// <summary>
+        ///     The weight this option must reach to survive, set by <see cref="DualUtilityReasoner" /> from the best weight
+        ///     it found across all of its options, scaled by the reasoner's <see cref="DualUtilityReasoner.WeightScreeningFactor" />.
+        /// </summary>
+        public float ScreeningWeight { get; set; }
 
-        public float ScreeningRank
-        {
-            get => _considerations.ScreeningRank;
-            set => _considerations.ScreeningRank = value;
-        }
+        /// <summary>
+        ///     The rank this option must reach to survive, set by the reasoner from the best rank it found across all of its
+        ///     options.
+        /// </summary>
+        public float ScreeningRank { get; set; } = float.MinValue;
+
+        /// <summary>True unless the reasoner's comparison against the other options screened this option out.</summary>
+        /// <remarks>
+        ///     An option below either ScreeningRank or ScreeningWeight reports a Weight of 0 rather than being taken out of a
+        ///     list, which is how a reasoner narrows its options without building a subset. <see cref="DualUtilityReasoner" /> is
+        ///     presently the only reasoner that sets these thresholds. For the other reasoner types PassesScreening is always
+        ///     true.
+        /// </remarks>
+        private bool PassesScreening =>
+            _considerations.Rank >= ScreeningRank && _considerations.Weight >= ScreeningWeight;
 
         /// <summary>True once every action on this option reports that it is done.</summary>
         public bool IsDone
@@ -48,10 +70,11 @@ namespace Gaia.Core.Options
             }
         }
 
-        /// <summary>
-        ///     Load the configuration from data. Not virtual, so that every option is guaranteed to run EnsureDefaultTuning
-        ///     once its configuration is complete. Derived options override OnInit.
-        /// </summary>
+        /// <summary>Load the configuration from data.</summary>
+        /// <remarks>
+        ///     Not virtual, so that every option is guaranteed to run EnsureTuningConsideration once its configuration is
+        ///     complete. Derived options override OnInit.
+        /// </remarks>
         /// <returns>True if the configuration was loaded successfully.</returns>
         public bool Init(AiCreationData creationData)
         {
@@ -60,7 +83,7 @@ namespace Gaia.Core.Options
                 return false;
             }
 
-            EnsureDefaultTuning();
+            EnsureTuningConsideration();
             // Configurations cannot presently be loaded successfully.
             return false;
         }
@@ -81,11 +104,12 @@ namespace Gaia.Core.Options
             _actions.Add(action);
         }
 
-        /// <summary>
-        ///     GAIA adds a default Tuning consideration with an addend of 1 when the configuration does not specify one.
-        ///     Without it every addend is 0, so the weight is 0 and the option can never be selected.
-        /// </summary>
-        private void EnsureDefaultTuning()
+        /// <summary>Adds a default <see cref="TuningConsideration" /> if the configuration supplied none.</summary>
+        /// <remarks>
+        ///     The default contributes an addend of 1 and a multiplier of 1. An option whose other considerations only
+        ///     multiply would otherwise sum its addends to 0, leaving a weight of 0, and could never be selected.
+        /// </remarks>
+        private void EnsureTuningConsideration()
         {
             if (_considerations.HasTuning)
             {
@@ -95,9 +119,17 @@ namespace Gaia.Core.Options
             AddConsideration(new TuningConsideration());
         }
 
+        /// <summary>Recalculates what the considerations add up to.</summary>
+        /// <remarks>
+        ///     Also clears ScreeningWeight and ScreeningRank. They belong to the cycle that set them and Calculate should
+        ///     only be called once per cycle.
+        /// </remarks>
         public void Calculate()
         {
             _considerations.Calculate();
+
+            ScreeningWeight = 0f;
+            ScreeningRank = float.MinValue;
         }
 
         /// <summary>Selects this option, which selects its considerations and actions. Does nothing if IsSelected.</summary>

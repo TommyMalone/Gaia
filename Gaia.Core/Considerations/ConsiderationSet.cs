@@ -5,25 +5,26 @@ using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Considerations
 {
+    /// <summary>The set of considerations belonging to one option.</summary>
+    /// <seealso>"Modular AI", Section 8.6.2.4, Listing 8.10</seealso>
     public sealed class ConsiderationSet
     {
         /// <summary>The considerations in the set, in the order they were added.</summary>
         private readonly List<ConsiderationBase> _considerations = new();
 
+        /// <summary>The sum of the considerations' addends, as of the last Calculate.</summary>
         public float Addend { get; private set; }
+
+        /// <summary>The product of the considerations' multipliers, as of the last Calculate.</summary>
         public float Multiplier { get; private set; }
 
-        public float UnscreenedWeight => Addend * Multiplier;
-        public float UnscreenedRank { get; private set; } = float.MinValue;
+        /// <summary>The addends' sum scaled by the multipliers' product, as of the last Calculate.</summary>
+        public float Weight => Addend * Multiplier;
 
-        public float ScreeningWeight { get; set; }
-        public float ScreeningRank { get; set; } = float.MinValue;
+        /// <summary>The highest rank any consideration in the set reported.</summary>
+        public float Rank { get; private set; } = float.MinValue;
 
-        public float Weight => PassesScreening ? UnscreenedWeight : 0f;
-        public float Rank => UnscreenedRank;
-
-        private bool PassesScreening => UnscreenedRank >= ScreeningRank && UnscreenedWeight >= ScreeningWeight;
-
+        /// <summary>True while the option this set belongs to is the one its reasoner has selected.</summary>
         public bool IsSelected { get; private set; }
 
         /// <summary>True if this set already contains a Tuning consideration.</summary>
@@ -35,6 +36,7 @@ namespace Gaia.Core.Considerations
             return false;
         }
 
+        /// <summary>Evaluates every consideration and combines the results.</summary>
         public void Calculate()
         {
             float addend = 0f;
@@ -53,10 +55,7 @@ namespace Gaia.Core.Considerations
 
             Addend = addend;
             Multiplier = multiplier;
-            UnscreenedRank = rank;
-
-            ScreeningWeight = 0f;
-            ScreeningRank = float.MinValue;
+            Rank = rank;
         }
 
         public void Add(ConsiderationBase consideration)
