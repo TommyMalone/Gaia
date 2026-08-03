@@ -1,14 +1,15 @@
-﻿using Gaia.Core.Reasoners;
+﻿using Gaia.Core.Options;
+using Gaia.Core.Reasoners;
 using Gaia.Core.Tests.Helpers;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Tests.Reasoners;
 
 /// <summary>
-///     Covers SequenceReasoner, which runs its options one at a time in the order they were added and moves on when
-///     the current one reports that it is done. It behaves much like a sequence node in a behavior tree. Unlike the other
-///     reasoners it always executes every option, so the weights their considerations report play no part in which
-///     option runs.
+///     Covers <see cref="SequenceReasoner" />, which runs its options one at a time in the order they were added and
+///     moves on when the selected option's <see cref="OptionBase.IsDone" /> is true. It behaves much like a sequence node
+///     in a behavior tree. Every option is executed when its turn comes, so the weights the considerations report play no
+///     part in which option runs.
 /// </summary>
 /// <remarks>
 ///     The fixture is three options, each holding a single <see cref="RecordAction" /> whose
