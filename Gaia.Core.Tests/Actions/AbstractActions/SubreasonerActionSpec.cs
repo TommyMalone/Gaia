@@ -5,12 +5,7 @@ using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Tests.Actions.AbstractActions;
 
-/// <summary>
-///     Covers SubreasonerAction, the component that turns a flat decision into a hierarchy by holding a reasoner of
-///     its own. Every test but one shares the same tree: a root reasoner with two options, each carrying a recording
-///     action and a subreasoner action, and each subreasoner holding two options of its own. The exception builds its own
-///     tree, three levels deep. Expected logs are grouped a tick per line.
-/// </summary>
+/// <summary>Covers how decisions flow through a hierarchy when options hold a <see cref="SubreasonerAction" />.</summary>
 /// <remarks>
 ///     Every test but one shares the same tree, which is a root reasoner with two options, each carrying a
 ///     <see cref="RecordAction" /> and a <see cref="SubreasonerAction" />, and each subreasoner holding two options of its
@@ -91,7 +86,7 @@ public class SubreasonerActionSpec
     private StubConsideration _subreasoner2Consideration2;
 
     [Test]
-    public void TicksTheContainedReasonerWhenItsOptionIsSelected()
+    public void UpdatesTheContainedReasonerWhenItsOptionIsSelected()
     {
         _reasoner.Update();
 
@@ -111,12 +106,12 @@ public class SubreasonerActionSpec
     }
 
     [Test]
-    public void ContinuesTickingTheContainedReasonerAfterItHasBeenSelected()
+    public void KeepsUpdatingTheContainedReasonerAfterItHasBeenSelected()
     {
         _reasoner.Update();
         _reasoner.Update();
 
-        // The subreasoner is updated every tick rather than once at selection
+        // The subreasoner is updated every cycle rather than once at selection.
         Assert.That(_executed, Is.EqualTo(new[]
         {
             // @formatter:off
@@ -200,7 +195,7 @@ public class SubreasonerActionSpec
     }
 
     [Test]
-    public void StopsTickingTheContainedReasonerOnceItsOptionIsDeselected()
+    public void StopsUpdatingTheContainedReasonerOnceItsOptionIsDeselected()
     {
         _reasoner.Update();
 
@@ -272,7 +267,7 @@ public class SubreasonerActionSpec
         Assert.Multiple(() =>
         {
             // Shutting off the brain is a different entry point from an option becoming invalid, and it has to reach
-            // the same way down the tree. The last group comes from Disable rather than from a tick.
+            // the same way down the tree. The last group comes from Disable rather than from a cycle.
             Assert.That(_executed, Is.EqualTo(new[]
             {
                 // @formatter:off
@@ -326,7 +321,7 @@ public class SubreasonerActionSpec
 
         Assert.Multiple(() =>
         {
-            // Selection reaches the bottom on the first tick, and tearing down the root disables every level below
+            // Selection reaches the bottom on the first cycle, and tearing down the root disables every level below
             // it on the second.
             Assert.That(executed, Is.EqualTo(new[]
             {

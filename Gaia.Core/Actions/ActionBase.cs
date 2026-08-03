@@ -34,7 +34,7 @@ namespace Gaia.Core.Actions
         {
         }
 
-        /// <summary>Called every tick while the action is selected.</summary>
+        /// <summary>Called every cycle while the action is selected.</summary>
         public virtual void Update()
         {
         }

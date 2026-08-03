@@ -56,7 +56,7 @@ public class SequenceReasonerSpec
     private RecordAction _option3RecordAction;
 
     [Test]
-    public void SelectsTheFirstOptionOnTheFirstTick()
+    public void SelectsTheFirstOptionOnTheFirstCycle()
     {
         _sequenceReasoner.Update();
 
@@ -91,7 +91,7 @@ public class SequenceReasonerSpec
 
         _sequenceReasoner.Update();
 
-        // This is what separates a sequence from a per-tick walk: the decision depends on what was chosen last tick,
+        // This is what separates a sequence from a per-cycle walk. The decision depends on what was chosen last cycle,
         // not only on the current situation.
         Assert.That(_executed, Is.EqualTo(new[]
         {
@@ -202,7 +202,7 @@ public class SequenceReasonerSpec
         Assert.Multiple(() =>
         {
             // Disabling mid-run tears down whatever was executing rather than leaving it selected. The last entry
-            // comes from Disable rather than from a tick.
+            // comes from Disable rather than from a cycle.
             Assert.That(_executed, Is.EqualTo(new[]
             {
                 // @formatter:off

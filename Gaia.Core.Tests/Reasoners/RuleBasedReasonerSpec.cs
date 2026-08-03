@@ -5,10 +5,9 @@ using Gaia.Core.WeightFunctions;
 namespace Gaia.Core.Tests.Reasoners;
 
 /// <summary>
-///     Covers RuleBasedReasoner's selection logic, which walks its options in the order they were added and takes the
-///     first valid one, where valid means a weight above zero. Weight and rank play no part beyond that, which is what
-///     separates this reasoner from the dual utility one. Considerations are stubbed rather than queried from a world, so
-///     a failure here points at the reasoner rather than at a consideration. Expected logs are grouped a tick per line.
+///     Covers <see cref="RuleBasedReasoner" />'s selection logic, which walks its options in the order they were
+///     added and takes the first valid one, where valid means a weight above zero. Weight and rank play no part beyond
+///     that, which is what separates this reasoner from <see cref="DualUtilityReasoner" />.
 /// </summary>
 /// <remarks>
 ///     Considerations are stubbed rather than queried from a world, so a failure here points at the reasoner rather
@@ -25,7 +24,7 @@ public class RuleBasedReasonerSpec
         _ruleBasedReasoner = new RuleBasedReasoner();
         _ruleBasedReasoner.Enable();
 
-        // Both options start valid. Each test changes what its considerations report before ticking.
+        // Both options start valid. Each test changes what its considerations report before the cycle runs.
         _firstConsideration = new StubConsideration(WeightValues.Neutral);
         _secondConsideration = new StubConsideration(WeightValues.Neutral);
 
@@ -120,10 +119,10 @@ public class RuleBasedReasonerSpec
     }
 
     [Test]
-    public void KeepsTheSameOptionSelectedAcrossTicks()
+    public void KeepsTheSameOptionSelectedAcrossCycles()
     {
-        // Select and Deselect are transitions; Update is the per-tick call. An option that stays valid across
-        // ticks is selected once and updated every tick.
+        // Select and Deselect are transitions; Update is the per-cycle call. An option that stays valid across
+        // cycles is selected once and updated every cycle.
         _ruleBasedReasoner.Update();
         _ruleBasedReasoner.Update();
 
@@ -148,7 +147,7 @@ public class RuleBasedReasonerSpec
         _ruleBasedReasoner.Update();
 
         // The outgoing option is deselected before the incoming one is selected, and only the incoming option is
-        // updated on the tick that swaps them.
+        // updated on the cycle that swaps them.
         Assert.That(_executed, Is.EqualTo(new[]
         {
             // @formatter:off

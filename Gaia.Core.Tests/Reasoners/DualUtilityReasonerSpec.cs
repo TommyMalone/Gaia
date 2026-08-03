@@ -7,15 +7,13 @@ using Gaia.Core.WeightFunctions;
 namespace Gaia.Core.Tests.Reasoners;
 
 /// <summary>
-///     Covers DualUtilityReasoner's four selection steps: discard options with no weight, keep only the highest rank
-///     tier, discard survivors that fall too far below the best weight, then choose among what is left at random in
-///     proportion to weight. Each option's numbers come from a stub consideration set by hand, and the random source is
-///     fixed, so each test pins down one step rather than sampling a distribution. Expected logs are grouped a tick per
-///     line.
+///     Covers <see cref="DualUtilityReasoner" />'s four selection steps, which discard options with no weight, keep
+///     only the highest rank tier, discard survivors that fall too far below the best weight, then choose among what is
+///     left at random in proportion to weight.
 /// </summary>
 /// <remarks>
-///     Each option's numbers come from a <see cref="StubConsideration" /> set by hand, and the random source is fixed,
-///     so each test pins down one step rather than sampling a distribution.
+///     Each option's numbers come from a <see cref="StubConsideration" /> set by hand, and the random source is
+///     fixed, so each test pins down one step rather than sampling a distribution.
 /// </remarks>
 [TestFixture]
 public class DualUtilityReasonerSpec
@@ -166,9 +164,9 @@ public class DualUtilityReasonerSpec
     }
 
     [Test]
-    public void KeepsTheSameOptionSelectedAcrossTicks()
+    public void KeepsTheSameOptionSelectedAcrossCycles()
     {
-        // Selection is re-run every tick. With nothing changing and a fixed roll the same option wins again, so it
+        // Selection is re-run every cycle. With nothing changing and a fixed roll the same option wins again, so it
         // is updated a second time rather than torn down and restarted.
         _firstConsideration.Set(_heavyWeight);
         _secondConsideration.Set(_lightWeight);

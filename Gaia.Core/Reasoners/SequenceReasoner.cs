@@ -30,8 +30,8 @@ namespace Gaia.Core.Reasoners
         /// <inheritdoc />
         protected override void Think()
         {
-            // Stay with the running option until it finishes. This is the only reasoner whose decision depends on
-            // what it chose last tick rather than only on the current situation.
+            // Stay with SelectedOption until its IsDone is true. This is the only reasoner whose decision depends on
+            // what it chose last cycle rather than only on the current situation.
             if (SelectedOption != null && !SelectedOption.IsDone)
             {
                 return;

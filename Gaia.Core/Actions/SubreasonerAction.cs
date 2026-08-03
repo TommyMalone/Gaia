@@ -45,7 +45,7 @@ namespace Gaia.Core.Actions
             Reasoner?.Disable();
         }
 
-        /// <summary>Ticks the contained reasoner, so that every level of the tree decides once per tick.</summary>
+        /// <summary>Calls Update on Reasoner, so that every level of the tree decides once per cycle.</summary>
         public override void Update()
         {
             base.Update();
