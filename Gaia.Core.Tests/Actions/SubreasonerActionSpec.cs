@@ -3,7 +3,7 @@ using Gaia.Core.Reasoners;
 using Gaia.Core.Tests.Helpers;
 using Gaia.Core.WeightFunctions;
 
-namespace Gaia.Core.Tests.Actions.AbstractActions;
+namespace Gaia.Core.Tests.Actions;
 
 /// <summary>Covers how decisions flow through a hierarchy when options hold a <see cref="SubreasonerAction" />.</summary>
 /// <remarks>
