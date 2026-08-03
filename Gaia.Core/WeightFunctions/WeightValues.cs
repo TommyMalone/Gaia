@@ -1,7 +1,10 @@
-﻿namespace Gaia.Core.WeightFunctions
+﻿using System;
+
+namespace Gaia.Core.WeightFunctions
 {
     /// <summary>What a consideration reports about the option it belongs to.</summary>
-    public readonly struct WeightValues
+    /// <seealso>"Modular AI", Section 8.6.2.1</seealso>
+    public readonly struct WeightValues : IEquatable<WeightValues>
     {
         /// <summary>How much this consideration wants its option chosen.</summary>
         /// <remarks>
@@ -39,5 +42,35 @@
 
         /// <summary>Vetoes the option, whatever the rest of its considerations report.</summary>
         public static readonly WeightValues Vetoed = new(0f, 0f, float.MinValue);
+
+        public bool Equals(WeightValues other)
+        {
+            return Addend.Equals(other.Addend) && Multiplier.Equals(other.Multiplier) && Rank.Equals(other.Rank);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is WeightValues other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Addend, Multiplier, Rank);
+        }
+
+        public static bool operator ==(WeightValues left, WeightValues right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(WeightValues left, WeightValues right)
+        {
+            return !left.Equals(right);
+        }
+
+        public override string ToString()
+        {
+            return $"Addend {Addend}, Multiplier {Multiplier}, Rank {Rank}";
+        }
     }
 }
