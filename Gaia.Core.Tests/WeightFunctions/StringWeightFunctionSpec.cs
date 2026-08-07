@@ -32,9 +32,9 @@ public class StringWeightFunctionSpec
     }
 
     [Test]
-    public void MatchesExactlyRatherThanIgnoringCase()
+    public void IgnoresCaseWhileMatching()
     {
-        Assert.That(_weightFunction.CalcString("enemy"), Is.EqualTo(WeightValues.Vetoed));
+        Assert.That(_weightFunction.CalcString("enemy"), Is.EqualTo(_enemyWeights));
     }
 
     [Test]

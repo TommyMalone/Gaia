@@ -10,7 +10,7 @@ namespace Gaia.Core.WeightFunctions
     /// </summary>
     public class StringWeightFunction : WeightFunctionBase
     {
-        private readonly Dictionary<string, WeightValues> _entries = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, WeightValues> _entries = new(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>Creates a function with no entries that reports the given values for every input.</summary>
         internal StringWeightFunction(WeightValues defaultWeights)
