@@ -4,8 +4,8 @@ using Gaia.Core.WeightFunctions;
 namespace Gaia.Core.Tests.Helpers;
 
 /// <summary>
-///     A weight function that reports whatever it was passed and counts the lifecycle calls it receives. For specs
-///     that care about what reached the weight function rather than what it computed.
+///     A weight function that remembers what it was passed and counts the calls it receives, reporting the configured
+///     Result, for specs that care about what reached the weight function rather than what it computed.
 /// </summary>
 internal sealed class RecordingWeightFunction : WeightFunctionBase
 {
@@ -14,6 +14,9 @@ internal sealed class RecordingWeightFunction : WeightFunctionBase
 
     /// <summary>The value passed to the most recent CalcFloat.</summary>
     internal float LastValue { get; private set; }
+
+    /// <summary>How many times a conversion has been asked for.</summary>
+    internal int CalculationCount { get; private set; }
 
     /// <summary>How many times Select has been called.</summary>
     internal int SelectCount { get; private set; }
@@ -32,6 +35,7 @@ internal sealed class RecordingWeightFunction : WeightFunctionBase
     public override WeightValues CalcFloat(float value)
     {
         LastValue = value;
+        CalculationCount++;
 
         return Result;
     }
