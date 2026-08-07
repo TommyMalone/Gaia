@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Temp;
+﻿using Gaia.Core.Strings;
+using Gaia.Core.Temp;
 
 namespace Gaia.Core.WeightFunctions
 {
@@ -27,7 +28,7 @@ namespace Gaia.Core.WeightFunctions
         }
 
         /// <inheritdoc />
-        public override WeightValues CalcString(string value)
+        public override WeightValues CalcString(AiString value)
         {
             return WeightValues;
         }

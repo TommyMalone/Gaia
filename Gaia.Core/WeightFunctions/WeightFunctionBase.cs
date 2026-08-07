@@ -1,4 +1,5 @@
 ﻿using System;
+using Gaia.Core.Strings;
 using Gaia.Core.Temp;
 
 namespace Gaia.Core.WeightFunctions
@@ -32,7 +33,8 @@ namespace Gaia.Core.WeightFunctions
             throw new NotSupportedException($"{GetType().Name} cannot convert a float.");
         }
 
-        public virtual WeightValues CalcString(string value)
+        /// <summary>Converts a string, which throws NotSupportedException unless overridden.</summary>
+        public virtual WeightValues CalcString(AiString value)
         {
             throw new NotSupportedException($"{GetType().Name} cannot convert a string.");
         }

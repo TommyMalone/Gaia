@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using Gaia.Core.Strings;
 using Gaia.Core.Temp;
 
 namespace Gaia.Core.WeightFunctions
@@ -8,9 +8,13 @@ namespace Gaia.Core.WeightFunctions
     ///     Matches the input against a set of configured strings and reports the weight values belonging to the one it
     ///     matched, or DefaultWeights if it matched none.
     /// </summary>
+    /// <remarks>
+    ///     Used by considerations that read a named variable, such as one that vetoes any entity whose side is not
+    ///     "Enemy". Matching ignores case, because an <see cref="AiString" /> is hashed from its lower cased text.
+    /// </remarks>
     public class StringWeightFunction : WeightFunctionBase
     {
-        private readonly Dictionary<string, WeightValues> _entries = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<AiString, WeightValues> _entries = new();
 
         /// <summary>Creates a function with no entries that reports the given values for every input.</summary>
         internal StringWeightFunction(WeightValues defaultWeights)
@@ -22,7 +26,7 @@ namespace Gaia.Core.WeightFunctions
         public WeightValues DefaultWeights { get; internal set; }
 
         /// <summary>Adds an entry, replacing any entry already configured for the same string.</summary>
-        internal void AddEntry(string value, WeightValues weights)
+        internal void AddEntry(AiString value, WeightValues weights)
         {
             _entries[value] = weights;
         }
@@ -35,7 +39,7 @@ namespace Gaia.Core.WeightFunctions
         }
 
         /// <inheritdoc />
-        public override WeightValues CalcString(string value)
+        public override WeightValues CalcString(AiString value)
         {
             return _entries.TryGetValue(value, out WeightValues weights) ? weights : DefaultWeights;
         }
