@@ -151,7 +151,7 @@ public class SequenceReasonerSpec
             }));
 
             Assert.That(_sequenceReasoner.SelectedOption, Is.Null);
-            Assert.That(_sequenceReasoner.IsDone(), Is.True);
+            Assert.That(_sequenceReasoner.IsDone, Is.True);
         });
     }
 
@@ -212,7 +212,7 @@ public class SequenceReasonerSpec
                 // @formatter:on
             }));
 
-            Assert.That(_sequenceReasoner.IsDone(), Is.True);
+            Assert.That(_sequenceReasoner.IsDone, Is.True);
         });
     }
 }

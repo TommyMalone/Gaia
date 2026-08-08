@@ -60,7 +60,7 @@ namespace Gaia.Core.Options
             {
                 foreach (ActionBase action in _actions)
                 {
-                    if (!action.IsDone())
+                    if (!action.IsDone)
                     {
                         return false;
                     }

@@ -143,10 +143,10 @@ public class SubreasonerActionSpec
             }));
 
             Assert.That(_subreasoner1.IsEnabled, Is.False);
-            Assert.That(_subreasoner1.IsDone(), Is.True);
+            Assert.That(_subreasoner1.IsDone, Is.True);
 
             Assert.That(_subreasoner2.IsEnabled, Is.True);
-            Assert.That(_subreasoner2.IsDone(), Is.False);
+            Assert.That(_subreasoner2.IsDone, Is.False);
         });
     }
 
@@ -223,20 +223,20 @@ public class SubreasonerActionSpec
     public void ReportsDoneWheneverTheContainedReasonerHasNothingSelected()
     {
         // Nothing has run yet, so the subreasoner has no selected option and the action containing it is finished.
-        Assert.That(_subreasonerAction1.IsDone(), Is.True);
+        Assert.That(_subreasonerAction1.IsDone, Is.True);
 
         _reasoner.Update();
 
         // The subreasoner picked an option, so the containing action is not finished. Without IsDone delegating to
         // Reasoner, a SequenceReasoner would move on while the whole subtree was still running.
-        Assert.That(_subreasonerAction1.IsDone(), Is.False);
+        Assert.That(_subreasonerAction1.IsDone, Is.False);
 
         _subreasoner1Consideration1.Veto();
         _subreasoner1Consideration2.Veto();
 
         _reasoner.Update();
 
-        Assert.That(_subreasonerAction1.IsDone(), Is.True);
+        Assert.That(_subreasonerAction1.IsDone, Is.True);
     }
 
     [Test]
@@ -253,7 +253,7 @@ public class SubreasonerActionSpec
             Assert.That(_executed, Is.EqualTo(new[] { "Reasoner.First.Select", "Reasoner.First.Update" }));
 
             Assert.That(_subreasoner1.IsEnabled, Is.True);
-            Assert.That(_subreasoner1.IsDone(), Is.True);
+            Assert.That(_subreasoner1.IsDone, Is.True);
         });
     }
 

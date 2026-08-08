@@ -15,10 +15,7 @@ namespace Gaia.Core.Actions
         ///     others (such as moving to a position) can be completed. The base reports true, so an action that does not override
         ///     this counts as finished from the moment it is selected.
         /// </summary>
-        public virtual bool IsDone()
-        {
-            return true;
-        }
+        public virtual bool IsDone => true;
 
         /// <summary>Load the configuration from data. Not yet implemented.</summary>
         /// <returns>True if the configuration was loaded successfully.</returns>

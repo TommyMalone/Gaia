@@ -25,14 +25,17 @@ namespace Gaia.Core.Actions
         public ITimeSource TimeSource { get; internal set; } = new SystemTimeSource();
 
         /// <summary>True once Duration has passed since the action was selected, or while the action is not selected.</summary>
-        public override bool IsDone()
+        public override bool IsDone
         {
-            if (!_isRunning)
+            get
             {
-                return true;
-            }
+                if (!_isRunning)
+                {
+                    return true;
+                }
 
-            return TimeSource.CurrentTime - _startTime >= Duration;
+                return TimeSource.CurrentTime - _startTime >= Duration;
+            }
         }
 
         /// <inheritdoc />

@@ -27,10 +27,7 @@ namespace Gaia.Core.Reasoners
         ///     True while SelectedOption is null, since a reasoner running nothing has nothing left to finish.
         ///     <see cref="SubreasonerAction" /> reads this to report its own IsDone.
         /// </summary>
-        public virtual bool IsDone()
-        {
-            return SelectedOption == null;
-        }
+        public virtual bool IsDone => SelectedOption == null;
 
         /// <summary>Load the configuration from data. Not yet implemented.</summary>
         /// <returns>True if the configuration was loaded successfully.</returns>

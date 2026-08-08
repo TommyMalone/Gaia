@@ -30,7 +30,7 @@ public class PauseActionSpec
     public void IsDoneBeforeItIsEverSelected()
     {
         // An action that is not running has nothing left to finish.
-        Assert.That(_pauseAction.IsDone(), Is.True);
+        Assert.That(_pauseAction.IsDone, Is.True);
     }
 
     [Test]
@@ -38,7 +38,7 @@ public class PauseActionSpec
     {
         _pauseAction.Select();
 
-        Assert.That(_pauseAction.IsDone(), Is.False);
+        Assert.That(_pauseAction.IsDone, Is.False);
     }
 
     [Test]
@@ -49,7 +49,7 @@ public class PauseActionSpec
         Seconds almostTheDuration = new(9f);
         _timeSource.Advance(almostTheDuration);
 
-        Assert.That(_pauseAction.IsDone(), Is.False);
+        Assert.That(_pauseAction.IsDone, Is.False);
     }
 
     [Test]
@@ -60,7 +60,7 @@ public class PauseActionSpec
 
         _timeSource.Advance(_duration);
 
-        Assert.That(_pauseAction.IsDone(), Is.True);
+        Assert.That(_pauseAction.IsDone, Is.True);
     }
 
     [Test]
@@ -71,11 +71,11 @@ public class PauseActionSpec
         Seconds pastTheDuration = new(15f);
         _timeSource.Advance(pastTheDuration);
 
-        Assert.That(_pauseAction.IsDone(), Is.True);
+        Assert.That(_pauseAction.IsDone, Is.True);
 
         _timeSource.Advance(pastTheDuration);
 
-        Assert.That(_pauseAction.IsDone(), Is.True);
+        Assert.That(_pauseAction.IsDone, Is.True);
     }
 
     [Test]
@@ -90,7 +90,7 @@ public class PauseActionSpec
         Seconds partOfTheDuration = new(5f);
         _timeSource.Advance(partOfTheDuration);
 
-        Assert.That(_pauseAction.IsDone(), Is.False);
+        Assert.That(_pauseAction.IsDone, Is.False);
     }
 
     [Test]
@@ -107,7 +107,7 @@ public class PauseActionSpec
         Seconds partOfTheDuration = new(5f);
         _timeSource.Advance(partOfTheDuration);
 
-        Assert.That(_pauseAction.IsDone(), Is.False);
+        Assert.That(_pauseAction.IsDone, Is.False);
     }
 
     [Test]
@@ -119,6 +119,6 @@ public class PauseActionSpec
 
         pauseAction.Select();
 
-        Assert.That(pauseAction.IsDone(), Is.True);
+        Assert.That(pauseAction.IsDone, Is.True);
     }
 }

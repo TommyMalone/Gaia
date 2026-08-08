@@ -19,10 +19,7 @@ namespace Gaia.Core.Actions
         public ReasonerBase? Reasoner { get; internal set; }
 
         /// <summary>True if Reasoner is null or reports that it is done.</summary>
-        public override bool IsDone()
-        {
-            return Reasoner?.IsDone() ?? true;
-        }
+        public override bool IsDone => Reasoner?.IsDone ?? true;
 
         /// <inheritdoc />
         public override bool Init(AiCreationData creationData)

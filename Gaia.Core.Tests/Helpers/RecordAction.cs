@@ -23,10 +23,7 @@ internal sealed class RecordAction : ActionBase
     }
 
     /// <summary>Whatever SetDone last set. True until it is called.</summary>
-    public override bool IsDone()
-    {
-        return _isDone;
-    }
+    public override bool IsDone => _isDone;
 
     /// <inheritdoc />
     public override bool Init(AiCreationData creationData)
