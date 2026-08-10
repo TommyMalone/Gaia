@@ -1,0 +1,62 @@
+﻿using System;
+
+namespace Gaia.Core.Spatial
+{
+    /// <summary>A position or direction in three dimensions.</summary>
+    /// <seealso>
+    ///     Fletcher Dunn and Ian Parberry, 3D Math Primer for Graphics and Game Development, described at
+    ///     https://gamemath.com/book/vectors.html
+    /// </seealso>
+    public readonly struct Vector3 : IEquatable<Vector3>
+    {
+        /// <summary>The component along the X axis, which is right.</summary>
+        public float X { get; }
+
+        /// <summary>The component along the Y axis, which is up.</summary>
+        public float Y { get; }
+
+        /// <summary>The component along the Z axis, which is forward.</summary>
+        public float Z { get; }
+
+        /// <summary>Creates a vector from its three components.</summary>
+        public Vector3(float x, float y, float z)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+        }
+
+        /// <summary>The vector with every component 0.</summary>
+        public static readonly Vector3 Zero = new(0f, 0f, 0f);
+
+        public bool Equals(Vector3 other)
+        {
+            return X.Equals(other.X) && Y.Equals(other.Y) && Z.Equals(other.Z);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is Vector3 other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(X, Y, Z);
+        }
+
+        public static bool operator ==(Vector3 left, Vector3 right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Vector3 left, Vector3 right)
+        {
+            return !left.Equals(right);
+        }
+
+        public override string ToString()
+        {
+            return $"({X}, {Y}, {Z})";
+        }
+    }
+}
