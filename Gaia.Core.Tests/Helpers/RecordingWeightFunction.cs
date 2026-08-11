@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Temp;
+﻿using Gaia.Core.Strings;
+using Gaia.Core.Temp;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Tests.Helpers;
@@ -13,9 +14,18 @@ internal sealed class RecordingWeightFunction : WeightFunctionBase
     internal WeightValues Result { get; set; } = WeightValues.Neutral;
 
     /// <summary>The value passed to the most recent CalcFloat.</summary>
-    internal float LastValue { get; private set; }
+    internal float LastFloat { get; private set; }
 
-    /// <summary>How many times a conversion has been asked for.</summary>
+    /// <summary>The value passed to the most recent CalcBool.</summary>
+    internal bool LastBool { get; private set; }
+
+    /// <summary>The value passed to the most recent CalcInt.</summary>
+    internal int LastInt { get; private set; }
+
+    /// <summary>The value passed to the most recent CalcString.</summary>
+    internal AiString LastString { get; private set; }
+
+    /// <summary>How many times a conversion of any kind has been asked for.</summary>
     internal int CalculationCount { get; private set; }
 
     /// <summary>How many times Select has been called.</summary>
@@ -31,10 +41,37 @@ internal sealed class RecordingWeightFunction : WeightFunctionBase
         return false;
     }
 
+    /// <summary>Remembers the value as LastBool, counts the call and reports Result.</summary>
+    public override WeightValues CalcBool(bool value)
+    {
+        LastBool = value;
+        CalculationCount++;
+
+        return Result;
+    }
+
+    /// <summary>Overridden rather than left to the base, so that a spec can tell an int apart from a float.</summary>
+    public override WeightValues CalcInt(int value)
+    {
+        LastInt = value;
+        CalculationCount++;
+
+        return Result;
+    }
+
     /// <summary>Remembers the value as LastFloat, counts the call and reports Result.</summary>
     public override WeightValues CalcFloat(float value)
     {
-        LastValue = value;
+        LastFloat = value;
+        CalculationCount++;
+
+        return Result;
+    }
+
+    /// <summary>Remembers the value as LastString, counts the call and reports Result.</summary>
+    public override WeightValues CalcString(AiString value)
+    {
+        LastString = value;
         CalculationCount++;
 
         return Result;

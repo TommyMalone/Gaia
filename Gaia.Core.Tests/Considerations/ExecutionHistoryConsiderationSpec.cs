@@ -85,7 +85,7 @@ public class ExecutionHistoryConsiderationSpec
 
         _consideration.Calculate();
 
-        Assert.That(_whileRunningWeightFunction.LastValue, Is.EqualTo(5f));
+        Assert.That(_whileRunningWeightFunction.LastFloat, Is.EqualTo(runningTime.Value));
     }
 
     [Test]
@@ -124,7 +124,7 @@ public class ExecutionHistoryConsiderationSpec
 
         _consideration.Calculate();
 
-        Assert.That(_sinceLastRunWeightFunction.LastValue, Is.EqualTo(cooldownTime.Value));
+        Assert.That(_sinceLastRunWeightFunction.LastFloat, Is.EqualTo(cooldownTime.Value));
     }
 
     [Test]
@@ -138,14 +138,14 @@ public class ExecutionHistoryConsiderationSpec
 
         _consideration.Calculate();
 
-        Assert.That(_sinceLastRunWeightFunction.LastValue, Is.EqualTo(3f));
+        Assert.That(_sinceLastRunWeightFunction.LastFloat, Is.EqualTo(3f));
 
         Seconds secondCycleTime = new(4f);
         _timeSource.Advance(secondCycleTime);
 
         _consideration.Calculate();
 
-        Assert.That(_sinceLastRunWeightFunction.LastValue, Is.EqualTo(7f));
+        Assert.That(_sinceLastRunWeightFunction.LastFloat, Is.EqualTo(7f));
     }
 
     [Test]
@@ -185,7 +185,7 @@ public class ExecutionHistoryConsiderationSpec
         _consideration.Calculate();
 
         // The cooldown counts from the most recent run, not the first one.
-        Assert.That(_sinceLastRunWeightFunction.LastValue, Is.EqualTo(1f));
+        Assert.That(_sinceLastRunWeightFunction.LastFloat, Is.EqualTo(sinceSecondRunTime.Value));
     }
 
     [Test]

@@ -41,7 +41,7 @@ public class WeightedConsiderationBaseSpec
     {
         _consideration.Calculate();
 
-        Assert.That(_weightFunction.LastValue, Is.EqualTo(7f));
+        Assert.That(_weightFunction.LastFloat, Is.EqualTo(7f));
     }
 
     [Test]
