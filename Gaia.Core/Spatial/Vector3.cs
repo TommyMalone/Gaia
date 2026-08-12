@@ -29,6 +29,59 @@ namespace Gaia.Core.Spatial
         /// <summary>The vector with every component 0.</summary>
         public static readonly Vector3 Zero = new(0f, 0f, 0f);
 
+        /// <summary>The length of this vector.</summary>
+        public float Magnitude => MathF.Sqrt(SquaredMagnitude);
+
+        /// <summary>The length of this vector, squared.</summary>
+        /// <remarks>Cheaper than Magnitude, since there is no square root. Enough for comparing two lengths.</remarks>
+        public float SquaredMagnitude => X * X + Y * Y + Z * Z;
+
+        /// <summary>The straight-line distance between two positions.</summary>
+        public static float Distance(Vector3 from, Vector3 to)
+        {
+            return (to - from).Magnitude;
+        }
+
+        /// <summary>The straight-line distance between two positions, squared.</summary>
+        /// <remarks>Cheaper than Distance, and enough for comparing against a radius that has itself been squared.</remarks>
+        public static float SquaredDistance(Vector3 from, Vector3 to)
+        {
+            return (to - from).SquaredMagnitude;
+        }
+
+        /// <summary>The dot product of two vectors.</summary>
+        public static float Dot(Vector3 left, Vector3 right)
+        {
+            return left.X * right.X + left.Y * right.Y + left.Z * right.Z;
+        }
+
+        /// <summary>The cross product of two vectors, which is perpendicular to both.</summary>
+        public static Vector3 Cross(Vector3 left, Vector3 right)
+        {
+            return new Vector3(left.Y * right.Z - left.Z * right.Y, left.Z * right.X - left.X * right.Z,
+                left.X * right.Y - left.Y * right.X);
+        }
+
+        public static Vector3 operator +(Vector3 left, Vector3 right)
+        {
+            return new Vector3(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
+        }
+
+        public static Vector3 operator -(Vector3 left, Vector3 right)
+        {
+            return new Vector3(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
+        }
+
+        public static Vector3 operator *(Vector3 vector, float scale)
+        {
+            return new Vector3(vector.X * scale, vector.Y * scale, vector.Z * scale);
+        }
+
+        public static Vector3 operator /(Vector3 vector, float divisor)
+        {
+            return new Vector3(vector.X / divisor, vector.Y / divisor, vector.Z / divisor);
+        }
+
         public bool Equals(Vector3 other)
         {
             return X.Equals(other.X) && Y.Equals(other.Y) && Z.Equals(other.Z);
