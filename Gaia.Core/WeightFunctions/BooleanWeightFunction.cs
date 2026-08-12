@@ -7,15 +7,15 @@ namespace Gaia.Core.WeightFunctions
         /// <summary>Creates a function that reports the given values for true and for false.</summary>
         internal BooleanWeightFunction(WeightValues trueWeight, WeightValues falseWeight)
         {
-            TrueWeight = trueWeight;
-            FalseWeight = falseWeight;
+            TrueWeights = trueWeight;
+            FalseWeights = falseWeight;
         }
 
         /// <summary>The weight values to report for a true input.</summary>
-        public WeightValues TrueWeight { get; internal set; }
+        public WeightValues TrueWeights { get; internal set; }
 
         /// <summary>The weight values to report for a false input.</summary>
-        public WeightValues FalseWeight { get; internal set; }
+        public WeightValues FalseWeights { get; internal set; }
 
         /// <inheritdoc />
         public override bool Init(AiCreationData creationData)
@@ -25,9 +25,9 @@ namespace Gaia.Core.WeightFunctions
         }
 
         /// <inheritdoc />
-        public override WeightValues CalcBool(bool value)
+        public override WeightValues CalculateBool(bool value)
         {
-            return value ? TrueWeight : FalseWeight;
+            return value ? TrueWeights : FalseWeights;
         }
     }
 }

@@ -28,8 +28,8 @@ namespace Gaia.Core.Considerations
 
         /// <summary>
         ///     Queries the situation and converts the answer using the given weight function, by calling whichever of
-        ///     <see cref="WeightFunctionBase.CalcBool" />, <see cref="WeightFunctionBase.CalcInt" />,
-        ///     <see cref="WeightFunctionBase.CalcFloat" /> or <see cref="WeightFunctionBase.CalcString" /> matches the
+        ///     <see cref="WeightFunctionBase.CalculateBool" />, <see cref="WeightFunctionBase.CalculateInt" />,
+        ///     <see cref="WeightFunctionBase.CalculateFloat" /> or <see cref="WeightFunctionBase.CalculateString" /> matches the
         ///     type of the query.
         /// </summary>
         /// <param name="weightFunction">The configured weight function. Can never be null.</param>

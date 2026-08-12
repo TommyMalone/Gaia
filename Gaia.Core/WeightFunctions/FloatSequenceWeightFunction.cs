@@ -44,7 +44,7 @@ namespace Gaia.Core.WeightFunctions
         }
 
         /// <inheritdoc />
-        public override WeightValues CalcFloat(float value)
+        public override WeightValues CalculateFloat(float value)
         {
             foreach (FloatSequenceEntry entry in _entries)
             {

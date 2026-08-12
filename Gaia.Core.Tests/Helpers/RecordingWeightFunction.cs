@@ -13,16 +13,16 @@ internal sealed class RecordingWeightFunction : WeightFunctionBase
     /// <summary>The values every conversion reports.</summary>
     internal WeightValues Result { get; set; } = WeightValues.Neutral;
 
-    /// <summary>The value passed to the most recent CalcFloat.</summary>
+    /// <summary>The value passed to the most recent CalculateFloat.</summary>
     internal float LastFloat { get; private set; }
 
-    /// <summary>The value passed to the most recent CalcBool.</summary>
+    /// <summary>The value passed to the most recent CalculateBool.</summary>
     internal bool LastBool { get; private set; }
 
-    /// <summary>The value passed to the most recent CalcInt.</summary>
+    /// <summary>The value passed to the most recent CalculateInt.</summary>
     internal int LastInt { get; private set; }
 
-    /// <summary>The value passed to the most recent CalcString.</summary>
+    /// <summary>The value passed to the most recent CalculateString.</summary>
     internal AiString LastString { get; private set; }
 
     /// <summary>How many times a conversion of any kind has been asked for.</summary>
@@ -42,7 +42,7 @@ internal sealed class RecordingWeightFunction : WeightFunctionBase
     }
 
     /// <summary>Remembers the value as LastBool, counts the call and reports Result.</summary>
-    public override WeightValues CalcBool(bool value)
+    public override WeightValues CalculateBool(bool value)
     {
         LastBool = value;
         CalculationCount++;
@@ -51,7 +51,7 @@ internal sealed class RecordingWeightFunction : WeightFunctionBase
     }
 
     /// <summary>Overridden rather than left to the base, so that a spec can tell an int apart from a float.</summary>
-    public override WeightValues CalcInt(int value)
+    public override WeightValues CalculateInt(int value)
     {
         LastInt = value;
         CalculationCount++;
@@ -60,7 +60,7 @@ internal sealed class RecordingWeightFunction : WeightFunctionBase
     }
 
     /// <summary>Remembers the value as LastFloat, counts the call and reports Result.</summary>
-    public override WeightValues CalcFloat(float value)
+    public override WeightValues CalculateFloat(float value)
     {
         LastFloat = value;
         CalculationCount++;
@@ -69,7 +69,7 @@ internal sealed class RecordingWeightFunction : WeightFunctionBase
     }
 
     /// <summary>Remembers the value as LastString, counts the call and reports Result.</summary>
-    public override WeightValues CalcString(AiString value)
+    public override WeightValues CalculateString(AiString value)
     {
         LastString = value;
         CalculationCount++;

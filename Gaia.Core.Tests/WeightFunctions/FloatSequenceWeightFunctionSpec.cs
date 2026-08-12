@@ -30,8 +30,8 @@ public class FloatSequenceWeightFunctionSpec
     {
         Assert.Multiple(() =>
         {
-            Assert.That(_weightFunction.CalcFloat(25f), Is.EqualTo(WeightValues.Vetoed));
-            Assert.That(_weightFunction.CalcFloat(200f), Is.EqualTo(_inRangeWeights));
+            Assert.That(_weightFunction.CalculateFloat(25f), Is.EqualTo(WeightValues.Vetoed));
+            Assert.That(_weightFunction.CalculateFloat(200f), Is.EqualTo(_inRangeWeights));
         });
     }
 
@@ -40,16 +40,16 @@ public class FloatSequenceWeightFunctionSpec
     {
         Assert.Multiple(() =>
         {
-            Assert.That(_weightFunction.CalcFloat(50f), Is.EqualTo(WeightValues.Vetoed));
-            Assert.That(_weightFunction.CalcFloat(50.01f), Is.EqualTo(_inRangeWeights));
-            Assert.That(_weightFunction.CalcFloat(300f), Is.EqualTo(_inRangeWeights));
+            Assert.That(_weightFunction.CalculateFloat(50f), Is.EqualTo(WeightValues.Vetoed));
+            Assert.That(_weightFunction.CalculateFloat(50.01f), Is.EqualTo(_inRangeWeights));
+            Assert.That(_weightFunction.CalculateFloat(300f), Is.EqualTo(_inRangeWeights));
         });
     }
 
     [Test]
     public void ReportsTheDefaultAboveEveryThreshold()
     {
-        Assert.That(_weightFunction.CalcFloat(500f), Is.EqualTo(WeightValues.Vetoed));
+        Assert.That(_weightFunction.CalculateFloat(500f), Is.EqualTo(WeightValues.Vetoed));
     }
 
     [Test]
@@ -57,7 +57,7 @@ public class FloatSequenceWeightFunctionSpec
     {
         FloatSequenceWeightFunction emptyWeightFunction = new(WeightValues.Vetoed);
 
-        Assert.That(emptyWeightFunction.CalcFloat(100f), Is.EqualTo(WeightValues.Vetoed));
+        Assert.That(emptyWeightFunction.CalculateFloat(100f), Is.EqualTo(WeightValues.Vetoed));
     }
 
     [Test]
@@ -71,9 +71,9 @@ public class FloatSequenceWeightFunctionSpec
 
         Assert.Multiple(() =>
         {
-            Assert.That(_weightFunction.CalcFloat(50f), Is.EqualTo(WeightValues.Vetoed));
-            Assert.That(_weightFunction.CalcFloat(200f), Is.EqualTo(_inRangeWeights));
-            Assert.That(_weightFunction.CalcFloat(500f), Is.EqualTo(WeightValues.Vetoed));
+            Assert.That(_weightFunction.CalculateFloat(50f), Is.EqualTo(WeightValues.Vetoed));
+            Assert.That(_weightFunction.CalculateFloat(200f), Is.EqualTo(_inRangeWeights));
+            Assert.That(_weightFunction.CalculateFloat(500f), Is.EqualTo(WeightValues.Vetoed));
         });
     }
 
@@ -86,13 +86,13 @@ public class FloatSequenceWeightFunctionSpec
         FloatSequenceEntry randomizedEntry = new(50f, 150f, _inRangeWeights);
         weightFunction.AddEntry(randomizedEntry);
 
-        // Threshold sits at ThresholdMinimum until Select rolls it, so 100 falls past the entry.
-        Assert.That(weightFunction.CalcFloat(100f), Is.EqualTo(WeightValues.Vetoed));
+        // Threshold sits at ThresholdMin until Select rolls it, so 100 falls past the entry.
+        Assert.That(weightFunction.CalculateFloat(100f), Is.EqualTo(WeightValues.Vetoed));
 
         weightFunction.Select();
 
         // A roll of 0.9 puts the threshold at 140, so the same input now falls inside the entry.
-        Assert.That(weightFunction.CalcFloat(100f), Is.EqualTo(_inRangeWeights));
+        Assert.That(weightFunction.CalculateFloat(100f), Is.EqualTo(_inRangeWeights));
     }
 
     [Test]

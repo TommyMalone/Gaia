@@ -32,6 +32,6 @@ internal sealed class StubWeightedConsideration : WeightedConsiderationBase
     {
         CalculateWeightsCount++;
 
-        return weightFunction.CalcFloat(QueryResult);
+        return weightFunction.CalculateFloat(QueryResult);
     }
 }

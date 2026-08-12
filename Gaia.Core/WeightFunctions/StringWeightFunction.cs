@@ -39,7 +39,7 @@ namespace Gaia.Core.WeightFunctions
         }
 
         /// <inheritdoc />
-        public override WeightValues CalcString(AiString value)
+        public override WeightValues CalculateString(AiString value)
         {
             return _entries.TryGetValue(value, out WeightValues weights) ? weights : DefaultWeights;
         }

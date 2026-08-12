@@ -24,7 +24,7 @@ public class CurveWeightFunctionSpec
     {
         CurveWeightFunction weightFunction = new() { AddendCurve = _risingCurve };
 
-        WeightValues weights = weightFunction.CalcFloat(5f);
+        WeightValues weights = weightFunction.CalculateFloat(5f);
 
         Assert.Multiple(() =>
         {
@@ -38,7 +38,7 @@ public class CurveWeightFunctionSpec
     {
         CurveWeightFunction weightFunction = new() { MultiplierCurve = _fallingCurve };
 
-        WeightValues weights = weightFunction.CalcFloat(5f);
+        WeightValues weights = weightFunction.CalculateFloat(5f);
 
         Assert.Multiple(() =>
         {
@@ -56,7 +56,7 @@ public class CurveWeightFunctionSpec
             MultiplierCurve = _fallingCurve,
         };
 
-        WeightValues weights = weightFunction.CalcFloat(5f);
+        WeightValues weights = weightFunction.CalculateFloat(5f);
 
         Assert.Multiple(() =>
         {
@@ -70,7 +70,7 @@ public class CurveWeightFunctionSpec
     {
         CurveWeightFunction weightFunction = new();
 
-        Assert.That(weightFunction.CalcFloat(5f), Is.EqualTo(WeightValues.Neutral));
+        Assert.That(weightFunction.CalculateFloat(5f), Is.EqualTo(WeightValues.Neutral));
     }
 
     [Test]
@@ -85,9 +85,9 @@ public class CurveWeightFunctionSpec
 
         Assert.Multiple(() =>
         {
-            Assert.That(weightFunction.CalcFloat(0f).Rank, Is.EqualTo(2f));
-            Assert.That(weightFunction.CalcFloat(5f).Rank, Is.EqualTo(2f));
-            Assert.That(weightFunction.CalcFloat(10f).Rank, Is.EqualTo(2f));
+            Assert.That(weightFunction.CalculateFloat(0f).Rank, Is.EqualTo(2f));
+            Assert.That(weightFunction.CalculateFloat(5f).Rank, Is.EqualTo(2f));
+            Assert.That(weightFunction.CalculateFloat(10f).Rank, Is.EqualTo(2f));
         });
     }
 
@@ -96,7 +96,7 @@ public class CurveWeightFunctionSpec
     {
         CurveWeightFunction weightFunction = new() { AddendCurve = _risingCurve };
 
-        Assert.That(weightFunction.CalcInt(5).Addend, Is.EqualTo(2f).Within(Tolerance));
+        Assert.That(weightFunction.CalculateInt(5).Addend, Is.EqualTo(2f).Within(Tolerance));
     }
 
     [Test]
@@ -106,8 +106,8 @@ public class CurveWeightFunctionSpec
 
         Assert.Multiple(() =>
         {
-            Assert.That(() => weightFunction.CalcBool(true), Throws.TypeOf<NotSupportedException>());
-            Assert.That(() => weightFunction.CalcString("Enemy"), Throws.TypeOf<NotSupportedException>());
+            Assert.That(() => weightFunction.CalculateBool(true), Throws.TypeOf<NotSupportedException>());
+            Assert.That(() => weightFunction.CalculateString("Enemy"), Throws.TypeOf<NotSupportedException>());
         });
     }
 

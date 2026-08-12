@@ -18,7 +18,7 @@ namespace Gaia.Core.Considerations
         protected override WeightValues CalculateWeights(WeightFunctionBase weightFunction, DataStoreBase dataStore)
         {
             return dataStore.TryGetInt(VariableName, out int value)
-                ? weightFunction.CalcInt(value)
+                ? weightFunction.CalculateInt(value)
                 : MissingVariableWeights;
         }
     }

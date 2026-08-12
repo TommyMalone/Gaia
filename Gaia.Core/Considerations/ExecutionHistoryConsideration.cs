@@ -97,7 +97,7 @@ namespace Gaia.Core.Considerations
         /// </summary>
         private static WeightValues Convert(WeightFunctionBase? weightFunction, Seconds elapsedTime)
         {
-            return weightFunction?.CalcFloat(elapsedTime.Value) ?? WeightValues.Neutral;
+            return weightFunction?.CalculateFloat(elapsedTime.Value) ?? WeightValues.Neutral;
         }
     }
 }

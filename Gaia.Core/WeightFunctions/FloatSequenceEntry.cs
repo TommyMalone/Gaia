@@ -12,7 +12,7 @@ namespace Gaia.Core.WeightFunctions
     ///         threshold up to its own.
     ///     </para>
     ///     <para>
-    ///         Most entries hold a fixed threshold. An entry given a ThresholdMinimum below its ThresholdMaximum rolls Threshold
+    ///         Most entries hold a fixed threshold. An entry given a ThresholdMin below its ThresholdMax rolls Threshold
     ///         from between them in RollThreshold each time the containing option is selected.
     ///     </para>
     /// </remarks>
@@ -26,23 +26,23 @@ namespace Gaia.Core.WeightFunctions
         }
 
         /// <summary>Creates an entry whose threshold is rolled between a range each time its option is selected.</summary>
-        /// <param name="thresholdMinimum">The lowest threshold this entry can roll.</param>
-        /// <param name="thresholdMaximum">The highest threshold this entry can roll.</param>
+        /// <param name="thresholdMin">The lowest threshold this entry can roll.</param>
+        /// <param name="thresholdMax">The highest threshold this entry can roll.</param>
         /// <param name="weights">The values to report for an input this entry covers.</param>
-        internal FloatSequenceEntry(float thresholdMinimum, float thresholdMaximum, WeightValues weights)
+        internal FloatSequenceEntry(float thresholdMin, float thresholdMax, WeightValues weights)
         {
-            ThresholdMinimum = thresholdMinimum;
-            ThresholdMaximum = thresholdMaximum;
+            ThresholdMin = thresholdMin;
+            ThresholdMax = thresholdMax;
             Weights = weights;
 
-            Threshold = thresholdMinimum;
+            Threshold = thresholdMin;
         }
 
         /// <summary>The lowest value Threshold can take.</summary>
-        public float ThresholdMinimum { get; internal set; }
+        public float ThresholdMin { get; internal set; }
 
-        /// <summary>The highest value Threshold can take. Equal to ThresholdMinimum for an entry that never changes.</summary>
-        public float ThresholdMaximum { get; internal set; }
+        /// <summary>The highest value Threshold can take. Equal to ThresholdMin for an entry that never changes.</summary>
+        public float ThresholdMax { get; internal set; }
 
         /// <summary>The weight values to report for an input this entry covers.</summary>
         public WeightValues Weights { get; internal set; }
@@ -51,9 +51,9 @@ namespace Gaia.Core.WeightFunctions
         public float Threshold { get; private set; }
 
         /// <summary>True if RollThreshold rolls a new Threshold when its option is selected.</summary>
-        public bool IsRandomized => ThresholdMaximum > ThresholdMinimum;
+        public bool IsRandomized => ThresholdMax > ThresholdMin;
 
-        /// <summary>Rolls a new Threshold between ThresholdMinimum and ThresholdMaximum. Does nothing unless IsRandomized.</summary>
+        /// <summary>Rolls a new Threshold between ThresholdMin and ThresholdMax. Does nothing unless IsRandomized.</summary>
         internal void RollThreshold(IRandomSource randomSource)
         {
             if (!IsRandomized)
@@ -61,7 +61,7 @@ namespace Gaia.Core.WeightFunctions
                 return;
             }
 
-            Threshold = ThresholdMinimum + randomSource.NextFloat() * (ThresholdMaximum - ThresholdMinimum);
+            Threshold = ThresholdMin + randomSource.NextFloat() * (ThresholdMax - ThresholdMin);
         }
     }
 }

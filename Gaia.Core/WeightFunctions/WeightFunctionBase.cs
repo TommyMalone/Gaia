@@ -16,25 +16,25 @@ namespace Gaia.Core.WeightFunctions
         public abstract bool Init(AiCreationData creationData);
 
         /// <summary>Converts a bool, which throws NotSupportedException unless overridden.</summary>
-        public virtual WeightValues CalcBool(bool value)
+        public virtual WeightValues CalculateBool(bool value)
         {
             throw new NotSupportedException($"{GetType().Name} cannot convert a bool.");
         }
 
-        /// <summary>Converts an int, which forwards to CalcFloat unless overridden.</summary>
-        public virtual WeightValues CalcInt(int value)
+        /// <summary>Converts an int, which forwards to CalculateFloat unless overridden.</summary>
+        public virtual WeightValues CalculateInt(int value)
         {
-            return CalcFloat(value);
+            return CalculateFloat(value);
         }
 
         /// <summary>Converts a float, which throws NotSupportedException unless overridden.</summary>
-        public virtual WeightValues CalcFloat(float value)
+        public virtual WeightValues CalculateFloat(float value)
         {
             throw new NotSupportedException($"{GetType().Name} cannot convert a float.");
         }
 
         /// <summary>Converts a string, which throws NotSupportedException unless overridden.</summary>
-        public virtual WeightValues CalcString(AiString value)
+        public virtual WeightValues CalculateString(AiString value)
         {
             throw new NotSupportedException($"{GetType().Name} cannot convert a string.");
         }

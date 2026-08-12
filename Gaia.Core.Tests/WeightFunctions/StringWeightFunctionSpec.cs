@@ -22,19 +22,19 @@ public class StringWeightFunctionSpec
     [Test]
     public void ReportsTheValuesOfTheEntryThatMatched()
     {
-        Assert.That(_weightFunction.CalcString("Enemy"), Is.EqualTo(_enemyWeights));
+        Assert.That(_weightFunction.CalculateString("Enemy"), Is.EqualTo(_enemyWeights));
     }
 
     [Test]
     public void ReportsTheDefaultWhenNothingMatched()
     {
-        Assert.That(_weightFunction.CalcString("Ally"), Is.EqualTo(WeightValues.Vetoed));
+        Assert.That(_weightFunction.CalculateString("Ally"), Is.EqualTo(WeightValues.Vetoed));
     }
 
     [Test]
     public void IgnoresCaseWhileMatching()
     {
-        Assert.That(_weightFunction.CalcString("enemy"), Is.EqualTo(_enemyWeights));
+        Assert.That(_weightFunction.CalculateString("enemy"), Is.EqualTo(_enemyWeights));
     }
 
     [Test]
@@ -44,7 +44,7 @@ public class StringWeightFunctionSpec
 
         _weightFunction.AddEntry("Enemy", replacementWeights);
 
-        Assert.That(_weightFunction.CalcString("Enemy"), Is.EqualTo(replacementWeights));
+        Assert.That(_weightFunction.CalculateString("Enemy"), Is.EqualTo(replacementWeights));
     }
 
     [Test]
@@ -52,6 +52,6 @@ public class StringWeightFunctionSpec
     {
         StringWeightFunction emptyWeightFunction = new(WeightValues.Vetoed);
 
-        Assert.That(emptyWeightFunction.CalcString("Enemy"), Is.EqualTo(WeightValues.Vetoed));
+        Assert.That(emptyWeightFunction.CalculateString("Enemy"), Is.EqualTo(WeightValues.Vetoed));
     }
 }

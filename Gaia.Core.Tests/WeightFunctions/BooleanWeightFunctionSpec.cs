@@ -25,8 +25,8 @@ public class BooleanWeightFunctionSpec
     {
         Assert.Multiple(() =>
         {
-            Assert.That(_weightFunction.CalcBool(true), Is.EqualTo(_trueWeights));
-            Assert.That(_weightFunction.CalcBool(false), Is.EqualTo(_falseWeights));
+            Assert.That(_weightFunction.CalculateBool(true), Is.EqualTo(_trueWeights));
+            Assert.That(_weightFunction.CalculateBool(false), Is.EqualTo(_falseWeights));
         });
     }
 
@@ -35,9 +35,9 @@ public class BooleanWeightFunctionSpec
     {
         Assert.Multiple(() =>
         {
-            Assert.That(() => _weightFunction.CalcFloat(1f), Throws.TypeOf<NotSupportedException>());
-            Assert.That(() => _weightFunction.CalcInt(1), Throws.TypeOf<NotSupportedException>());
-            Assert.That(() => _weightFunction.CalcString("true"), Throws.TypeOf<NotSupportedException>());
+            Assert.That(() => _weightFunction.CalculateFloat(1f), Throws.TypeOf<NotSupportedException>());
+            Assert.That(() => _weightFunction.CalculateInt(1), Throws.TypeOf<NotSupportedException>());
+            Assert.That(() => _weightFunction.CalculateString("true"), Throws.TypeOf<NotSupportedException>());
         });
     }
 }

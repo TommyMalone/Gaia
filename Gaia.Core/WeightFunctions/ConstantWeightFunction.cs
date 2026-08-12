@@ -6,7 +6,7 @@ namespace Gaia.Core.WeightFunctions
     public class ConstantWeightFunction : WeightFunctionBase
     {
         /// <summary>The weight values to report for every input.</summary>
-        public WeightValues WeightValues { get; internal set; }
+        public WeightValues Weights { get; internal set; }
 
         /// <inheritdoc />
         public override bool Init(AiCreationData creationData)
@@ -16,21 +16,21 @@ namespace Gaia.Core.WeightFunctions
         }
 
         /// <inheritdoc />
-        public override WeightValues CalcBool(bool value)
+        public override WeightValues CalculateBool(bool value)
         {
-            return WeightValues;
+            return Weights;
         }
 
         /// <inheritdoc />
-        public override WeightValues CalcFloat(float value)
+        public override WeightValues CalculateFloat(float value)
         {
-            return WeightValues;
+            return Weights;
         }
 
         /// <inheritdoc />
-        public override WeightValues CalcString(AiString value)
+        public override WeightValues CalculateString(AiString value)
         {
-            return WeightValues;
+            return Weights;
         }
     }
 }

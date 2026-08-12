@@ -11,7 +11,7 @@ public class ConstantWeightFunctionSpec
     {
         _configuredWeights = new WeightValues(3f, 0.5f, 2f);
 
-        _weightFunction = new ConstantWeightFunction { WeightValues = _configuredWeights };
+        _weightFunction = new ConstantWeightFunction { Weights = _configuredWeights };
     }
 
     private WeightValues _configuredWeights;
@@ -23,12 +23,12 @@ public class ConstantWeightFunctionSpec
     {
         Assert.Multiple(() =>
         {
-            Assert.That(_weightFunction.CalcInt(4), Is.EqualTo(_configuredWeights));
-            Assert.That(_weightFunction.CalcBool(true), Is.EqualTo(_configuredWeights));
-            Assert.That(_weightFunction.CalcBool(false), Is.EqualTo(_configuredWeights));
-            Assert.That(_weightFunction.CalcFloat(0f), Is.EqualTo(_configuredWeights));
-            Assert.That(_weightFunction.CalcFloat(9999f), Is.EqualTo(_configuredWeights));
-            Assert.That(_weightFunction.CalcString("anything"), Is.EqualTo(_configuredWeights));
+            Assert.That(_weightFunction.CalculateInt(4), Is.EqualTo(_configuredWeights));
+            Assert.That(_weightFunction.CalculateBool(true), Is.EqualTo(_configuredWeights));
+            Assert.That(_weightFunction.CalculateBool(false), Is.EqualTo(_configuredWeights));
+            Assert.That(_weightFunction.CalculateFloat(0f), Is.EqualTo(_configuredWeights));
+            Assert.That(_weightFunction.CalculateFloat(9999f), Is.EqualTo(_configuredWeights));
+            Assert.That(_weightFunction.CalculateString("anything"), Is.EqualTo(_configuredWeights));
         });
     }
 }

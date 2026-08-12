@@ -34,7 +34,7 @@ namespace Gaia.Core.WeightFunctions
         }
 
         /// <inheritdoc />
-        public override WeightValues CalcFloat(float value)
+        public override WeightValues CalculateFloat(float value)
         {
             float addend = AddendCurve?.Evaluate(value) ?? 0f;
             float multiplier = MultiplierCurve?.Evaluate(value) ?? 1f;
