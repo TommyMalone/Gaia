@@ -3,8 +3,9 @@ using Gaia.Core.Temp;
 
 namespace Gaia.Core.Actions
 {
-    /// <summary>An action that reports that it is done once a configured number of seconds have passed.</summary>
-    public class PauseAction : ActionBase
+    /// <summary>An action that reports that it is done once its Duration has passed.</summary>
+    /// <seealso>"Modular AI", Section 8.5.4</seealso>
+    public sealed class PauseAction : ActionBase
     {
         /// <summary>True while the action is selected.</summary>
         private bool _isRunning;

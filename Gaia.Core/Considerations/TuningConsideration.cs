@@ -7,12 +7,8 @@ namespace Gaia.Core.Considerations
     /// <seealso>"Modular AI", Section 8.6.2.3</seealso>
     public sealed class TuningConsideration : ConsiderationBase
     {
-        /// <summary>Creates a consideration that reports neutral values.</summary>
-        public TuningConsideration() : this(new WeightValues(1f, 1f, float.MinValue))
-        {
-        }
-
-        public TuningConsideration(WeightValues weights)
+        /// <summary>Creates a consideration that reports the given values.</summary>
+        internal TuningConsideration(WeightValues weights)
         {
             Weights = weights;
         }

@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using Gaia.Core.Actions;
-using Gaia.Core.Considerations;
 using Gaia.Core.Options;
 using Gaia.Core.Temp;
 
@@ -14,8 +13,10 @@ namespace Gaia.Core.Reasoners
     /// <seealso>"Modular AI", Section 8.5.3, Listing 8.3</seealso>
     public abstract class ReasonerBase
     {
+        private readonly List<OptionBase> _options = new();
+
         /// <summary>The options this reasoner chooses among, in the order they were added.</summary>
-        protected readonly List<OptionBase> Options = new();
+        protected IReadOnlyList<OptionBase> Options => _options;
 
         /// <summary>True while the reasoner is allowed to decide.</summary>
         public bool IsEnabled { get; private set; }
@@ -37,13 +38,13 @@ namespace Gaia.Core.Reasoners
         /// <param name="option">The option to add.</param>
         public void AddOption(OptionBase option)
         {
-            Options.Add(option);
+            _options.Add(option);
         }
 
         /// <summary>Clears the current set of options.</summary>
         public void Clear()
         {
-            Options.Clear();
+            _options.Clear();
         }
 
         /// <summary>
@@ -88,7 +89,7 @@ namespace Gaia.Core.Reasoners
                 return;
             }
 
-            Debug.Assert(option == null || Options.Contains(option),
+            Debug.Assert(option == null || _options.Contains(option),
                 "The option is not one of this reasoner's options.");
 
             SelectedOption?.Deselect();
@@ -96,8 +97,7 @@ namespace Gaia.Core.Reasoners
             SelectedOption?.Select();
         }
 
-
-        /// <summary>Sense, Think, Act.</summary>
+        /// <summary>Sense, Think, Act, with EvaluateOptions between Sense and Think.</summary>
         public void Update()
         {
             if (IsEnabled)

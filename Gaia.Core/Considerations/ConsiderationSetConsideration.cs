@@ -29,6 +29,7 @@ namespace Gaia.Core.Considerations
         public override bool Init(AiCreationData creationData)
         {
             // Configurations cannot presently be loaded successfully.
+            _set.Init(creationData);
             return false;
         }
 

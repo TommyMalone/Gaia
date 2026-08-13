@@ -24,20 +24,19 @@ namespace Gaia.Core.Considerations
         /// <summary>The highest rank any consideration in the set reported.</summary>
         public float Rank { get; private set; } = float.MinValue;
 
-        /// <summary>True while the option this set belongs to is the one its reasoner has selected.</summary>
-        public bool IsSelected { get; private set; }
+        /// <summary>True if this set already contains a <see cref="TuningConsideration" />.</summary>
+        internal bool HasTuning { get; private set; }
 
-        /// <summary>True if this set already contains a Tuning consideration.</summary>
-        public bool HasTuning { get; private set; }
-
-        public bool Init(AiCreationData creationData)
+        /// <summary>Load the configuration from data. Not yet implemented.</summary>
+        /// <returns>True if the configuration was loaded successfully.</returns>
+        internal bool Init(AiCreationData creationData)
         {
             // Configurations cannot presently be loaded successfully.
             return false;
         }
 
         /// <summary>Evaluates every consideration and combines the results.</summary>
-        public void Calculate()
+        internal void Calculate()
         {
             float addend = 0f;
             float multiplier = 1f;
@@ -58,9 +57,11 @@ namespace Gaia.Core.Considerations
             Rank = rank;
         }
 
-        public void Add(ConsiderationBase consideration)
+        /// <summary>Adds a consideration to the set.</summary>
+        internal void Add(ConsiderationBase consideration)
         {
             _considerations.Add(consideration);
+
             if (consideration is TuningConsideration)
             {
                 // If considerations are ever allowed to be removed, a more robust method will be needed to tell
@@ -69,24 +70,22 @@ namespace Gaia.Core.Considerations
             }
         }
 
-        public void Select()
+        /// <summary>Calls Select on every consideration in the set.</summary>
+        internal void Select()
         {
             foreach (ConsiderationBase consideration in _considerations)
             {
                 consideration.Select();
             }
-
-            IsSelected = true;
         }
 
-        public void Deselect()
+        /// <summary>Calls Deselect on every consideration in the set.</summary>
+        internal void Deselect()
         {
             foreach (ConsiderationBase consideration in _considerations)
             {
                 consideration.Deselect();
             }
-
-            IsSelected = false;
         }
     }
 }

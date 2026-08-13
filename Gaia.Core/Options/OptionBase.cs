@@ -3,6 +3,7 @@ using Gaia.Core.Actions;
 using Gaia.Core.Considerations;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Temp;
+using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Options
 {
@@ -33,15 +34,16 @@ namespace Gaia.Core.Options
 
         /// <summary>
         ///     The weight this option must reach to survive, set by <see cref="DualUtilityReasoner" /> from the best weight
-        ///     it found across all of its options, scaled by the reasoner's <see cref="DualUtilityReasoner.WeightScreeningFactor" />.
+        ///     it found across all of its options, scaled by the reasoner's
+        ///     <see cref="DualUtilityReasoner.WeightScreeningFactor" />.
         /// </summary>
-        public float ScreeningWeight { get; set; }
+        public float ScreeningWeight { get; internal set; }
 
         /// <summary>
         ///     The rank this option must reach to survive, set by the reasoner from the best rank it found across all of its
         ///     options.
         /// </summary>
-        public float ScreeningRank { get; set; } = float.MinValue;
+        public float ScreeningRank { get; internal set; } = float.MinValue;
 
         /// <summary>True unless the reasoner's comparison against the other options screened this option out.</summary>
         /// <remarks>
@@ -116,7 +118,8 @@ namespace Gaia.Core.Options
                 return;
             }
 
-            AddConsideration(new TuningConsideration());
+            WeightValues neutralTuning = new(1f, 1f, float.MinValue);
+            AddConsideration(new TuningConsideration(neutralTuning));
         }
 
         /// <summary>Recalculates what the considerations add up to.</summary>

@@ -15,7 +15,8 @@ namespace Gaia.Core.WeightFunctions
     ///         part way between two tiers means nothing.
     ///     </para>
     /// </remarks>
-    public class CurveWeightFunction : WeightFunctionBase
+    /// <seealso>"Modular AI", Section 8.5.2</seealso>
+    public sealed class CurveWeightFunction : WeightFunctionBase
     {
         /// <summary>The curve mapping the input to an addend, or null to contribute no addend.</summary>
         public Curve? AddendCurve { get; internal set; }

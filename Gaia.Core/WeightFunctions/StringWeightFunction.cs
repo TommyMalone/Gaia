@@ -12,7 +12,8 @@ namespace Gaia.Core.WeightFunctions
     ///     Used by considerations that read a named variable, such as one that vetoes any entity whose side is not
     ///     "Enemy". Matching ignores case, because an <see cref="AiString" /> is hashed from its lower cased text.
     /// </remarks>
-    public class StringWeightFunction : WeightFunctionBase
+    /// <seealso>"Modular AI", Section 8.5.2</seealso>
+    public sealed class StringWeightFunction : WeightFunctionBase
     {
         private readonly Dictionary<AiString, WeightValues> _entries = new();
 

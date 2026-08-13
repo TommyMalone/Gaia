@@ -2,7 +2,9 @@
 
 namespace Gaia.Core.WeightFunctions
 {
-    public class BooleanWeightFunction : WeightFunctionBase
+    /// <summary>Reports one set of weight values for a true input and another for a false one.</summary>
+    /// <seealso>"Modular AI", Section 8.5.2</seealso>
+    public sealed class BooleanWeightFunction : WeightFunctionBase
     {
         /// <summary>Creates a function that reports the given values for true and for false.</summary>
         internal BooleanWeightFunction(WeightValues trueWeight, WeightValues falseWeight)

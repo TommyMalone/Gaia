@@ -16,15 +16,16 @@ namespace Gaia.Core.Curves
     ///         so a curve never extrapolates past what it was given.
     ///     </para>
     /// </remarks>
-    public class Curve
+    /// <seealso>Cubic Hermite splines, described at https://en.wikibooks.org/wiki/Cg_Programming/Unity/Hermite_Curves</seealso>
+    public sealed class Curve
     {
         private readonly List<CurveKeyframe> _keyframes = new();
 
         /// <summary>The keyframes, in ascending order of input.</summary>
         public IReadOnlyList<CurveKeyframe> Keyframes => _keyframes;
 
-        /// <summary>Adds a keyframe, keeping the keyframes ordered by input.</summary>
-        public void AddKeyframe(CurveKeyframe keyframe)
+        /// <summary>Adds a keyframe, keeping the keyframes ordered by Input.</summary>
+        internal void AddKeyframe(CurveKeyframe keyframe)
         {
             int index = 0;
 
@@ -40,7 +41,7 @@ namespace Gaia.Core.Curves
         ///     Replaces every tangent with the slope of the neighboring segment, turning the curve into a series of straight
         ///     lines.
         /// </summary>
-        public void SetLinearTangents()
+        internal void SetLinearTangents()
         {
             for (int index = 0; index < _keyframes.Count; index++)
             {

@@ -3,7 +3,9 @@ using Gaia.Core.Temp;
 
 namespace Gaia.Core.WeightFunctions
 {
-    public class ConstantWeightFunction : WeightFunctionBase
+    /// <summary>Reports the same weight values whatever the input.</summary>
+    /// <seealso>"Modular AI", Section 8.5.2</seealso>
+    public sealed class ConstantWeightFunction : WeightFunctionBase
     {
         /// <summary>The weight values to report for every input.</summary>
         public WeightValues Weights { get; internal set; }

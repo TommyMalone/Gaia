@@ -3,10 +3,16 @@ using Gaia.Core.Temp;
 
 namespace Gaia.Core.Actions
 {
-    /// <summary>
-    ///     An action that holds a reasoner of its own. This allows a flat decision to become a hierarchy.
-    /// </summary>
-    public class SubreasonerAction : ActionBase
+    /// <summary>An action that holds a reasoner of its own. This allows a flat decision to become a hierarchy.</summary>
+    /// <remarks>
+    ///     The contained reasoner runs only while the option holding this action is selected. Selecting the action
+    ///     enables it, deselecting it disables it, and disabling a reasoner deselects whatever it was running. A single veto
+    ///     near the root therefore tears down the whole branch beneath it. Each level's reasoner is disabled, which deselects
+    ///     the option it was running, which deselects that option's actions, considerations, and any subreasoners the actions
+    ///     hold.
+    /// </remarks>
+    /// <seealso>"Modular AI", Section 8.5.4</seealso>
+    public sealed class SubreasonerAction : ActionBase
     {
         /// <summary>Internal constructor used for testing.</summary>
         /// <param name="reasoner">The reasoner to run while this action is selected.</param>
