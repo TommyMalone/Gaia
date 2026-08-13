@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Temp;
+﻿using Gaia.Core.Options;
+using Gaia.Core.Temp;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Considerations
@@ -22,6 +23,13 @@ namespace Gaia.Core.Considerations
         /// <summary>True while the option this consideration belongs to is the one its reasoner has selected.</summary>
         public bool IsSelected { get; private set; }
 
+        /// <summary>The option this consideration belongs to, or null until AttachTo has been called.</summary>
+        /// <remarks>
+        ///     Most considerations never look at this. It exists for the few that evaluate the option itself rather than the
+        ///     world, such as <see cref="ExecutionHistoryConsideration" /> reading the option's <see cref="OptionBase.IsDone" />.
+        /// </remarks>
+        public OptionBase? Option { get; private set; }
+
         /// <summary>Load the configuration from data. Not yet implemented.</summary>
         /// <returns>True if the configuration was loaded successfully.</returns>
         public abstract bool Init(AiCreationData creationData);
@@ -29,6 +37,11 @@ namespace Gaia.Core.Considerations
         /// <summary>Called once per decision cycle to evaluate the situation and store the result in Weights.</summary>
         public abstract void Calculate();
 
+        /// <summary>Sets Option. Called by the <see cref="ConsiderationSet" /> that takes this consideration.</summary>
+        internal virtual void AttachTo(OptionBase option)
+        {
+            Option = option;
+        }
 
         /// <summary>Called when the option this consideration scores is selected. Sets IsSelected.</summary>
         public virtual void Select()

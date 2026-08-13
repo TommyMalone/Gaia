@@ -17,6 +17,15 @@ namespace Gaia.Core.Options
         private readonly List<ActionBase> _actions = new();
         private readonly ConsiderationSet _considerations = new();
 
+        /// <summary>
+        ///     Attaches the consideration set to this option. The set passes the option along to each consideration as it is
+        ///     added, so a consideration that needs to look at its own option can.
+        /// </summary>
+        protected OptionBase()
+        {
+            _considerations.AttachTo(this);
+        }
+
         /// <summary>True while this option is the one its reasoner has selected.</summary>
         public bool IsSelected { get; private set; }
 

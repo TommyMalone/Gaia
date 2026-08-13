@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Gaia.Core.Options;
 using Gaia.Core.Temp;
 using Gaia.Core.WeightFunctions;
 
@@ -11,6 +12,9 @@ namespace Gaia.Core.Considerations
     {
         /// <summary>The considerations in the set, in the order they were added.</summary>
         private readonly List<ConsiderationBase> _considerations = new();
+
+        /// <summary>The option the set belongs to, once AttachTo has said which that is.</summary>
+        private OptionBase? _option;
 
         /// <summary>The sum of the considerations' addends, as of the last Calculate.</summary>
         public float Addend { get; private set; }
@@ -57,10 +61,26 @@ namespace Gaia.Core.Considerations
             Rank = rank;
         }
 
-        /// <summary>Adds a consideration to the set.</summary>
+        /// <summary>Calls AttachTo on every consideration in the set with the option the set belongs to.</summary>
+        internal void AttachTo(OptionBase option)
+        {
+            _option = option;
+
+            foreach (ConsiderationBase consideration in _considerations)
+            {
+                consideration.AttachTo(option);
+            }
+        }
+
+        /// <summary>Adds a consideration to the set, attaching it to the option if the set already has one.</summary>
         internal void Add(ConsiderationBase consideration)
         {
             _considerations.Add(consideration);
+
+            if (_option != null)
+            {
+                consideration.AttachTo(_option);
+            }
 
             if (consideration is TuningConsideration)
             {
