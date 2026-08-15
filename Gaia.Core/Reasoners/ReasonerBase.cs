@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using Gaia.Core.Actions;
+using Gaia.Core.Considerations;
 using Gaia.Core.Options;
 using Gaia.Core.Temp;
 
@@ -97,7 +98,10 @@ namespace Gaia.Core.Reasoners
             SelectedOption?.Select();
         }
 
-        /// <summary>Sense, Think, Act, with EvaluateOptions between Sense and Think.</summary>
+        /// <summary>
+        ///     Runs one decision cycle. Sense observes the world, EvaluateOptions rescores every option, Think chooses which
+        ///     to run, and Act updates whatever is selected.
+        /// </summary>
         public void Update()
         {
             if (IsEnabled)

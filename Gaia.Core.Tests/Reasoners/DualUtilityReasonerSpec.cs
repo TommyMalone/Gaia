@@ -1,6 +1,7 @@
 ﻿using Gaia.Core.Considerations;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Random;
+using Gaia.Core.Services.Time;
 using Gaia.Core.Tests.Helpers;
 using Gaia.Core.WeightFunctions;
 
@@ -38,8 +39,8 @@ public class DualUtilityReasonerSpec
         _firstConsideration = new StubConsideration(WeightValues.Neutral);
         _secondConsideration = new StubConsideration(WeightValues.Neutral);
 
-        RecordAction firstRecordAction = new("First", _executed);
-        RecordAction secondRecordAction = new("Second", _executed);
+        RecordAction firstRecordAction = new("First", _executed, false);
+        RecordAction secondRecordAction = new("Second", _executed, false);
 
         StubOption firstOption = new([_firstConsideration, neutralTuning], [firstRecordAction]);
         StubOption secondOption = new([_secondConsideration, neutralTuning], [secondRecordAction]);
@@ -182,5 +183,74 @@ public class DualUtilityReasonerSpec
             "First.Update",
             // @formatter:on
         }));
+    }
+
+    [Test]
+    public void StaysWithARunningOptionThatKeepsEnoughOfItsRank()
+    {
+        // The Inertia pattern, cited on ExecutionHistoryConsideration. First won at rank 10 and
+        // keeps six tenths of it while running, so when its own rank falls away it still sits above Second's 5.
+        RunInertiaCycles(0.6f);
+
+        Assert.That(_executed, Is.EqualTo(new[]
+        {
+            // @formatter:off
+            "First.Select", "First.Update",
+            "First.Update",
+            // @formatter:on
+        }));
+    }
+
+    [Test]
+    public void GivesUpARunningOptionThatKeepsTooLittleOfItsRank()
+    {
+        // Four tenths of 10 is 4, which no longer holds off Second's 5.
+        RunInertiaCycles(0.4f);
+
+        Assert.That(_executed, Is.EqualTo(new[]
+        {
+            // @formatter:off
+            "First.Select", "First.Update",
+            "First.Deselect", "Second.Select", "Second.Update",
+            // @formatter:on
+        }));
+    }
+
+    /// <summary>
+    ///     Runs two cycles of a reasoner whose First option is selected at rank 10 on the first and loses that rank
+    ///     before the second, keeping only the given <see cref="ExecutionHistoryConsideration.RankRetentionFactor" /> of it
+    ///     through its <see cref="ExecutionHistoryConsideration" />.
+    /// </summary>
+    private void RunInertiaCycles(float rankRetentionFactor)
+    {
+        WeightValues rankTen = new(1f, 1f, 10f);
+        WeightValues rankFive = new(1f, 1f, 5f);
+
+        StubConsideration firstRank = new(rankTen);
+        StubConsideration secondRank = new(rankFive);
+
+        ManualTimeSource timeSource = new();
+        ExecutionHistoryConsideration inertia = new()
+        {
+            TimeSource = timeSource,
+            RankRetentionFactor = rankRetentionFactor,
+        };
+
+        RecordAction firstAction = new("First", _executed, false);
+        RecordAction secondAction = new("Second", _executed, false);
+
+        StubOption firstOption = new([firstRank, inertia], [firstAction]);
+        StubOption secondOption = new([secondRank], [secondAction]);
+
+        DualUtilityReasoner reasoner = new() { RandomSource = new FixedRandomSource(0f) };
+        reasoner.AddOption(firstOption);
+        reasoner.AddOption(secondOption);
+        reasoner.Enable();
+
+        reasoner.Update();
+
+        firstRank.Set(WeightValues.Neutral);
+
+        reasoner.Update();
     }
 }

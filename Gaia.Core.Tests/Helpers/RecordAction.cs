@@ -13,16 +13,23 @@ internal sealed class RecordAction : ActionBase
 {
     private readonly List<string> _log;
     private readonly string _name;
+    private bool _isDone;
 
-    private bool _isDone = true;
-
-    internal RecordAction(string name, List<string> log)
+    /// <summary>Creates an action that appends to the given log under the given name.</summary>
+    /// <param name="name">The prefix each recorded entry is written with, as name.Phase.</param>
+    /// <param name="log">The shared list every lifecycle call is appended to. The spec owns it and reads it back.</param>
+    /// <param name="isDone">
+    ///     The initial IsDone. Defaults to true, which is what <see cref="ActionBase" /> reports. Pass false
+    ///     for an action that keeps its option running until SetDone is called.
+    /// </param>
+    internal RecordAction(string name, List<string> log, bool isDone = true)
     {
         _name = name;
         _log = log;
+        _isDone = isDone;
     }
 
-    /// <summary>Whatever SetDone last set. True until it is called.</summary>
+    /// <summary>Whatever the constructor or SetDone last set.</summary>
     public override bool IsDone => _isDone;
 
     /// <inheritdoc />

@@ -1,4 +1,6 @@
-﻿using Gaia.Core.Reasoners;
+﻿using Gaia.Core.Considerations;
+using Gaia.Core.Reasoners;
+using Gaia.Core.Services.Time;
 using Gaia.Core.Tests.Helpers;
 using Gaia.Core.WeightFunctions;
 
@@ -28,8 +30,8 @@ public class RuleBasedReasonerSpec
         _firstConsideration = new StubConsideration(WeightValues.Neutral);
         _secondConsideration = new StubConsideration(WeightValues.Neutral);
 
-        RecordAction firstRecordAction = new("First", _executed);
-        RecordAction secondRecordAction = new("Second", _executed);
+        RecordAction firstRecordAction = new("First", _executed, false);
+        RecordAction secondRecordAction = new("Second", _executed, false);
 
         StubOption firstOption = new([_firstConsideration], [firstRecordAction]);
         StubOption secondOption = new([_secondConsideration], [secondRecordAction]);
@@ -121,8 +123,8 @@ public class RuleBasedReasonerSpec
     [Test]
     public void KeepsTheSameOptionSelectedAcrossCycles()
     {
-        // Select and Deselect are transitions; Update is the per-cycle call. An option that stays valid across
-        // cycles is selected once and updated every cycle.
+        // Select and Deselect are transitions and Update is the per-cycle call. An option whose actions are still
+        // running and which stays valid across cycles is selected once and updated every cycle.
         _ruleBasedReasoner.Update();
         _ruleBasedReasoner.Update();
 
@@ -153,6 +155,71 @@ public class RuleBasedReasonerSpec
             // @formatter:off
             "Second.Select", "Second.Update",
             "Second.Deselect", "First.Select", "First.Update",
+            // @formatter:on
+        }));
+    }
+
+    [Test]
+    public void KeepsAFinishedOptionSelectedUntilAConsiderationVetoesIt()
+    {
+        // The reasoner takes no notice of the option's actions finishing. An action that is done the moment it runs
+        // leaves its option selected, being updated every cycle, the same as one that never finishes.
+        RecordAction instantlyDoneAction = new("InstantlyDone", _executed);
+        StubOption instantlyDoneOption = new([], [instantlyDoneAction]);
+
+        RuleBasedReasoner reasoner = new();
+        reasoner.AddOption(instantlyDoneOption);
+        reasoner.Enable();
+
+        reasoner.Update();
+        reasoner.Update();
+
+        Assert.That(_executed, Is.EqualTo(new[]
+        {
+            // @formatter:off
+            "InstantlyDone.Select", "InstantlyDone.Update",
+            "InstantlyDone.Update",
+            // @formatter:on
+        }));
+    }
+
+    [Test]
+    public void LetsAFinishedOptionEndItselfThroughItsConsiderations()
+    {
+        // The Is Done pattern, cited on ExecutionHistoryConsideration. FinishedWeightFunction
+        // vetoes once the option IsDone, which is what deselects it. With nothing keeping it out afterwards, it is
+        // first valid again on the cycle after and starts over. A cooldown on SinceLastRunWeightFunction is what would
+        // hold it back.
+        ManualTimeSource timeSource = new();
+        ConstantWeightFunction vetoWhenFinished = new() { Weights = WeightValues.Vetoed };
+
+        ExecutionHistoryConsideration endsWhenFinished = new()
+        {
+            TimeSource = timeSource,
+            FinishedWeightFunction = vetoWhenFinished,
+        };
+
+        RecordAction instantlyDoneAction = new("InstantlyDone", _executed);
+        RecordAction fallbackAction = new("Fallback", _executed, false);
+
+        StubOption instantlyDoneOption = new([endsWhenFinished], [instantlyDoneAction]);
+        StubOption fallbackOption = new([], [fallbackAction]);
+
+        RuleBasedReasoner reasoner = new();
+        reasoner.AddOption(instantlyDoneOption);
+        reasoner.AddOption(fallbackOption);
+        reasoner.Enable();
+
+        reasoner.Update();
+        reasoner.Update();
+        reasoner.Update();
+
+        Assert.That(_executed, Is.EqualTo(new[]
+        {
+            // @formatter:off
+            "InstantlyDone.Select", "InstantlyDone.Update",
+            "InstantlyDone.Deselect", "Fallback.Select", "Fallback.Update",
+            "Fallback.Deselect", "InstantlyDone.Select", "InstantlyDone.Update",
             // @formatter:on
         }));
     }

@@ -35,14 +35,14 @@ public class SubreasonerActionSpec
         _subreasoner2Consideration1 = new StubConsideration(WeightValues.Neutral);
         _subreasoner2Consideration2 = new StubConsideration(WeightValues.Neutral);
 
-        RecordAction reasonerRecordAction1 = new("Reasoner.First", _executed);
-        RecordAction reasonerRecordAction2 = new("Reasoner.Second", _executed);
+        RecordAction reasonerRecordAction1 = new("Reasoner.First", _executed, false);
+        RecordAction reasonerRecordAction2 = new("Reasoner.Second", _executed, false);
 
-        RecordAction subreasoner1RecordAction1 = new("Subreasoner1.First", _executed);
-        RecordAction subreasoner1RecordAction2 = new("Subreasoner1.Second", _executed);
+        RecordAction subreasoner1RecordAction1 = new("Subreasoner1.First", _executed, false);
+        RecordAction subreasoner1RecordAction2 = new("Subreasoner1.Second", _executed, false);
 
-        RecordAction subreasoner2RecordAction1 = new("Subreasoner2.First", _executed);
-        RecordAction subreasoner2RecordAction2 = new("Subreasoner2.Second", _executed);
+        RecordAction subreasoner2RecordAction1 = new("Subreasoner2.First", _executed, false);
+        RecordAction subreasoner2RecordAction2 = new("Subreasoner2.Second", _executed, false);
 
         _subreasonerAction1 = new SubreasonerAction(_subreasoner1);
         SubreasonerAction subreasonerAction2 = new(_subreasoner2);
@@ -298,9 +298,9 @@ public class SubreasonerActionSpec
         StubConsideration childConsideration = new(WeightValues.Neutral);
         StubConsideration grandchildConsideration = new(WeightValues.Neutral);
 
-        RecordAction rootRecordAction = new("Root", executed);
-        RecordAction childRecordAction = new("Child", executed);
-        RecordAction grandchildRecordAction = new("Grandchild", executed);
+        RecordAction rootRecordAction = new("Root", executed, false);
+        RecordAction childRecordAction = new("Child", executed, false);
+        RecordAction grandchildRecordAction = new("Grandchild", executed, false);
 
         SubreasonerAction childSubreasonerAction = new(childReasoner);
         SubreasonerAction grandchildSubreasonerAction = new(grandchildReasoner);
