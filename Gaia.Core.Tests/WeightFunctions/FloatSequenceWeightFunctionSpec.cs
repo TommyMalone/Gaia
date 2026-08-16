@@ -96,6 +96,57 @@ public class FloatSequenceWeightFunctionSpec
     }
 
     [Test]
+    public void RejectsAnEntryOutOfOrder()
+    {
+        // The entries are tested first to last, so one added out of order would shadow everything after it.
+        FloatSequenceEntry earlierEntry = new(100f, _inRangeWeights);
+
+        Assert.That(() => _weightFunction.AddEntry(earlierEntry), Throws.ArgumentException);
+    }
+
+    [Test]
+    public void AcceptsAnEntryAtTheSameThresholdAsTheLast()
+    {
+        // Equal thresholds are harmless. The earlier entry answers, and the later one is simply never reached.
+        FloatSequenceEntry repeatedEntry = new(300f, WeightValues.Vetoed);
+
+        Assert.That(() => _weightFunction.AddEntry(repeatedEntry), Throws.Nothing);
+    }
+
+    [Test]
+    public void RejectsARolledRangeThatOverlapsTheEntryBefore()
+    {
+        // An entry rolling between 250 and 350 would sometimes land below the 300 entry and sometimes above it.
+        FloatSequenceEntry overlappingEntry = new(250f, 350f, WeightValues.Vetoed);
+
+        Assert.That(() => _weightFunction.AddEntry(overlappingEntry), Throws.ArgumentException);
+    }
+
+    [Test]
+    public void RejectsAnEntryThatCouldRollBelowTheRangeBefore()
+    {
+        FloatSequenceWeightFunction weightFunction = new(WeightValues.Vetoed);
+
+        FloatSequenceEntry rolledEntry = new(50f, 150f, _inRangeWeights);
+        FloatSequenceEntry tooEarlyEntry = new(120f, 200f, WeightValues.Vetoed);
+        FloatSequenceEntry lateEnoughEntry = new(150f, 200f, WeightValues.Vetoed);
+
+        weightFunction.AddEntry(rolledEntry);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => weightFunction.AddEntry(tooEarlyEntry), Throws.ArgumentException);
+            Assert.That(() => weightFunction.AddEntry(lateEnoughEntry), Throws.Nothing);
+        });
+    }
+
+    [Test]
+    public void RejectsARangeWhoseMaximumIsBelowItsMinimum()
+    {
+        Assert.That(() => new FloatSequenceEntry(150f, 50f, _inRangeWeights), Throws.ArgumentException);
+    }
+
+    [Test]
     public void ReportsWhichEntriesRollTheirThreshold()
     {
         FloatSequenceEntry fixedEntry = new(100f, _inRangeWeights);

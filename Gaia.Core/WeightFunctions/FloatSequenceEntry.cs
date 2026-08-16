@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Services.Random;
+﻿using System;
+using Gaia.Core.Services.Random;
 
 namespace Gaia.Core.WeightFunctions
 {
@@ -16,7 +17,8 @@ namespace Gaia.Core.WeightFunctions
     ///         from between them in RollThreshold each time the containing option is selected.
     ///     </para>
     /// </remarks>
-    public class FloatSequenceEntry
+    /// <seealso>"Modular AI", Section 8.5.2</seealso>
+    public sealed class FloatSequenceEntry
     {
         /// <summary>Creates an entry whose threshold never changes.</summary>
         /// <param name="threshold">The highest input this entry covers.</param>
@@ -29,8 +31,16 @@ namespace Gaia.Core.WeightFunctions
         /// <param name="thresholdMin">The lowest threshold this entry can roll.</param>
         /// <param name="thresholdMax">The highest threshold this entry can roll.</param>
         /// <param name="weights">The values to report for an input this entry covers.</param>
+        /// <exception cref="ArgumentException">thresholdMax is below thresholdMin.</exception>
         internal FloatSequenceEntry(float thresholdMin, float thresholdMax, WeightValues weights)
         {
+            if (thresholdMax < thresholdMin)
+            {
+                throw new ArgumentException(
+                    $"A float sequence entry cannot roll between {thresholdMin} and {thresholdMax}, since the " +
+                    "maximum is below the minimum.", nameof(thresholdMax));
+            }
+
             ThresholdMin = thresholdMin;
             ThresholdMax = thresholdMax;
             Weights = weights;
