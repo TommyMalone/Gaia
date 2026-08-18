@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using Gaia.Core.Actions;
-using Gaia.Core.Considerations;
+using Gaia.Core.Brains;
 using Gaia.Core.Options;
 using Gaia.Core.Temp;
 
@@ -48,9 +48,7 @@ namespace Gaia.Core.Reasoners
             _options.Clear();
         }
 
-        /// <summary>
-        ///     Enables the reasoner. Called by <see cref="SubreasonerAction.Select" /> and Brain.Enable.
-        /// </summary>
+        /// <summary>Enables the reasoner. Called by <see cref="SubreasonerAction.Select" /> and <see cref="Brain.Enable" />.</summary>
         public void Enable()
         {
             IsEnabled = true;
@@ -62,10 +60,7 @@ namespace Gaia.Core.Reasoners
         {
         }
 
-        /// <summary>
-        ///     Disables the reasoner. Called by <see cref="SubreasonerAction.Deselect" /> and
-        ///     Brain.Disable.
-        /// </summary>
+        /// <summary>Disables the reasoner. Called by <see cref="SubreasonerAction.Deselect" /> and <see cref="Brain.Disable" />.</summary>
         public void Disable()
         {
             IsEnabled = false;
