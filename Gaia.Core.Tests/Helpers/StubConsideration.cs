@@ -5,9 +5,8 @@ using Gaia.Core.WeightFunctions;
 namespace Gaia.Core.Tests.Helpers;
 
 /// <summary>
-///     A consideration whose result is set by hand rather than queried from a world. Stands in for
-///     EntityExistsConsideration, <see cref="ExecutionHistoryConsideration" /> and the rest. A
-///     multiplier of 0 vetoes the option regardless of what the other considerations contribute.
+///     A consideration whose result is set by hand rather than queried from a world. A multiplier of 0 vetoes the
+///     option regardless of what the other considerations contribute.
 /// </summary>
 internal sealed class StubConsideration : ConsiderationBase
 {
