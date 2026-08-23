@@ -22,4 +22,32 @@ internal static class RegionSpecHelpers
             Assert.That(region.IsInRegion(position), Is.True, $"sample {sampleIndex} at {position} landed outside");
         }
     }
+
+    /// <summary>Asserts that two vectors are equal within a small tolerance, component by component.</summary>
+    internal static void AssertNearly(Vector3 actual, Vector3 expected)
+    {
+        const float tolerance = 0.001f;
+
+        Assert.That(actual.X, Is.EqualTo(expected.X).Within(tolerance));
+        Assert.That(actual.Y, Is.EqualTo(expected.Y).Within(tolerance));
+        Assert.That(actual.Z, Is.EqualTo(expected.Z).Within(tolerance));
+    }
+
+    /// <summary>Adds an L shaped footprint, a 10 by 10 square with its upper right quarter missing.</summary>
+    internal static void AddLShapedFootprint(PolygonRegionBase region)
+    {
+        Vector3 lowerLeft = new(0f, 0f, 0f);
+        Vector3 lowerRight = new(10f, 0f, 0f);
+        Vector3 rightNotch = new(10f, 0f, 5f);
+        Vector3 innerCorner = new(5f, 0f, 5f);
+        Vector3 topNotch = new(5f, 0f, 10f);
+        Vector3 upperLeft = new(0f, 0f, 10f);
+
+        region.AddCorner(lowerLeft);
+        region.AddCorner(lowerRight);
+        region.AddCorner(rightNotch);
+        region.AddCorner(innerCorner);
+        region.AddCorner(topNotch);
+        region.AddCorner(upperLeft);
+    }
 }

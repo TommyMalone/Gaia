@@ -1,0 +1,182 @@
+﻿using Gaia.Core.Regions;
+using Gaia.Core.Services.Random;
+using Gaia.Core.Spatial;
+
+namespace Gaia.Core.Tests.Regions;
+
+/// <summary>Covers <see cref="ConvexHullRegion" />.</summary>
+/// <remarks>
+///     The hulls under test are a box, whose answers <see cref="BoxRegion" /> makes obvious, and a wedge, because the
+///     interesting failure is a normal pointing the wrong way and a symmetric shape hides it.
+/// </remarks>
+[TestFixture]
+public class ConvexHullRegionSpec
+{
+    [SetUp]
+    public void BuildRegions()
+    {
+        _randomSource = new SystemRandomSource(12345);
+
+        Vector3 towardNegativeX = new(-1f, 0f, 0f);
+        Vector3 towardPositiveX = new(1f, 0f, 0f);
+        Vector3 towardNegativeY = new(0f, -1f, 0f);
+        Vector3 towardPositiveY = new(0f, 1f, 0f);
+        Vector3 towardNegativeZ = new(0f, 0f, -1f);
+        Vector3 towardPositiveZ = new(0f, 0f, 1f);
+
+        Plane leftWall = new(towardNegativeX, 0f);
+        Plane rightWall = new(towardPositiveX, 10f);
+        Plane floor = new(towardNegativeY, 0f);
+        Plane ceiling = new(towardPositiveY, 3f);
+        Plane nearWall = new(towardNegativeZ, 0f);
+        Plane farWall = new(towardPositiveZ, 20f);
+
+        // A box from the origin to (10, 3, 20), as six outward-facing planes.
+        _hullBox = new ConvexHullRegion { RandomSource = _randomSource };
+        _hullBox.AddPlane(leftWall);
+        _hullBox.AddPlane(rightWall);
+        _hullBox.AddPlane(floor);
+        _hullBox.AddPlane(ceiling);
+        _hullBox.AddPlane(nearWall);
+        _hullBox.AddPlane(farWall);
+
+        // A wedge, the box above cut by the diagonal plane x + z <= 10, keeping the corner at the origin. The right
+        // and far walls are left out, since the diagonal with the near and left walls already caps x and z at 10.
+        Vector3 pointOnDiagonal = new(10f, 0f, 0f);
+        Vector3 diagonalNormal = new(1f, 0f, 1f);
+        Plane diagonal = Plane.FromPointAndNormal(pointOnDiagonal, diagonalNormal);
+
+        _hullWedge = new ConvexHullRegion { RandomSource = _randomSource };
+        _hullWedge.AddPlane(leftWall);
+        _hullWedge.AddPlane(floor);
+        _hullWedge.AddPlane(ceiling);
+        _hullWedge.AddPlane(nearWall);
+        _hullWedge.AddPlane(diagonal);
+    }
+
+    private SystemRandomSource _randomSource;
+
+    private ConvexHullRegion _hullBox;
+    private ConvexHullRegion _hullWedge;
+
+    [Test]
+    public void ContainsWhatIsInsideABoxShapedHull()
+    {
+        Vector3 middle = new(5f, 1f, 10f);
+        Vector3 farCorner = new(10f, 3f, 20f);
+        Vector3 pastTheRightWall = new(11f, 1f, 10f);
+        Vector3 aboveCeiling = new(5f, 4f, 10f);
+        Vector3 pastTheNearWall = new(5f, 1f, -1f);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_hullBox.IsInRegion(middle), Is.True);
+            Assert.That(_hullBox.IsInRegion(farCorner), Is.True, "the far corner counts as inside");
+            Assert.That(_hullBox.IsInRegion(pastTheRightWall), Is.False);
+            Assert.That(_hullBox.IsInRegion(aboveCeiling), Is.False);
+            Assert.That(_hullBox.IsInRegion(pastTheNearWall), Is.False);
+        });
+    }
+
+    [Test]
+    public void ContainsWhatIsInsideAWedge()
+    {
+        // The corner near the origin is kept and the corner away from it is cut off.
+        Vector3 nearTheOrigin = new(1f, 1f, 1f);
+        Vector3 justShortOfTheDiagonal = new(4f, 1f, 5f);
+        Vector3 cutOffCorner = new(9f, 1f, 9f);
+        Vector3 pastTheLeftWall = new(-1f, 1f, 1f);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_hullWedge.IsInRegion(nearTheOrigin), Is.True);
+            Assert.That(_hullWedge.IsInRegion(justShortOfTheDiagonal), Is.True, "just short of the diagonal is inside");
+            Assert.That(_hullWedge.IsInRegion(cutOffCorner), Is.False, "the far corner was cut off");
+            Assert.That(_hullWedge.IsInRegion(pastTheLeftWall), Is.False);
+        });
+    }
+
+    [Test]
+    public void SamplesInsideItself()
+    {
+        RegionSpecHelpers.AssertEverySampleLandsInside(_hullBox);
+        RegionSpecHelpers.AssertEverySampleLandsInside(_hullWedge);
+    }
+
+    [Test]
+    public void ContainsNothingWithNoPlanes()
+    {
+        // No planes would otherwise mean everywhere, and a region that contains the whole world is never what a
+        // configuration meant.
+        ConvexHullRegion empty = new() { RandomSource = _randomSource };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(empty.IsInRegion(Vector3.Zero), Is.False);
+            Assert.That(empty.TryGetRandomPosition(out _), Is.False);
+        });
+    }
+
+    [Test]
+    public void WorksOutItsBoundsFromWhereItsPlanesMeet()
+    {
+        Vector3 origin = new(0f, 0f, 0f);
+        Vector3 boxFarCorner = new(10f, 3f, 20f);
+        Vector3 wedgeFarCorner = new(10f, 3f, 10f);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_hullBox.TryGetBounds(out Vector3 boxMin, out Vector3 boxMax), Is.True);
+            RegionSpecHelpers.AssertNearly(boxMin, origin);
+            RegionSpecHelpers.AssertNearly(boxMax, boxFarCorner);
+
+            // The diagonal plane's normal is not a round number, so the corners it produces are not either.
+            Assert.That(_hullWedge.TryGetBounds(out Vector3 wedgeMin, out Vector3 wedgeMax), Is.True);
+            RegionSpecHelpers.AssertNearly(wedgeMin, origin);
+            RegionSpecHelpers.AssertNearly(wedgeMax, wedgeFarCorner);
+        });
+    }
+
+    [Test]
+    public void HasNoBoundsWhenItsPlanesDoNotEncloseAnything()
+    {
+        // A slab between two parallel planes goes on forever, so there is nowhere to sample from, and the region has
+        // to say so rather than hand back a position outside itself.
+        Vector3 towardPositiveX = new(1f, 0f, 0f);
+        Vector3 towardNegativeX = new(-1f, 0f, 0f);
+        Plane upperFace = new(towardPositiveX, 8f);
+        Plane lowerFace = new(towardNegativeX, -2f);
+        Vector3 farFromTheOriginInsideTheSlab = new(5f, 100f, -100f);
+
+        ConvexHullRegion slab = new() { RandomSource = _randomSource };
+        slab.AddPlane(upperFace);
+        slab.AddPlane(lowerFace);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(slab.IsInRegion(farFromTheOriginInsideTheSlab), Is.True, "the slab is unbounded in Y and Z");
+            Assert.That(slab.TryGetBounds(out _, out _), Is.False);
+            Assert.That(slab.TryGetRandomPosition(out _), Is.False);
+        });
+    }
+
+    [Test]
+    public void HasNoBoundsWhenItsPlanesLeaveAnOpenEnd()
+    {
+        // Three planes around the Y axis make a triangular tube with no top or bottom. Its walls meet pairwise along
+        // vertical lines, never three at a point, so the tube has no corners for the bounds to be worked out from.
+        Vector3 towardNegativeX = new(-1f, 0f, 0f);
+        Vector3 towardNegativeZ = new(0f, 0f, -1f);
+        Vector3 diagonalNormal = new(1f, 0f, 1f);
+        Plane leftWall = new(towardNegativeX, 0f);
+        Plane nearWall = new(towardNegativeZ, 0f);
+        Plane diagonal = new(diagonalNormal, 10f);
+
+        ConvexHullRegion tube = new() { RandomSource = _randomSource };
+        tube.AddPlane(leftWall);
+        tube.AddPlane(nearWall);
+        tube.AddPlane(diagonal);
+
+        Assert.That(tube.TryGetBounds(out _, out _), Is.False);
+    }
+}

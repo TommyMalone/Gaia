@@ -8,7 +8,7 @@ namespace Gaia.Core.Regions
     /// <remarks>
     ///     <para>
     ///         Only the X and Z of Center matter, as for <see cref="CircleRegion" />, since Floor and Ceiling bound the
-    ///         height instead.
+    ///         height instead, as for <see cref="ExtrudedPolygonRegion" />.
     ///     </para>
     ///     <para>
     ///         A random position is picked on the disc the way <see cref="CircleRegion" /> picks one and spread evenly
