@@ -7,7 +7,7 @@ namespace Gaia.Core.Considerations
     ///     turns it into weight values.
     /// </summary>
     /// <remarks>
-    ///     Splitting the two apart is what lets a single DistanceConsideration serve any number of
+    ///     Splitting the two apart is what lets a single <see cref="DistanceConsideration" /> serve any number of
     ///     options. The class knows how to measure a distance, and the configured weight function decides what a given
     ///     distance means. The same distance can raise the addend on one option and veto another.
     /// </remarks>
