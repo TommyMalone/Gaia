@@ -40,21 +40,28 @@ public class GuardSpec
     {
         _timeSource = new ManualTimeSource();
         _executed = new List<string>();
+        _logSink = new RecordingLogSink();
         _threats = new List<EntityBase>();
 
         _noiseHeardTime = null;
         _alarmHeardTime = null;
 
-        _brain = new Brain();
+        _brain = new Brain
+        {
+            LogSink = _logSink,
+            LogChannel = CharacterName,
+        };
         _brain.Blackboard.SetEntityList("Threats", _threats);
 
         _guard = new Actor
         {
-            Name = "Guard",
+            Name = CharacterName,
             Brain = _brain,
         };
 
-        _investigateAction = new RecordAction("Investigate", _executed, false);
+        _recordActionFactory = new RecordActionFactory(_executed, _logSink, CharacterName);
+
+        _investigateAction = _recordActionFactory.Build("Investigate", false);
 
         _investigateHistory = new ExecutionHistoryConsideration
         {
@@ -62,7 +69,12 @@ public class GuardSpec
             FinishedWeightFunction = VetoWhenFinished(),
         };
 
-        _reasoner = new DualUtilityReasoner { RandomSource = new FixedRandomSource(0f) };
+        _reasoner = new DualUtilityReasoner
+        {
+            RandomSource = new FixedRandomSource(0f),
+            LogSink = _logSink,
+            LogChannel = CharacterName,
+        };
         _reasoner.AddOption(BuildFightOption());
         _reasoner.AddOption(BuildInvestigateOption());
         _reasoner.AddOption(BuildAlarmOption());
@@ -72,11 +84,15 @@ public class GuardSpec
         _brain.Enable();
     }
 
+    private const string CharacterName = "Guard";
+
     private static readonly Seconds OneCycleTime = new(1f);
     private static readonly Seconds StaysRecentTime = new(3f);
 
     private ManualTimeSource _timeSource;
     private List<string> _executed;
+    private RecordingLogSink _logSink;
+    private RecordActionFactory _recordActionFactory;
     private List<EntityBase> _threats;
 
     /// <summary>When the noise happened, or null while none has.</summary>
@@ -203,7 +219,7 @@ public class GuardSpec
     {
         // The Commit pattern. The walk keeps the whole rank 5, so a fresh alarm only ties it. The reasoner settles a
         // tie with its weighted random pick, and the fixture pins that roll at 0, which always lands on the first
-        // option still in the running. That is the walk, added before the alarm.
+        // option still eligible. That is the walk, added before the alarm.
         _investigateHistory.RankRetentionFactor = 1f;
 
         HearNoise();
@@ -246,6 +262,28 @@ public class GuardSpec
         }));
     }
 
+    [Test]
+    public void ReportsEveryDecisionToItsLogSink()
+    {
+        // The same walk and turn back that TurnsBackWhenTheNoiseFadesWithNoRankRetained covers, read from the sink
+        // instead of the executed list. The reasoner names the option it is changing to, and the option's own action
+        // reports underneath it, so a reader sees both the decision and its consequence.
+        HearNoise();
+        Cycle();
+
+        Cycle(StaysRecentTime + OneCycleTime);
+
+        Assert.That(_logSink.Entries, Is.EqualTo(new[]
+        {
+            // @formatter:off
+            "Message Guard brain enabled",
+            "Message Guard selected Investigate", "Message Guard Investigate started",
+            "Message Guard deselected Investigate", "Message Guard Investigate stopped",
+            "Message Guard selected Patrol", "Message Guard Patrol started",
+            // @formatter:on
+        }));
+    }
+
     private StubOption BuildFightOption()
     {
         WeightValues rankTen = new(0f, 1f, 10f);
@@ -258,33 +296,33 @@ public class GuardSpec
             WeightFunction = rankTenWhenFound,
         };
 
-        RecordAction fight = new("Fight", _executed, false);
+        RecordAction fight = _recordActionFactory.Build("Fight", false);
 
-        return new StubOption([threatExists], [fight]);
+        return new StubOption([threatExists], [fight]) { Name = "Fight" };
     }
 
     private StubOption BuildInvestigateOption()
     {
         FloatVariableConsideration noiseIsRecent = RecentEvent("SecondsSinceNoise");
 
-        return new StubOption([noiseIsRecent, _investigateHistory], [_investigateAction]);
+        return new StubOption([noiseIsRecent, _investigateHistory], [_investigateAction]) { Name = "Investigate" };
     }
 
     private StubOption BuildAlarmOption()
     {
         FloatVariableConsideration alarmIsRecent = RecentEvent("SecondsSinceAlarm");
-        RecordAction alarm = new("Alarm", _executed, false);
+        RecordAction alarm = _recordActionFactory.Build("Alarm", false);
 
-        return new StubOption([alarmIsRecent], [alarm]);
+        return new StubOption([alarmIsRecent], [alarm]) { Name = "Alarm" };
     }
 
     private StubOption BuildPatrolOption()
     {
         WeightValues rankZero = new(1f, 1f, 0f);
         TuningConsideration alwaysRankZero = new(rankZero);
-        RecordAction patrol = new("Patrol", _executed, false);
+        RecordAction patrol = _recordActionFactory.Build("Patrol", false);
 
-        return new StubOption([alwaysRankZero], [patrol]);
+        return new StubOption([alwaysRankZero], [patrol]) { Name = "Patrol" };
     }
 
     /// <summary>Rank 5 while the named event happened recently, nothing once it has faded, and vetoed if it never happened.</summary>

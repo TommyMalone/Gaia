@@ -3,6 +3,8 @@ using System.Diagnostics;
 using Gaia.Core.Actions;
 using Gaia.Core.Brains;
 using Gaia.Core.Options;
+using Gaia.Core.Services.Log;
+using Gaia.Core.Strings;
 using Gaia.Core.Temp;
 
 namespace Gaia.Core.Reasoners
@@ -18,6 +20,12 @@ namespace Gaia.Core.Reasoners
 
         /// <summary>The options this reasoner chooses among, in the order they were added.</summary>
         protected IReadOnlyList<OptionBase> Options => _options;
+
+        /// <summary>Where this reasoner reports the decisions it makes.</summary>
+        public ILogSink LogSink { get; internal set; } = new TraceLogSink();
+
+        /// <summary>The character this reasoner decides for, which its entries are filed under.</summary>
+        public AiString LogChannel { get; internal set; } = AiString.Empty;
 
         /// <summary>True while the reasoner is allowed to decide.</summary>
         public bool IsEnabled { get; private set; }
@@ -88,8 +96,19 @@ namespace Gaia.Core.Reasoners
             Debug.Assert(option == null || _options.Contains(option),
                 "The option is not one of this reasoner's options.");
 
+            if (SelectedOption != null)
+            {
+                LogSink.LogMessage(LogChannel, $"deselected {SelectedOption.Name.Text}");
+            }
+
             SelectedOption?.Deselect();
             SelectedOption = option;
+
+            if (option != null)
+            {
+                LogSink.LogMessage(LogChannel, $"selected {option.Name.Text}");
+            }
+
             SelectedOption?.Select();
         }
 

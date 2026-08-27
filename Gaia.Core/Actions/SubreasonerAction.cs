@@ -35,23 +35,20 @@ namespace Gaia.Core.Actions
         }
 
         /// <summary>Calls Enable on Reasoner so that it begins making decisions.</summary>
-        public override void Select()
+        protected override void OnSelect()
         {
-            base.Select();
             Reasoner?.Enable();
         }
 
         /// <summary>Calls Disable on Reasoner, which deselects whatever option it was running.</summary>
-        public override void Deselect()
+        protected override void OnDeselect()
         {
-            base.Deselect();
             Reasoner?.Disable();
         }
 
         /// <summary>Calls Update on Reasoner, so that every level of the tree decides once per cycle.</summary>
-        public override void Update()
+        protected override void OnUpdate()
         {
-            base.Update();
             Reasoner?.Update();
         }
     }

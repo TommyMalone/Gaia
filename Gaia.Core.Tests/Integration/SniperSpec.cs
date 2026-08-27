@@ -14,8 +14,8 @@ using Gaia.Core.WeightFunctions;
 namespace Gaia.Core.Tests.Integration;
 
 /// <summary>
-///     Covers the sniper from the chapter's running example, a whole brain assembled from real reasoners,
-///     considerations, weight functions, regions and targets working together.
+///     Covers the sniper from the chapter's running example, a whole brain of reasoners, considerations, weight
+///     functions, regions and targets working together, with nothing but actions stubbed.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -40,11 +40,13 @@ public class SniperSpec
     {
         _timeSource = new ManualTimeSource();
         _executed = new List<string>();
+        _logSink = new RecordingLogSink();
+        _recordActionFactory = new RecordActionFactory(_executed, _logSink, CharacterName);
         _contacts = new List<EntityBase>();
 
         _sniper = new Actor
         {
-            Name = "Sniper",
+            Name = CharacterName,
             Position = new Vector3(0f, 10f, 0f),
         };
 
@@ -60,7 +62,11 @@ public class SniperSpec
             Max = new Vector3(5f, 0f, -10f),
         };
 
-        _brain = new Brain();
+        _brain = new Brain
+        {
+            LogSink = _logSink,
+            LogChannel = CharacterName,
+        };
         _sniper.Brain = _brain;
 
         List<EntityBase> killZoneContacts = new();
@@ -70,7 +76,11 @@ public class SniperSpec
         _brain.Blackboard.SetEntityList("KillZoneContacts", killZoneContacts);
         _brain.Blackboard.SetEntityList("RetreatRouteContacts", retreatRouteContacts);
 
-        RuleBasedReasoner reasoner = new();
+        RuleBasedReasoner reasoner = new()
+        {
+            LogSink = _logSink,
+            LogChannel = CharacterName,
+        };
         reasoner.AddOption(BuildRetreatOption());
         reasoner.AddOption(BuildFightBackOption());
         reasoner.AddOption(BuildSnipeOption());
@@ -80,6 +90,8 @@ public class SniperSpec
         _brain.Enable();
     }
 
+    private const string CharacterName = "Sniper";
+
     private static readonly Seconds OneCycleTime = new(1f);
     private static readonly Seconds CooldownMinTime = new(60f);
     private static readonly Seconds CooldownMaxTime = new(120f);
@@ -87,6 +99,8 @@ public class SniperSpec
 
     private ManualTimeSource _timeSource;
     private List<string> _executed;
+    private RecordingLogSink _logSink;
+    private RecordActionFactory _recordActionFactory;
     private List<EntityBase> _contacts;
 
     private Actor _sniper;
@@ -252,49 +266,100 @@ public class SniperSpec
         Assert.That(Selections(), Is.EqualTo(new[] { "Hide" }));
     }
 
+    [Test]
+    public void ReportsEveryDecisionToItsLogSink()
+    {
+        // The same shot TakesAShotWhenAnEnemyEntersTheKillZone covers, read from the sink instead of the executed
+        // list. Both levels of the tree write to the same sink, so the sequence's steps appear underneath the Snipe
+        // option that started them, which is what a nested reasoner looks like from outside.
+        Vector3 inKillZone = new(10f, 0f, 140f);
+
+        Cycle();
+
+        AddContact("Patrol", inKillZone);
+
+        Cycle();
+        Cycle();
+        Cycle();
+        Cycle(AimTime);
+
+        Assert.That(_logSink.Entries, Is.EqualTo(new[]
+        {
+            // @formatter:off
+            "Message Sniper brain enabled",
+            "Message Sniper selected Hide", "Message Sniper Hide started",
+            "Message Sniper deselected Hide", "Message Sniper Hide stopped",
+            "Message Sniper selected Snipe", "Message Sniper TakeTheShot started",
+            "Message Sniper selected SetPoseStep", "Message Sniper SetPose started",
+            "Message Sniper deselected SetPoseStep", "Message Sniper SetPose stopped",
+            "Message Sniper selected RaiseWeaponStep", "Message Sniper RaiseWeapon started",
+            "Message Sniper deselected RaiseWeaponStep", "Message Sniper RaiseWeapon stopped",
+            "Message Sniper selected AimStep", "Message Sniper Aim started",
+            "Message Sniper deselected AimStep", "Message Sniper Aim stopped",
+            "Message Sniper selected FireStep", "Message Sniper Fire started",
+            // @formatter:on
+        }));
+    }
+
     private StubOption BuildRetreatOption()
     {
-        RecordAction retreat = new("Retreat", _executed, false);
+        RecordAction retreat = _recordActionFactory.Build("Retreat", false);
 
-        return new StubOption([UnderFire(), LineOfRetreatClear()], [retreat]);
+        return new StubOption([UnderFire(), LineOfRetreatClear()], [retreat]) { Name = "Retreat" };
     }
 
     private StubOption BuildFightBackOption()
     {
-        RecordAction fightBack = new("FightBack", _executed, false);
+        RecordAction fightBack = _recordActionFactory.Build("FightBack", false);
 
-        return new StubOption([UnderFire()], [fightBack]);
+        return new StubOption([UnderFire()], [fightBack]) { Name = "FightBack" };
     }
 
     private StubOption BuildSnipeOption()
     {
-        RecordAction setPose = new("SetPose", _executed);
-        RecordAction raiseWeapon = new("RaiseWeapon", _executed);
-        PauseAction aim = new(AimTime) { TimeSource = _timeSource };
-        RecordAction fire = new("Fire", _executed);
+        RecordAction setPose = _recordActionFactory.Build("SetPose");
+        RecordAction raiseWeapon = _recordActionFactory.Build("RaiseWeapon");
+        RecordAction fire = _recordActionFactory.Build("Fire");
 
-        StubOption setPoseStep = new([], [setPose]);
-        StubOption raiseWeaponStep = new([], [raiseWeapon]);
-        StubOption aimStep = new([], [aim]);
-        StubOption fireStep = new([], [fire]);
+        PauseAction aim = new(AimTime)
+        {
+            TimeSource = _timeSource,
+            Name = "Aim",
+            LogSink = _logSink,
+            LogChannel = CharacterName,
+        };
 
-        SequenceReasoner shot = new();
+        StubOption setPoseStep = new([], [setPose]) { Name = "SetPoseStep" };
+        StubOption raiseWeaponStep = new([], [raiseWeapon]) { Name = "RaiseWeaponStep" };
+        StubOption aimStep = new([], [aim]) { Name = "AimStep" };
+        StubOption fireStep = new([], [fire]) { Name = "FireStep" };
+
+        SequenceReasoner shot = new()
+        {
+            LogSink = _logSink,
+            LogChannel = CharacterName,
+        };
         shot.AddOption(setPoseStep);
         shot.AddOption(raiseWeaponStep);
         shot.AddOption(aimStep);
         shot.AddOption(fireStep);
 
-        SubreasonerAction takeTheShot = new(shot);
+        SubreasonerAction takeTheShot = new(shot)
+        {
+            Name = "TakeTheShot",
+            LogSink = _logSink,
+            LogChannel = CharacterName,
+        };
 
         return new StubOption([LineOfRetreatClear(), TargetInKillZone(), KillZoneInRange(), ShotCooldown()],
-            [takeTheShot]);
+            [takeTheShot]) { Name = "Snipe" };
     }
 
     private StubOption BuildHideOption()
     {
-        RecordAction hide = new("Hide", _executed, false);
+        RecordAction hide = _recordActionFactory.Build("Hide", false);
 
-        return new StubOption([], [hide]);
+        return new StubOption([], [hide]) { Name = "Hide" };
     }
 
     /// <summary>Vetoes unless the game has flagged the sniper as under fire.</summary>

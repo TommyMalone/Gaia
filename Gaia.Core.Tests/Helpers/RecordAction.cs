@@ -27,6 +27,8 @@ internal sealed class RecordAction : ActionBase
         _name = name;
         _log = log;
         _isDone = isDone;
+
+        Name = name;
     }
 
     /// <summary>Whatever the constructor or SetDone last set.</summary>
@@ -40,19 +42,19 @@ internal sealed class RecordAction : ActionBase
     }
 
     /// <summary>Records "Name.Select".</summary>
-    public override void Select()
+    protected override void OnSelect()
     {
         Record("Select");
     }
 
     /// <summary>Records "Name.Deselect".</summary>
-    public override void Deselect()
+    protected override void OnDeselect()
     {
         Record("Deselect");
     }
 
     /// <summary>Records "Name.Update".</summary>
-    public override void Update()
+    protected override void OnUpdate()
     {
         Record("Update");
     }

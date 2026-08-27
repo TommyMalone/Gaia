@@ -6,7 +6,7 @@ namespace Gaia.Core.Tests.Brains;
 
 /// <summary>Covers how enabling, disabling and updating a <see cref="Brain" /> reaches whatever its reasoner runs.</summary>
 /// <remarks>
-///     The reasoner is a real <see cref="RuleBasedReasoner" /> with one always-valid option holding a
+///     The reasoner is a <see cref="RuleBasedReasoner" /> rather than a stub, with one always-valid option holding a
 ///     <see cref="RecordAction" />, so what is asserted is which lifecycle calls reached the action rather than anything
 ///     about how the reasoner decided.
 /// </remarks>
@@ -181,5 +181,21 @@ public class BrainSpec
             Assert.That(() => emptyBrain.Update(), Throws.Nothing);
             Assert.That(() => emptyBrain.Disable(), Throws.Nothing);
         });
+    }
+
+    [Test]
+    public void WarnsWhenItIsEnabledWithNoReasoner()
+    {
+        RecordingLogSink logSink = new();
+
+        Brain emptyBrain = new()
+        {
+            LogSink = logSink,
+            LogChannel = "Sentry",
+        };
+
+        emptyBrain.Enable();
+
+        Assert.That(logSink.Entries, Is.EqualTo(new[] { "Warning Sentry brain enabled with no root reasoner" }));
     }
 }

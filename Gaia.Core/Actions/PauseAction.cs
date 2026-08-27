@@ -47,19 +47,15 @@ namespace Gaia.Core.Actions
         }
 
         /// <inheritdoc />
-        public override void Select()
+        protected override void OnSelect()
         {
-            base.Select();
-
             _startTime = TimeSource.CurrentTime;
             _isRunning = true;
         }
 
         /// <inheritdoc />
-        public override void Deselect()
+        protected override void OnDeselect()
         {
-            base.Deselect();
-
             _isRunning = false;
         }
     }

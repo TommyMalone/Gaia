@@ -2,6 +2,7 @@
 using Gaia.Core.Actions;
 using Gaia.Core.Considerations;
 using Gaia.Core.Reasoners;
+using Gaia.Core.Strings;
 using Gaia.Core.Temp;
 using Gaia.Core.WeightFunctions;
 
@@ -25,6 +26,9 @@ namespace Gaia.Core.Options
         {
             _considerations.AttachTo(this);
         }
+
+        /// <summary>What this option is called, which is how a reasoner names it when it reports a decision.</summary>
+        public AiString Name { get; internal set; } = AiString.Empty;
 
         /// <summary>True while this option is the one its reasoner has selected.</summary>
         public bool IsSelected { get; private set; }

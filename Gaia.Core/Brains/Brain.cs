@@ -1,5 +1,7 @@
 ﻿using Gaia.Core.Blackboards;
 using Gaia.Core.Reasoners;
+using Gaia.Core.Services.Log;
+using Gaia.Core.Strings;
 using Gaia.Core.Temp;
 
 namespace Gaia.Core.Brains
@@ -20,6 +22,12 @@ namespace Gaia.Core.Brains
 
         /// <summary>The reasoner at the top of this character's decision tree. Null means the brain decides nothing.</summary>
         public ReasonerBase? RootReasoner { get; internal set; }
+
+        /// <summary>Where this brain reports taking control of its character and giving it up.</summary>
+        public ILogSink LogSink { get; internal set; } = new TraceLogSink();
+
+        /// <summary>The character this brain belongs to, which its entries are filed under.</summary>
+        public AiString LogChannel { get; internal set; } = AiString.Empty;
 
         /// <summary>True while the brain is in control of its character.</summary>
         public bool IsEnabled { get; private set; }
@@ -45,6 +53,16 @@ namespace Gaia.Core.Brains
             }
 
             IsEnabled = true;
+
+            if (RootReasoner == null)
+            {
+                LogSink.LogWarning(LogChannel, "brain enabled with no root reasoner");
+            }
+            else
+            {
+                LogSink.LogMessage(LogChannel, "brain enabled");
+            }
+
             RootReasoner?.Enable();
         }
 
@@ -61,6 +79,7 @@ namespace Gaia.Core.Brains
             }
 
             IsEnabled = false;
+            LogSink.LogMessage(LogChannel, "brain disabled");
             RootReasoner?.Disable();
         }
 
