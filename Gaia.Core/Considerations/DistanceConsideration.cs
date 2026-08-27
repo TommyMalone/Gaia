@@ -1,6 +1,6 @@
-﻿using Gaia.Core.Spatial;
+﻿using Gaia.Core.Factories;
+using Gaia.Core.Spatial;
 using Gaia.Core.Targets;
-using Gaia.Core.Temp;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Considerations

@@ -1,6 +1,6 @@
-﻿using Gaia.Core.Options;
+﻿using Gaia.Core.Factories;
+using Gaia.Core.Options;
 using Gaia.Core.Services.Time;
-using Gaia.Core.Temp;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Considerations

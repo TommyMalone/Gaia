@@ -1,4 +1,4 @@
-﻿using Gaia.Core.Temp;
+﻿using Gaia.Core.Factories;
 
 namespace Gaia.Core.WeightFunctions
 {

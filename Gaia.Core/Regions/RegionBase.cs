@@ -1,7 +1,7 @@
-﻿using Gaia.Core.Reasoners;
+﻿using Gaia.Core.Factories;
+using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Spatial;
-using Gaia.Core.Temp;
 
 namespace Gaia.Core.Regions
 {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using Gaia.Core.Factories;
 using Gaia.Core.Services.Random;
-using Gaia.Core.Temp;
 
 namespace Gaia.Core.WeightFunctions
 {

@@ -1,8 +1,8 @@
 ﻿using Gaia.Core.Blackboards;
+using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Log;
 using Gaia.Core.Strings;
-using Gaia.Core.Temp;
 
 namespace Gaia.Core.Brains
 {

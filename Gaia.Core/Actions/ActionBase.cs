@@ -1,6 +1,6 @@
-﻿using Gaia.Core.Services.Log;
+﻿using Gaia.Core.Factories;
+using Gaia.Core.Services.Log;
 using Gaia.Core.Strings;
-using Gaia.Core.Temp;
 
 namespace Gaia.Core.Actions
 {

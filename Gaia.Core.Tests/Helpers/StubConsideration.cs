@@ -1,5 +1,5 @@
 ﻿using Gaia.Core.Considerations;
-using Gaia.Core.Temp;
+using Gaia.Core.Factories;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Tests.Helpers;

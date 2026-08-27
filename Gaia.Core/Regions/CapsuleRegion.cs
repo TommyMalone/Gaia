@@ -1,6 +1,6 @@
 ﻿using System;
+using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
-using Gaia.Core.Temp;
 
 namespace Gaia.Core.Regions
 {

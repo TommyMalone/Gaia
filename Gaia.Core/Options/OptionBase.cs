@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using Gaia.Core.Actions;
 using Gaia.Core.Considerations;
+using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Strings;
-using Gaia.Core.Temp;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Options

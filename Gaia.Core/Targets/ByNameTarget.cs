@@ -3,9 +3,9 @@ using Gaia.Core.Blackboards;
 using Gaia.Core.Considerations;
 using Gaia.Core.DataStores;
 using Gaia.Core.Entities;
+using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
 using Gaia.Core.Strings;
-using Gaia.Core.Temp;
 
 namespace Gaia.Core.Targets
 {

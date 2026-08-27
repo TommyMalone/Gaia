@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
+using Gaia.Core.Factories;
 using Gaia.Core.Options;
-using Gaia.Core.Temp;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Considerations
@@ -10,7 +10,7 @@ namespace Gaia.Core.Considerations
     ///     Without it every consideration on an option sits in one flat list. With it a subset can be grouped first and
     ///     its combined answer reported as a single consideration. Under the one combining rule the library presently has,
     ///     summed addends, multiplied multipliers and the highest rank, a grouped subset produces the same totals a flat list
-    ///     would, so for now the grouping buys structure rather than different numbers.
+    ///     would, so for now the grouping provides structure rather than different numbers.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.6.2.4</seealso>
     public sealed class ConsiderationSetConsideration : ConsiderationBase

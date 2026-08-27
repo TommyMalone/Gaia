@@ -1,5 +1,5 @@
-﻿using Gaia.Core.Strings;
-using Gaia.Core.Temp;
+﻿using Gaia.Core.Factories;
+using Gaia.Core.Strings;
 
 namespace Gaia.Core.WeightFunctions
 {

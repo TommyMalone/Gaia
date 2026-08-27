@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using Gaia.Core.Factories;
 using Gaia.Core.Options;
-using Gaia.Core.Temp;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Considerations

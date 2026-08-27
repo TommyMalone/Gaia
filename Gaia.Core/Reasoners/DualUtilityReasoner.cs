@@ -1,6 +1,6 @@
-﻿using Gaia.Core.Options;
+﻿using Gaia.Core.Factories;
+using Gaia.Core.Options;
 using Gaia.Core.Services.Random;
-using Gaia.Core.Temp;
 
 namespace Gaia.Core.Reasoners
 {
@@ -16,7 +16,7 @@ namespace Gaia.Core.Reasoners
         public IRandomSource RandomSource { get; internal set; } = new SystemRandomSource();
 
         /// <summary>
-        ///     How close to the best weight an option must come to stay in the running for random-weighted selection, from 0
+        ///     How close to the best weight an option must come to remain a candidate for random-weighted selection, from 0
         ///     for no screening to 1 for only the best. The best weight within the winning rank is multiplied by this factor, and
         ///     options whose weight falls below the result are screened out before the random pick.
         /// </summary>

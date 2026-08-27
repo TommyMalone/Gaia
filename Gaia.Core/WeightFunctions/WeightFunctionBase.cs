@@ -1,6 +1,6 @@
 ﻿using System;
+using Gaia.Core.Factories;
 using Gaia.Core.Strings;
-using Gaia.Core.Temp;
 
 namespace Gaia.Core.WeightFunctions
 {

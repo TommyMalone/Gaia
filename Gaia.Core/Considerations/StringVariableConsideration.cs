@@ -1,6 +1,6 @@
 ﻿using Gaia.Core.DataStores;
+using Gaia.Core.Factories;
 using Gaia.Core.Strings;
-using Gaia.Core.Temp;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Considerations
