@@ -8,7 +8,7 @@ namespace Gaia.Core.Considerations
     public sealed class FloatVariableConsideration : VariableConsiderationBase
     {
         /// <inheritdoc />
-        public override bool Init(AiCreationData creationData)
+        protected override bool OnInit(AiCreationData creationData)
         {
             // Configurations cannot presently be loaded successfully.
             return false;

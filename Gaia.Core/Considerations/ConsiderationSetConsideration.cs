@@ -27,7 +27,7 @@ namespace Gaia.Core.Considerations
         }
 
         /// <inheritdoc />
-        public override bool Init(AiCreationData creationData)
+        protected override bool OnInit(AiCreationData creationData)
         {
             // Configurations cannot presently be loaded successfully.
             _set.Init(creationData);
@@ -52,16 +52,14 @@ namespace Gaia.Core.Considerations
         }
 
         /// <inheritdoc />
-        public override void Select()
+        protected override void OnSelect()
         {
-            base.Select();
             _set.Select();
         }
 
         /// <inheritdoc />
-        public override void Deselect()
+        protected override void OnDeselect()
         {
-            base.Deselect();
             _set.Deselect();
         }
     }

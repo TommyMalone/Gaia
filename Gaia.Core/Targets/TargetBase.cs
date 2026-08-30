@@ -31,7 +31,14 @@ namespace Gaia.Core.Targets
 
         /// <summary>Load the configuration from data. Not yet implemented.</summary>
         /// <returns>True if the configuration was loaded successfully.</returns>
-        public abstract bool Init(AiCreationData creationData);
+        public bool Init(AiCreationData creationData)
+        {
+            return OnInit(creationData);
+        }
+
+        /// <summary>Loads the derived target's own configuration.</summary>
+        /// <returns>True if the configuration was loaded successfully.</returns>
+        protected abstract bool OnInit(AiCreationData creationData);
 
         /// <summary>Finds where the target is. A target with an Entity reports that entity's Position.</summary>
         /// <returns>True if the target has a position to give.</returns>

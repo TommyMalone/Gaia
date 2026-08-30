@@ -86,10 +86,6 @@ namespace Gaia.Core.Options
         }
 
         /// <summary>Load the configuration from data.</summary>
-        /// <remarks>
-        ///     Not virtual, so that every option is guaranteed to run EnsureTuningConsideration once its configuration is
-        ///     complete. Derived options override OnInit.
-        /// </remarks>
         /// <returns>True if the configuration was loaded successfully.</returns>
         public bool Init(AiCreationData creationData)
         {

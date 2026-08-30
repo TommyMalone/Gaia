@@ -41,7 +41,14 @@ namespace Gaia.Core.Reasoners
 
         /// <summary>Load the configuration from data. Not yet implemented.</summary>
         /// <returns>True if the configuration was loaded successfully.</returns>
-        public abstract bool Init(AiCreationData creationData);
+        public bool Init(AiCreationData creationData)
+        {
+            return OnInit(creationData);
+        }
+
+        /// <summary>Loads the derived reasoner's own configuration.</summary>
+        /// <returns>True if the configuration was loaded successfully.</returns>
+        protected abstract bool OnInit(AiCreationData creationData);
 
         /// <summary>Adds an option to the current set of options.</summary>
         /// <param name="option">The option to add.</param>

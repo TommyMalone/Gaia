@@ -30,7 +30,14 @@ namespace Gaia.Core.Actions
 
         /// <summary>Load the configuration from data. Not yet implemented.</summary>
         /// <returns>True if the configuration was loaded successfully.</returns>
-        public abstract bool Init(AiCreationData creationData);
+        public bool Init(AiCreationData creationData)
+        {
+            return OnInit(creationData);
+        }
+
+        /// <summary>Loads the derived action's own configuration.</summary>
+        /// <returns>True if the configuration was loaded successfully.</returns>
+        protected abstract bool OnInit(AiCreationData creationData);
 
         /// <summary>Starts the action.</summary>
         public void Select()

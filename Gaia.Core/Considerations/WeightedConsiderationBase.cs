@@ -37,16 +37,14 @@ namespace Gaia.Core.Considerations
         protected abstract WeightValues CalculateWeights(WeightFunctionBase weightFunction);
 
         /// <inheritdoc />
-        public override void Select()
+        protected override void OnSelect()
         {
-            base.Select();
             WeightFunction?.Select();
         }
 
         /// <inheritdoc />
-        public override void Deselect()
+        protected override void OnDeselect()
         {
-            base.Deselect();
             WeightFunction?.Deselect();
         }
     }

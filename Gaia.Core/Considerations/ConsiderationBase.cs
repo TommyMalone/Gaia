@@ -32,7 +32,14 @@ namespace Gaia.Core.Considerations
 
         /// <summary>Load the configuration from data. Not yet implemented.</summary>
         /// <returns>True if the configuration was loaded successfully.</returns>
-        public abstract bool Init(AiCreationData creationData);
+        public bool Init(AiCreationData creationData)
+        {
+            return OnInit(creationData);
+        }
+
+        /// <summary>Loads the derived consideration's own configuration.</summary>
+        /// <returns>True if the configuration was loaded successfully.</returns>
+        protected abstract bool OnInit(AiCreationData creationData);
 
         /// <summary>Called once per decision cycle to evaluate the situation and store the result in Weights.</summary>
         public abstract void Calculate();
@@ -43,16 +50,28 @@ namespace Gaia.Core.Considerations
             Option = option;
         }
 
-        /// <summary>Called when the option this consideration scores is selected. Sets IsSelected.</summary>
-        public virtual void Select()
+        /// <summary>Called when the option this consideration scores is selected. Sets IsSelected, then OnSelect runs.</summary>
+        public void Select()
         {
             IsSelected = true;
+            OnSelect();
         }
 
-        /// <summary>Called when the option this consideration scores is deselected. Clears IsSelected.</summary>
-        public virtual void Deselect()
+        /// <summary>Called by Select once IsSelected is set, so a derived consideration can act on the moment.</summary>
+        protected virtual void OnSelect()
+        {
+        }
+
+        /// <summary>Called when the option this consideration scores is deselected. Clears IsSelected, then OnDeselect runs.</summary>
+        public void Deselect()
         {
             IsSelected = false;
+            OnDeselect();
+        }
+
+        /// <summary>Called by Deselect once IsSelected is cleared, so a derived consideration can act on the moment.</summary>
+        protected virtual void OnDeselect()
+        {
         }
     }
 }

@@ -38,7 +38,7 @@ namespace Gaia.Core.WeightFunctions
         public IRandomSource RandomSource { get; internal set; } = new SystemRandomSource();
 
         /// <inheritdoc />
-        public override bool Init(AiCreationData creationData)
+        protected override bool OnInit(AiCreationData creationData)
         {
             // Configurations cannot presently be loaded successfully.
             return false;
@@ -91,7 +91,7 @@ namespace Gaia.Core.WeightFunctions
         ///     Calls <see cref="FloatSequenceEntry.RollThreshold" /> on every entry, which rolls a fresh threshold for any
         ///     entry that is randomized. Entries with a fixed threshold are the common case and are left alone.
         /// </summary>
-        public override void Select()
+        protected override void OnSelect()
         {
             foreach (FloatSequenceEntry entry in _entries)
             {

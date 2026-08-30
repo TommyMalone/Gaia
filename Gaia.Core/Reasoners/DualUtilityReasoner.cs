@@ -23,7 +23,7 @@ namespace Gaia.Core.Reasoners
         public float WeightScreeningFactor { get; internal set; }
 
         /// <inheritdoc />
-        public override bool Init(AiCreationData creationData)
+        protected override bool OnInit(AiCreationData creationData)
         {
             // Configurations cannot presently be loaded successfully.
             return false;

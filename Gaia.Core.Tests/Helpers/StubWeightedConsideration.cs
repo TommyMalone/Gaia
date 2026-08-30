@@ -21,7 +21,7 @@ internal sealed class StubWeightedConsideration : WeightedConsiderationBase
     internal int CalculateWeightsCount { get; private set; }
 
     /// <inheritdoc />
-    public override bool Init(AiCreationData creationData)
+    protected override bool OnInit(AiCreationData creationData)
     {
         // Configurations cannot presently be loaded successfully.
         return false;

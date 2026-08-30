@@ -25,7 +25,14 @@ namespace Gaia.Core.Regions
 
         /// <summary>Load the configuration from data. Not yet implemented.</summary>
         /// <returns>True if the configuration was loaded successfully.</returns>
-        public abstract bool Init(AiCreationData creationData);
+        public bool Init(AiCreationData creationData)
+        {
+            return OnInit(creationData);
+        }
+
+        /// <summary>Loads the derived region's own configuration.</summary>
+        /// <returns>True if the configuration was loaded successfully.</returns>
+        protected abstract bool OnInit(AiCreationData creationData);
 
         /// <summary>Tests whether a position is inside the region.</summary>
         public abstract bool IsInRegion(Vector3 position);

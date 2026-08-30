@@ -15,7 +15,7 @@ namespace Gaia.Core.Reasoners
         private int _currentIndex;
 
         /// <inheritdoc />
-        public override bool Init(AiCreationData creationData)
+        protected override bool OnInit(AiCreationData creationData)
         {
             // Configurations cannot presently be loaded successfully.
             return false;

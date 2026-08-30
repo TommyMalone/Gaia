@@ -35,7 +35,7 @@ internal sealed class RecordingWeightFunction : WeightFunctionBase
     internal int DeselectCount { get; private set; }
 
     /// <inheritdoc />
-    public override bool Init(AiCreationData creationData)
+    protected override bool OnInit(AiCreationData creationData)
     {
         // Configurations cannot presently be loaded successfully.
         return false;
@@ -78,13 +78,13 @@ internal sealed class RecordingWeightFunction : WeightFunctionBase
     }
 
     /// <summary>Counts the call in SelectCount.</summary>
-    public override void Select()
+    protected override void OnSelect()
     {
         SelectCount++;
     }
 
     /// <summary>Counts the call in DeselectCount.</summary>
-    public override void Deselect()
+    protected override void OnDeselect()
     {
         DeselectCount++;
     }

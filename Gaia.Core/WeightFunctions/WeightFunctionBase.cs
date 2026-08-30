@@ -13,7 +13,14 @@ namespace Gaia.Core.WeightFunctions
     {
         /// <summary>Load the configuration from data. Not yet implemented.</summary>
         /// <returns>True if the configuration was loaded successfully.</returns>
-        public abstract bool Init(AiCreationData creationData);
+        public bool Init(AiCreationData creationData)
+        {
+            return OnInit(creationData);
+        }
+
+        /// <summary>Loads the derived weight function's own configuration.</summary>
+        /// <returns>True if the configuration was loaded successfully.</returns>
+        protected abstract bool OnInit(AiCreationData creationData);
 
         /// <summary>Converts a bool, which throws NotSupportedException unless overridden.</summary>
         public virtual WeightValues CalculateBool(bool value)
@@ -39,13 +46,25 @@ namespace Gaia.Core.WeightFunctions
             throw new NotSupportedException($"{GetType().Name} cannot convert a string.");
         }
 
-        /// <summary>Called when the associated option is selected.</summary>
-        public virtual void Select()
+        /// <summary>Called when the associated option is selected. OnSelect runs.</summary>
+        public void Select()
+        {
+            OnSelect();
+        }
+
+        /// <summary>Called by Select, so a derived function can act on the moment.</summary>
+        protected virtual void OnSelect()
         {
         }
 
-        /// <summary>Called when the associated option is deselected.</summary>
-        public virtual void Deselect()
+        /// <summary>Called when the associated option is deselected. OnDeselect runs.</summary>
+        public void Deselect()
+        {
+            OnDeselect();
+        }
+
+        /// <summary>Called by Deselect, so a derived function can act on the moment.</summary>
+        protected virtual void OnDeselect()
         {
         }
     }

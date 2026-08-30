@@ -28,7 +28,7 @@ namespace Gaia.Core.Actions
         public override bool IsDone => Reasoner?.IsDone ?? true;
 
         /// <inheritdoc />
-        public override bool Init(AiCreationData creationData)
+        protected override bool OnInit(AiCreationData creationData)
         {
             // Configurations cannot presently be loaded successfully.
             return false;

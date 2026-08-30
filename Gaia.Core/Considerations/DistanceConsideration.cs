@@ -31,7 +31,7 @@ namespace Gaia.Core.Considerations
         public WeightValues MissingTargetWeights { get; internal set; } = WeightValues.Neutral;
 
         /// <inheritdoc />
-        public override bool Init(AiCreationData creationData)
+        protected override bool OnInit(AiCreationData creationData)
         {
             // Configurations cannot presently be loaded successfully.
             return false;

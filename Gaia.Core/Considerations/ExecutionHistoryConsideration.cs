@@ -76,7 +76,7 @@ namespace Gaia.Core.Considerations
         public WeightFunctionBase? SinceLastRunWeightFunction { get; internal set; }
 
         /// <inheritdoc />
-        public override bool Init(AiCreationData creationData)
+        protected override bool OnInit(AiCreationData creationData)
         {
             // Configurations cannot presently be loaded successfully.
             return false;
@@ -105,10 +105,8 @@ namespace Gaia.Core.Considerations
         }
 
         /// <inheritdoc />
-        public override void Select()
+        protected override void OnSelect()
         {
-            base.Select();
-
             _selectedTime = TimeSource.CurrentTime;
 
             // Option.Calculate ran this cycle, so Option.Rank is the one it was selected at.
@@ -122,10 +120,8 @@ namespace Gaia.Core.Considerations
         }
 
         /// <inheritdoc />
-        public override void Deselect()
+        protected override void OnDeselect()
         {
-            base.Deselect();
-
             _deselectedTime = TimeSource.CurrentTime;
             _hasRun = true;
 
