@@ -361,7 +361,7 @@ public class ExecutionHistoryConsiderationSpec
     [Test]
     public void PassesSelectionAlongToEveryWeightFunction()
     {
-        // Any of the four can be one that rolls fresh values, so all of them hear about selection.
+        // Any of the four can be one that rolls fresh values, so selection reaches all of them.
         _consideration.Select();
         _consideration.Deselect();
 

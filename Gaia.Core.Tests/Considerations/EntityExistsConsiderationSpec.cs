@@ -81,7 +81,7 @@ public class EntityExistsConsiderationSpec
     [Test]
     public void ReportsFalseWhenEverythingInTheListHasGone()
     {
-        // A list nobody has cleaned up must not keep an option alive.
+        // A list that was never cleaned up must not keep an option alive.
         StubEntity gone = new("Gone") { IsValid = false };
         _contacts.Add(gone);
 

@@ -14,7 +14,8 @@ namespace Gaia.Core.Entities
         /// <summary>Which way this character is facing.</summary>
         /// <remarks>
         ///     Kept off <see cref="EntityBase" /> on purpose. A contact, a threat or a stimulus has a position but often no
-        ///     meaningful facing, and a rotation that every entity had to carry would be a default nobody wrote most of the time.
+        ///     meaningful facing, and a rotation that every entity had to carry would sit unwritten at its default most of the
+        ///     time.
         /// </remarks>
         public Rotation Rotation { get; set; } = Rotation.Identity;
 

@@ -23,8 +23,8 @@ namespace Gaia.Core.Considerations
 
         /// <summary>What to report when DataStore is null, or it has nothing under VariableName.</summary>
         /// <remarks>
-        ///     Neutral by default, so a variable nobody has written yet leaves its option alone. A configuration that would
-        ///     rather veto the option until the value arrives sets this to do so.
+        ///     Neutral by default, so a variable that has not been written yet leaves its option alone. A configuration that
+        ///     would rather veto the option until the value arrives sets this to do so.
         /// </remarks>
         public WeightValues MissingVariableWeights { get; internal set; } = WeightValues.Neutral;
 

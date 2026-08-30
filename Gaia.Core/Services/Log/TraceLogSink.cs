@@ -6,7 +6,7 @@ namespace Gaia.Core.Services.Log
     /// <summary>The default sink, which writes every entry through <see cref="Trace" />.</summary>
     public sealed class TraceLogSink : ILogSink
     {
-        /// <summary>Always true, since the listeners decide for themselves what to keep.</summary>
+        /// <summary>Always true, since filtering is left to the trace listeners.</summary>
         public bool IsEnabled(LogSeverity severity)
         {
             return true;

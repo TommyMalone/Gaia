@@ -8,8 +8,8 @@ namespace Gaia.Core.Tests.Considerations;
 /// <summary>Covers what separates the four variable considerations, the type each reads and the conversion it reaches.</summary>
 /// <remarks>
 ///     The weight function is stubbed, so what is asserted is which conversion was reached and what value got there,
-///     rather than anything about the conversion itself. The store is a <see cref="BrainBlackboard" /> because it is a
-///     real one and nothing here depends on which kind of store it is.
+///     rather than anything about the conversion itself. The store is a <see cref="BrainBlackboard" /> because any store
+///     would serve and nothing here depends on which kind it is.
 /// </remarks>
 [TestFixture]
 public class VariableConsiderationSpec
@@ -160,7 +160,7 @@ public class VariableConsiderationSpec
     [Test]
     public void ReportsNeutralValuesForAMissingVariableByDefault()
     {
-        // A variable nobody has written yet leaves its option alone rather than vetoing it.
+        // A variable that has not been written yet leaves its option alone rather than vetoing it.
         FloatVariableConsideration consideration = new()
         {
             DataStore = _blackboard,

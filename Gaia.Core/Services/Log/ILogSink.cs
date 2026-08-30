@@ -15,7 +15,10 @@ namespace Gaia.Core.Services.Log
     public interface ILogSink
     {
         /// <summary>Reports whether entries of the given severity go anywhere.</summary>
-        /// <remarks>A caller about to build an expensive message checks this first and skips the work when nobody is listening.</remarks>
+        /// <remarks>
+        ///     A caller about to build an expensive message checks this first and skips the work when the sink would discard
+        ///     it.
+        /// </remarks>
         bool IsEnabled(LogSeverity severity);
 
         /// <summary>Writes one entry.</summary>

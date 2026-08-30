@@ -304,7 +304,7 @@ namespace Gaia.Core.DataStores
             OnTypeMismatch(name, storedValueType, requestedValueType);
         }
 
-        /// <summary>Reports a mismatch if the failed read was one, rather than a name nobody had written.</summary>
+        /// <summary>Reports a mismatch if the failed read was one, rather than a name that was never written.</summary>
         /// <remarks>
         ///     Conditional, so that a release build spends nothing on the extra lookup this needs. A name that was never
         ///     written is an ordinary miss rather than a collision.

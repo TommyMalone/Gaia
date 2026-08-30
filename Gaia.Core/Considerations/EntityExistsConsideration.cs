@@ -16,8 +16,8 @@ namespace Gaia.Core.Considerations
     ///         veto when nothing is found and another veto when something is.
     ///     </para>
     ///     <para>
-    ///         Each entity's <see cref="EntityBase.IsValid" /> is checked rather than the list's Count, so a list nobody has
-    ///         cleaned up cannot keep an option alive after everything in it has gone.
+    ///         Each entity's <see cref="EntityBase.IsValid" /> is checked rather than the list's Count, so a list that was
+    ///         never cleaned up cannot keep an option alive after everything in it has gone.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.1</seealso>

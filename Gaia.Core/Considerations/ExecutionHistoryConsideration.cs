@@ -112,7 +112,7 @@ namespace Gaia.Core.Considerations
             // Option.Calculate ran this cycle, so Option.Rank is the one it was selected at.
             RankWhenLastSelected = Option?.Rank ?? float.MinValue;
 
-            // Any of the four can be one that rolls fresh values, so all of them hear about selection.
+            // Any of the four can be one that rolls fresh values, so selection reaches all of them.
             WhileRunningWeightFunction?.Select();
             FinishedWeightFunction?.Select();
             NeverRunWeightFunction?.Select();

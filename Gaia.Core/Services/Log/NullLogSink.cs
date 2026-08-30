@@ -5,7 +5,7 @@ namespace Gaia.Core.Services.Log
     /// <summary>A sink that discards everything, for a host that wants no logging.</summary>
     public sealed class NullLogSink : ILogSink
     {
-        /// <summary>Always false, so that a caller can skip building messages nobody will see.</summary>
+        /// <summary>Always false, so that a caller can skip building messages this sink would discard.</summary>
         public bool IsEnabled(LogSeverity severity)
         {
             return false;
