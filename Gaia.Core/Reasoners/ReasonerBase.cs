@@ -14,7 +14,7 @@ namespace Gaia.Core.Reasoners
     ///     cycle it rescores every option and lets the derived reasoner choose which, if any, to run.
     /// </summary>
     /// <seealso>"Modular AI", Section 8.5.3, Listing 8.3</seealso>
-    public abstract class ReasonerBase
+    public abstract class ReasonerBase : IAiComponent
     {
         private readonly List<OptionBase> _options = new();
 

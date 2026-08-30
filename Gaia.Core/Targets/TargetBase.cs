@@ -14,7 +14,7 @@ namespace Gaia.Core.Targets
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.5, Listing 8.5</seealso>
-    public abstract class TargetBase
+    public abstract class TargetBase : IAiComponent
     {
         /// <summary>Whether this kind of target represents an entity at all, as opposed to only a position.</summary>
         /// <remarks>

@@ -13,7 +13,7 @@ namespace Gaia.Core.Options
     ///     is chosen.
     /// </summary>
     /// <seealso>"Modular AI", Section 8.3.1, Listing 8.11</seealso>
-    public abstract class OptionBase
+    public abstract class OptionBase : IAiComponent
     {
         private readonly List<ActionBase> _actions = new();
         private readonly ConsiderationSet _considerations = new();
@@ -124,7 +124,7 @@ namespace Gaia.Core.Options
         ///     The default contributes an addend of 1 and a multiplier of 1. An option whose other considerations only
         ///     multiply would otherwise sum its addends to 0, leaving a weight of 0, and could never be selected.
         /// </remarks>
-        private void EnsureTuningConsideration()
+        internal void EnsureTuningConsideration()
         {
             if (_considerations.HasTuning)
             {

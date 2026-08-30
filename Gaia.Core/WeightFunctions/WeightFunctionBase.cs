@@ -9,7 +9,7 @@ namespace Gaia.Core.WeightFunctions
     ///     the measurement a different shape.
     /// </summary>
     /// <seealso>"Modular AI", Section 8.5.2, Listing 8.2</seealso>
-    public abstract class WeightFunctionBase
+    public abstract class WeightFunctionBase : IAiComponent
     {
         /// <summary>Load the configuration from data. Not yet implemented.</summary>
         /// <returns>True if the configuration was loaded successfully.</returns>

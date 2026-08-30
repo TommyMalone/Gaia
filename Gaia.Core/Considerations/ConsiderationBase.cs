@@ -11,11 +11,11 @@ namespace Gaia.Core.Considerations
     /// </summary>
     /// <remarks>
     ///     The addend raises or lowers the option's weight, the multiplier scales it, and a multiplier of 0 is a veto
-    ///     that removes the option from the running entirely. The rank is a priority class that a reasoner may settle before
+    ///     that removes the option from selection entirely. The rank is a priority class that a reasoner may settle before
     ///     comparing weights at all. Considerations are meant to be small and reusable.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.1, Listing 8.1</seealso>
-    public abstract class ConsiderationBase
+    public abstract class ConsiderationBase : IAiComponent
     {
         /// <summary>The addend, multiplier and rank this consideration reported when Calculate last ran.</summary>
         public WeightValues Weights { get; protected set; } = WeightValues.Neutral;

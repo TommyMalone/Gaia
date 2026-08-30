@@ -10,7 +10,7 @@ namespace Gaia.Core.Actions
     ///     through IsDone when there is nothing left to do.
     /// </summary>
     /// <seealso>"Modular AI", Section 8.5.4, Listing 8.4</seealso>
-    public abstract class ActionBase
+    public abstract class ActionBase : IAiComponent
     {
         /// <summary>What this action is called, which is how its entries are recognized in the log.</summary>
         public AiString Name { get; internal set; } = AiString.Empty;

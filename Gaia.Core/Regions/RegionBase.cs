@@ -18,7 +18,7 @@ namespace Gaia.Core.Regions
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.6, Listing 8.6</seealso>
-    public abstract class RegionBase
+    public abstract class RegionBase : IAiComponent
     {
         /// <summary>Where the region draws the numbers that pick a random position.</summary>
         public IRandomSource RandomSource { get; internal set; } = new SystemRandomSource();
