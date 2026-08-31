@@ -1,4 +1,6 @@
-﻿using Gaia.Core.Services.Random;
+﻿using Gaia.Core.Factories;
+using Gaia.Core.Services.Random;
+using Gaia.Core.Tests.Helpers;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Tests.WeightFunctions;
@@ -107,7 +109,7 @@ public class FloatSequenceWeightFunctionSpec
     [Test]
     public void AcceptsAnEntryAtTheSameThresholdAsTheLast()
     {
-        // Equal thresholds are harmless. The earlier entry answers, and the later one is simply never reached.
+        // Equal thresholds are harmless. The earlier entry answers, and the later one is never reached.
         FloatSequenceEntry repeatedEntry = new(300f, WeightValues.Vetoed);
 
         Assert.That(() => _weightFunction.AddEntry(repeatedEntry), Throws.Nothing);
@@ -156,6 +158,129 @@ public class FloatSequenceWeightFunctionSpec
         {
             Assert.That(fixedEntry.IsRandomized, Is.False);
             Assert.That(randomizedEntry.IsRandomized, Is.True);
+        });
+    }
+
+    [Test]
+    public void LoadsItsEntriesAndDefaultInOrder()
+    {
+        const string snippet = """
+                               <WeightFunction Type="FloatSequence">
+                                   <Entry Threshold="50" Multiplier="0"/>
+                                   <Entry Threshold="300" Addend="1"/>
+                                   <Default Multiplier="0"/>
+                               </WeightFunction>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        FloatSequenceWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.CalculateFloat(40f), Is.EqualTo(WeightValues.Vetoed), "below the first threshold");
+            Assert.That(loaded.CalculateFloat(100f), Is.EqualTo(new WeightValues(1f, 1f, float.MinValue)),
+                "between the thresholds");
+            Assert.That(loaded.CalculateFloat(400f), Is.EqualTo(WeightValues.Vetoed), "above both, the default");
+            Assert.That(logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void RollsALoadedEntryWhenItsOptionIsSelected()
+    {
+        const string snippet = """
+                               <WeightFunction Type="FloatSequence">
+                                   <Entry ThresholdMin="10" ThresholdMax="20" Multiplier="0"/>
+                               </WeightFunction>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        creationData.RandomSource = new FixedRandomSource(0.5f);
+
+        FloatSequenceWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+
+            loaded.Select();
+
+            // A roll of 0.5 lands the threshold at 15, between the loaded 10 and 20.
+            Assert.That(loaded.CalculateFloat(14f), Is.EqualTo(WeightValues.Vetoed));
+            Assert.That(loaded.CalculateFloat(16f), Is.EqualTo(WeightValues.Neutral));
+        });
+    }
+
+    [Test]
+    public void RefusesAnEntryMixingItsThresholdForms()
+    {
+        const string snippet = """
+                               <WeightFunction Type="FloatSequence">
+                                   <Entry Threshold="50" ThresholdMin="10" ThresholdMax="20"/>
+                               </WeightFunction>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        FloatSequenceWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 2, the Entry element mixes Threshold with ThresholdMin and ThresholdMax",
+            }));
+        });
+    }
+
+    [Test]
+    public void RefusesAnEntryOutOfOrder()
+    {
+        const string snippet = """
+                               <WeightFunction Type="FloatSequence">
+                                   <Entry Threshold="300" Addend="1"/>
+                                   <Entry Threshold="50" Multiplier="0"/>
+                               </WeightFunction>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        FloatSequenceWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 3, the Entry element is out of order, it starts at 50 and the entry before " +
+                "it reaches 300",
+            }));
+        });
+    }
+
+    [Test]
+    public void RefusesARangeWhoseMaxIsBelowItsMin()
+    {
+        const string snippet = """
+                               <WeightFunction Type="FloatSequence">
+                                   <Entry ThresholdMin="20" ThresholdMax="10" Multiplier="0"/>
+                               </WeightFunction>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        FloatSequenceWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 2, the Entry element's ThresholdMax 10 is below its ThresholdMin 20",
+            }));
         });
     }
 }

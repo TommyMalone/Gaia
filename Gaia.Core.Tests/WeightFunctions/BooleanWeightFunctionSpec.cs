@@ -1,4 +1,6 @@
-﻿using Gaia.Core.WeightFunctions;
+﻿using Gaia.Core.Factories;
+using Gaia.Core.Tests.Helpers;
+using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Tests.WeightFunctions;
 
@@ -38,6 +40,72 @@ public class BooleanWeightFunctionSpec
             Assert.That(() => _weightFunction.CalculateFloat(1f), Throws.TypeOf<NotSupportedException>());
             Assert.That(() => _weightFunction.CalculateInt(1), Throws.TypeOf<NotSupportedException>());
             Assert.That(() => _weightFunction.CalculateString("true"), Throws.TypeOf<NotSupportedException>());
+        });
+    }
+
+    [Test]
+    public void LoadsEachAnswersValuesFromItsElement()
+    {
+        const string snippet = """
+                               <WeightFunction Type="Boolean">
+                                   <True Addend="2"/>
+                                   <False Multiplier="0"/>
+                               </WeightFunction>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        BooleanWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.CalculateBool(true), Is.EqualTo(new WeightValues(2f, 1f, float.MinValue)));
+            Assert.That(loaded.CalculateBool(false), Is.EqualTo(WeightValues.Vetoed));
+            Assert.That(logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void LeavesAnUnmentionedAnswerNeutral()
+    {
+        const string snippet = """
+                               <WeightFunction Type="Boolean">
+                                   <False Multiplier="0"/>
+                               </WeightFunction>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        BooleanWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.CalculateBool(true), Is.EqualTo(WeightValues.Neutral));
+        });
+    }
+
+    [Test]
+    public void RefusesElementsItDoesNotTake()
+    {
+        const string snippet = """
+                               <WeightFunction Type="Boolean">
+                                   <Maybe/>
+                               </WeightFunction>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        BooleanWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 2, the WeightFunction element does not take Maybe elements",
+            }));
         });
     }
 }

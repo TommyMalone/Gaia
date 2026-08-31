@@ -55,5 +55,17 @@ namespace Gaia.Core.Factories
                 RandomSource = RandomSource,
             };
         }
+
+        /// <summary>Reports a loading error against the node, filed under the node's source document name.</summary>
+        internal void ReportError(string message)
+        {
+            LogSink.LogError(Node.SourceDocumentName, message);
+        }
+
+        /// <summary>Reports a loading warning against the node, filed under the node's source document name.</summary>
+        internal void ReportWarning(string message)
+        {
+            LogSink.LogWarning(Node.SourceDocumentName, message);
+        }
     }
 }

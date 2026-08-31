@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Gaia.Core.Services.Log;
 using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
 
@@ -73,7 +72,7 @@ namespace Gaia.Core.Factories
         /// <summary>Reports a creation failure, filed under the node's source name.</summary>
         private static void Report(AiCreationData creationData, string message)
         {
-            creationData.LogSink.LogError(creationData.Node.SourceDocumentName, message);
+            creationData.ReportError(message);
         }
     }
 }

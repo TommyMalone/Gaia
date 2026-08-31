@@ -76,6 +76,16 @@ namespace Gaia.Core.Specifications
             _attributes[name] = value;
         }
 
+        /// <summary>Reports whether the element carries the named attribute.</summary>
+        /// <remarks>
+        ///     What a loader checks before reading an optional attribute whose default is not the accessor's, so that absence
+        ///     keeps the default while malformed text still fails the read.
+        /// </remarks>
+        public bool HasAttribute(AiString name)
+        {
+            return _attributes.ContainsKey(name);
+        }
+
         /// <summary>Reads an optional bool attribute. Absence is silent, malformed text is reported.</summary>
         public bool TryGetBool(AiString name, out bool value)
         {
@@ -259,7 +269,11 @@ namespace Gaia.Core.Specifications
         }
 
         /// <summary>Reports an attribute whose text cannot be read as the kind that was asked for.</summary>
-        private void ReportMalformed(AiString name, string text, string expected)
+        /// <remarks>
+        ///     Internal rather than private so that a loader can also refuse a value that parsed but has no meaning the
+        ///     configuration could intend, a negative multiplier for one, in the same located wording.
+        /// </remarks>
+        internal void ReportMalformed(AiString name, string text, string expected)
         {
             _logSink.LogError(SourceDocumentName,
                 $"Line {LineNumber}, the {Name.Text} element's {name.Text} is not {expected}, it reads \"{text}\"");

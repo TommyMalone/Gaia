@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Gaia.Core.Factories;
+using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
 
 namespace Gaia.Core.WeightFunctions
@@ -15,7 +16,16 @@ namespace Gaia.Core.WeightFunctions
     /// <seealso>"Modular AI", Section 8.5.2</seealso>
     public sealed class StringWeightFunction : WeightFunctionBase
     {
+        private static readonly AiString DefaultElement = "Default";
+        private static readonly AiString EntryElement = "Entry";
+        private static readonly AiString TextAttribute = "Text";
+
         private readonly Dictionary<AiString, WeightValues> _entries = new();
+
+        /// <summary>Creates a function with no entries that reports Neutral for every input until a configuration loads.</summary>
+        internal StringWeightFunction() : this(WeightValues.Neutral)
+        {
+        }
 
         /// <summary>Creates a function with no entries that reports the given values for every input.</summary>
         internal StringWeightFunction(WeightValues defaultWeights)
@@ -35,8 +45,38 @@ namespace Gaia.Core.WeightFunctions
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            // Configurations cannot presently be loaded successfully.
-            return false;
+            SpecificationNode node = creationData.Node;
+
+            foreach (SpecificationNode child in node.Children)
+            {
+                if (child.Name == DefaultElement)
+                {
+                    if (!WeightValues.TryRead(child, out WeightValues defaultWeights))
+                    {
+                        return false;
+                    }
+
+                    DefaultWeights = defaultWeights;
+                }
+                else if (child.Name == EntryElement)
+                {
+                    if (!child.ReadString(TextAttribute, out string text) ||
+                        !WeightValues.TryRead(child, out WeightValues weights))
+                    {
+                        return false;
+                    }
+
+                    AddEntry(text, weights);
+                }
+                else
+                {
+                    creationData.ReportError(
+                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <inheritdoc />

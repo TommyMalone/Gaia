@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using Gaia.Core.Factories;
 using Gaia.Core.Services.Random;
+using Gaia.Core.Specifications;
+using Gaia.Core.Strings;
 
 namespace Gaia.Core.WeightFunctions
 {
@@ -20,7 +22,18 @@ namespace Gaia.Core.WeightFunctions
     /// <seealso>"Modular AI", Section 8.5.2</seealso>
     public sealed class FloatSequenceWeightFunction : WeightFunctionBase
     {
+        private static readonly AiString DefaultElement = "Default";
+        private static readonly AiString EntryElement = "Entry";
+        private static readonly AiString ThresholdAttribute = "Threshold";
+        private static readonly AiString ThresholdMaxAttribute = "ThresholdMax";
+        private static readonly AiString ThresholdMinAttribute = "ThresholdMin";
+
         private readonly List<FloatSequenceEntry> _entries = new();
+
+        /// <summary>Creates a function with no entries that reports Neutral for every input until a configuration loads.</summary>
+        internal FloatSequenceWeightFunction() : this(WeightValues.Neutral)
+        {
+        }
 
         /// <summary>Creates a function with no entries that reports the given values for every input.</summary>
         internal FloatSequenceWeightFunction(WeightValues defaultWeights)
@@ -40,8 +53,37 @@ namespace Gaia.Core.WeightFunctions
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            // Configurations cannot presently be loaded successfully.
-            return false;
+            SpecificationNode node = creationData.Node;
+
+            RandomSource = creationData.RandomSource;
+
+            foreach (SpecificationNode child in node.Children)
+            {
+                if (child.Name == DefaultElement)
+                {
+                    if (!WeightValues.TryRead(child, out WeightValues defaultWeights))
+                    {
+                        return false;
+                    }
+
+                    DefaultWeights = defaultWeights;
+                }
+                else if (child.Name == EntryElement)
+                {
+                    if (!TryLoadEntry(child, creationData))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    creationData.ReportError(
+                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>Adds an entry. Entries must be added in ascending order of <see cref="FloatSequenceEntry.Threshold" />.</summary>
@@ -97,6 +139,72 @@ namespace Gaia.Core.WeightFunctions
             {
                 entry.RollThreshold(RandomSource);
             }
+        }
+
+        /// <summary>Loads one entry from an Entry element, in either its fixed or its rolled threshold form.</summary>
+        /// <remarks>
+        ///     The checks <see cref="AddEntry" /> and the entry's constructor enforce with exceptions are made here first and
+        ///     reported through the sink instead, so a configuration mistake reads as a located error rather than a thrown
+        ///     exception.
+        /// </remarks>
+        private bool TryLoadEntry(SpecificationNode entryNode, AiCreationData creationData)
+        {
+            float thresholdMin;
+            float thresholdMax;
+
+            bool hasRange = entryNode.HasAttribute(ThresholdMinAttribute) ||
+                            entryNode.HasAttribute(ThresholdMaxAttribute);
+
+            if (hasRange && entryNode.HasAttribute(ThresholdAttribute))
+            {
+                creationData.ReportError(
+                    $"Line {entryNode.LineNumber}, the {entryNode.Name.Text} element mixes Threshold with ThresholdMin " +
+                    "and ThresholdMax");
+                return false;
+            }
+
+            if (hasRange)
+            {
+                if (!entryNode.ReadFloat(ThresholdMinAttribute, out thresholdMin) ||
+                    !entryNode.ReadFloat(ThresholdMaxAttribute, out thresholdMax))
+                {
+                    return false;
+                }
+
+                if (thresholdMax < thresholdMin)
+                {
+                    creationData.ReportError(
+                        $"Line {entryNode.LineNumber}, the {entryNode.Name.Text} element's ThresholdMax {thresholdMax} " +
+                        $"is below its ThresholdMin {thresholdMin}");
+                    return false;
+                }
+            }
+            else
+            {
+                if (!entryNode.ReadFloat(ThresholdAttribute, out float threshold))
+                {
+                    return false;
+                }
+
+                thresholdMin = threshold;
+                thresholdMax = threshold;
+            }
+
+            if (_entries.Count > 0 && thresholdMin < _entries[_entries.Count - 1].ThresholdMax)
+            {
+                creationData.ReportError(
+                    $"Line {entryNode.LineNumber}, the {entryNode.Name.Text} element is out of order, it starts at " +
+                    $"{thresholdMin} and the entry before it reaches {_entries[_entries.Count - 1].ThresholdMax}");
+                return false;
+            }
+
+            if (!WeightValues.TryRead(entryNode, out WeightValues weights))
+            {
+                return false;
+            }
+
+            AddEntry(new FloatSequenceEntry(thresholdMin, thresholdMax, weights));
+            return true;
         }
     }
 }

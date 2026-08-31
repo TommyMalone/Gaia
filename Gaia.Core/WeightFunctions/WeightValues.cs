@@ -1,4 +1,6 @@
 ﻿using System;
+using Gaia.Core.Specifications;
+using Gaia.Core.Strings;
 
 namespace Gaia.Core.WeightFunctions
 {
@@ -16,7 +18,8 @@ namespace Gaia.Core.WeightFunctions
         /// <summary>How much of what the addends asked for this consideration will allow.</summary>
         /// <remarks>
         ///     Multiplied with the option's other multipliers. A value of 0 vetoes the option outright however large its
-        ///     addends are, and a value in between weakens it without vetoing it. The identity is 1.
+        ///     addends are, and a value in between weakens it without vetoing it. The identity is 1. A value below 0 has no
+        ///     meaning, two of them would cancel to a positive weight, so TryRead refuses one.
         /// </remarks>
         public float Multiplier { get; }
 
@@ -42,6 +45,53 @@ namespace Gaia.Core.WeightFunctions
 
         /// <summary>Vetoes the option, whatever the rest of its considerations report.</summary>
         public static readonly WeightValues Vetoed = new(0f, 0f, float.MinValue);
+
+        private static readonly AiString AddendAttribute = "Addend";
+        private static readonly AiString MultiplierAttribute = "Multiplier";
+        private static readonly AiString RankAttribute = "Rank";
+
+        /// <summary>Reads the optional Addend, Multiplier and Rank attributes of an element as one set of weight values.</summary>
+        /// <remarks>
+        ///     An absent attribute keeps its identity value, so an element saying nothing reads as <see cref="Neutral" /> and
+        ///     a veto is written Multiplier="0". Malformed text fails the read once the node has reported it, and so does a
+        ///     multiplier below 0, which parses but has no meaning a configuration could intend.
+        /// </remarks>
+        internal static bool TryRead(SpecificationNode node, out WeightValues values)
+        {
+            values = Neutral;
+
+            float addend = 0f;
+            float multiplier = 1f;
+            float rank = float.MinValue;
+
+            if (node.HasAttribute(AddendAttribute) && !node.ReadFloat(AddendAttribute, out addend))
+            {
+                return false;
+            }
+
+            if (node.HasAttribute(MultiplierAttribute))
+            {
+                if (!node.ReadFloat(MultiplierAttribute, out multiplier))
+                {
+                    return false;
+                }
+
+                if (multiplier < 0f)
+                {
+                    node.TryGetString(MultiplierAttribute, out string multiplierText);
+                    node.ReportMalformed(MultiplierAttribute, multiplierText, "0 or above");
+                    return false;
+                }
+            }
+
+            if (node.HasAttribute(RankAttribute) && !node.ReadFloat(RankAttribute, out rank))
+            {
+                return false;
+            }
+
+            values = new WeightValues(addend, multiplier, rank);
+            return true;
+        }
 
         public bool Equals(WeightValues other)
         {

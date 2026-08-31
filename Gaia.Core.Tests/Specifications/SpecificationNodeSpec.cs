@@ -127,4 +127,15 @@ public class SpecificationNodeSpec
             }));
         });
     }
+
+    [Test]
+    public void KnowsWhichAttributesTheElementCarries()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(_node.HasAttribute("Radius"), Is.True);
+            Assert.That(_node.HasAttribute("Missing"), Is.False);
+            Assert.That(_logSink.Entries, Is.Empty, "presence checks report nothing");
+        });
+    }
 }

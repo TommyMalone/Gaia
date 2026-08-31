@@ -11,15 +11,15 @@ namespace Gaia.Core.WeightFunctions
     /// <seealso>"Modular AI", Section 8.5.2, Listing 8.2</seealso>
     public abstract class WeightFunctionBase : IAiComponent
     {
-        /// <summary>Load the configuration from data. Not yet implemented.</summary>
-        /// <returns>True if the configuration was loaded successfully.</returns>
+        /// <summary>Loads this function's configuration from the creation data's node.</summary>
+        /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         public bool Init(AiCreationData creationData)
         {
             return OnInit(creationData);
         }
 
-        /// <summary>Loads the derived weight function's own configuration.</summary>
-        /// <returns>True if the configuration was loaded successfully.</returns>
+        /// <summary>Loads the derived function's own configuration.</summary>
+        /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         protected abstract bool OnInit(AiCreationData creationData);
 
         /// <summary>Converts a bool, which throws NotSupportedException unless overridden.</summary>

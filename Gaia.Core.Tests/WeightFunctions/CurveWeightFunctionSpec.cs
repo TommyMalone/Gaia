@@ -1,4 +1,6 @@
 ﻿using Gaia.Core.Curves;
+using Gaia.Core.Factories;
+using Gaia.Core.Tests.Helpers;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Tests.WeightFunctions;
@@ -66,6 +68,21 @@ public class CurveWeightFunctionSpec
     }
 
     [Test]
+    public void ClampsAMultiplierCurveAtTheVeto()
+    {
+        Curve divingCurve = BuildStraightLine(1f, -1f);
+
+        CurveWeightFunction weightFunction = new() { MultiplierCurve = divingCurve };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(weightFunction.CalculateFloat(0f).Multiplier, Is.EqualTo(1f).Within(Tolerance));
+            Assert.That(weightFunction.CalculateFloat(10f).Multiplier, Is.EqualTo(0f),
+                "below 0 clamps to the veto rather than flipping the weight");
+        });
+    }
+
+    [Test]
     public void ReportsNeutralValuesWithNoCurves()
     {
         CurveWeightFunction weightFunction = new();
@@ -108,6 +125,112 @@ public class CurveWeightFunctionSpec
         {
             Assert.That(() => weightFunction.CalculateBool(true), Throws.TypeOf<NotSupportedException>());
             Assert.That(() => weightFunction.CalculateString("Enemy"), Throws.TypeOf<NotSupportedException>());
+        });
+    }
+
+    [Test]
+    public void LoadsItsCurvesAndRank()
+    {
+        const string snippet = """
+                               <WeightFunction Type="Curve" Rank="5">
+                                   <AddendCurve>
+                                       <Keyframe Input="0" Value="0"/>
+                                       <Keyframe Input="10" Value="4"/>
+                                   </AddendCurve>
+                                   <MultiplierCurve>
+                                       <Keyframe Input="0" Value="1"/>
+                                   </MultiplierCurve>
+                               </WeightFunction>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        CurveWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+
+            WeightValues atTheTop = loaded.CalculateFloat(10f);
+
+            Assert.That(atTheTop.Addend, Is.EqualTo(4f).Within(Tolerance));
+            Assert.That(atTheTop.Multiplier, Is.EqualTo(1f).Within(Tolerance));
+            Assert.That(atTheTop.Rank, Is.EqualTo(5f));
+            Assert.That(logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void StraightensACurveMarkedLinear()
+    {
+        const string snippet = """
+                               <WeightFunction Type="Curve">
+                                   <AddendCurve Linear="true">
+                                       <Keyframe Input="0" Value="0"/>
+                                       <Keyframe Input="10" Value="4"/>
+                                   </AddendCurve>
+                               </WeightFunction>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        CurveWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+
+            // The default flat tangents would ease through 0.625 here. The straight line passes through 1 exactly.
+            Assert.That(loaded.CalculateFloat(2.5f).Addend, Is.EqualTo(1f).Within(Tolerance));
+        });
+    }
+
+    [Test]
+    public void WarnsAboutAMultiplierCurveAuthoredBelowZero()
+    {
+        const string snippet = """
+                               <WeightFunction Type="Curve">
+                                   <MultiplierCurve>
+                                       <Keyframe Input="0" Value="1"/>
+                                       <Keyframe Input="10" Value="-1"/>
+                                   </MultiplierCurve>
+                               </WeightFunction>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        CurveWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True, "a diving curve loads, clamped rather than refused");
+            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            {
+                "Warning guard.xml Line 2, the MultiplierCurve element dips below 0 and will be clamped to 0",
+            }));
+        });
+    }
+
+    [Test]
+    public void RefusesACurveElementWithNoKeyframes()
+    {
+        const string snippet = """
+                               <WeightFunction Type="Curve">
+                                   <AddendCurve/>
+                               </WeightFunction>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        CurveWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 2, the AddendCurve element has no Keyframe elements",
+            }));
         });
     }
 

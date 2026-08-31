@@ -13,13 +13,23 @@ namespace Gaia.Core.Factories
     ///     children of any kind.
     /// </summary>
     /// <remarks>
-    ///     The set starts empty. Each component is registered in the same change that implements its loading, so a
-    ///     registered name always means a loadable component, and a game registers its own components on the same set before
-    ///     loading begins. What registration records is also the authoring tool's catalog, which is why it lives in one place.
+    ///     The constructor registers every built-in component whose loading is implemented, so a registered name always
+    ///     means a loadable component, and a game registers its own components on the same set before loading begins. What
+    ///     registration records is also the authoring tool's catalog, which is why it lives in one place.
     /// </remarks>
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>
     public sealed class FactorySet
     {
+        /// <summary>Creates a set holding every built-in component that can load itself.</summary>
+        public FactorySet()
+        {
+            WeightFunctions.Register("Constant", () => new ConstantWeightFunction());
+            WeightFunctions.Register("Boolean", () => new BooleanWeightFunction());
+            WeightFunctions.Register("String", () => new StringWeightFunction());
+            WeightFunctions.Register("FloatSequence", () => new FloatSequenceWeightFunction());
+            WeightFunctions.Register("Curve", () => new CurveWeightFunction());
+        }
+
         /// <summary>Builds the actions options run.</summary>
         public ComponentFactory<ActionBase> Actions { get; } = new();
 
