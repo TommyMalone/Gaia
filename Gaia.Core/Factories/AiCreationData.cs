@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Services.Log;
+﻿using Gaia.Core.Blackboards;
+using Gaia.Core.Services.Log;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Services.Time;
 using Gaia.Core.Specifications;
@@ -12,8 +13,8 @@ namespace Gaia.Core.Factories
     /// </summary>
     /// <remarks>
     ///     A composite descends by calling <see cref="ForChild" /> with one of its node's children, so the whole tree is
-    ///     built from one creation data that only ever swaps its node. Contextual back-references such as blackboards arrive
-    ///     here once a component's loading needs them.
+    ///     built from one creation data that only ever swaps its node. Contextual back-references arrive as component loading
+    ///     needs them, the blackboards first.
     /// </remarks>
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>
     public sealed class AiCreationData
@@ -44,6 +45,12 @@ namespace Gaia.Core.Factories
         /// <summary>Where a component that rolls reads its randomness, pulled by its Init.</summary>
         public IRandomSource RandomSource { get; internal set; } = new SystemRandomSource();
 
+        /// <summary>The blackboard of the brain being built, or null until a host supplies one.</summary>
+        public BrainBlackboard? BrainBlackboard { get; internal set; }
+
+        /// <summary>The blackboard every character shares, or null until a host supplies one.</summary>
+        public WorldBlackboard? WorldBlackboard { get; internal set; }
+
         /// <summary>The creation data for one of this node's children, the same everything with the child's node.</summary>
         public AiCreationData ForChild(SpecificationNode childNode)
         {
@@ -53,6 +60,8 @@ namespace Gaia.Core.Factories
                 LogChannel = LogChannel,
                 TimeSource = TimeSource,
                 RandomSource = RandomSource,
+                BrainBlackboard = BrainBlackboard,
+                WorldBlackboard = WorldBlackboard,
             };
         }
 

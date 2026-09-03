@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using Gaia.Core.Factories;
 using Gaia.Core.Options;
+using Gaia.Core.Specifications;
+using Gaia.Core.Strings;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Considerations
@@ -10,6 +12,8 @@ namespace Gaia.Core.Considerations
     /// <seealso>"Modular AI", Section 8.6.2.4, Listing 8.10</seealso>
     public sealed class ConsiderationSet
     {
+        private static readonly AiString ConsiderationElement = "Consideration";
+
         /// <summary>The considerations in the set, in the order they were added.</summary>
         private readonly List<ConsiderationBase> _considerations = new();
 
@@ -31,12 +35,31 @@ namespace Gaia.Core.Considerations
         /// <summary>True if this set already contains a <see cref="TuningConsideration" />.</summary>
         internal bool HasTuning { get; private set; }
 
-        /// <summary>Load the configuration from data. Not yet implemented.</summary>
-        /// <returns>True if the configuration was loaded successfully.</returns>
+        /// <summary>Loads one consideration into the set for each Consideration child the node holds.</summary>
+        /// <returns>True when every child loaded. False after reporting what went wrong.</returns>
         internal bool Init(AiCreationData creationData)
         {
-            // Configurations cannot presently be loaded successfully.
-            return false;
+            SpecificationNode node = creationData.Node;
+
+            foreach (SpecificationNode child in node.Children)
+            {
+                if (child.Name != ConsiderationElement)
+                {
+                    creationData.ReportError(
+                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
+                    return false;
+                }
+
+                if (!creationData.Factories.Considerations.TryCreate(creationData.ForChild(child),
+                        out ConsiderationBase? consideration))
+                {
+                    return false;
+                }
+
+                Add(consideration!);
+            }
+
+            return true;
         }
 
         /// <summary>Evaluates every consideration and combines the results.</summary>

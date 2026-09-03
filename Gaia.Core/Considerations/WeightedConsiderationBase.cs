@@ -1,4 +1,7 @@
-﻿using Gaia.Core.WeightFunctions;
+﻿using Gaia.Core.Factories;
+using Gaia.Core.Specifications;
+using Gaia.Core.Strings;
+using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Considerations
 {
@@ -14,11 +17,26 @@ namespace Gaia.Core.Considerations
     /// <seealso>"Modular AI", Section 8.5.2</seealso>
     public abstract class WeightedConsiderationBase : ConsiderationBase
     {
+        internal static readonly AiString WeightFunctionElement = "WeightFunction";
+
         /// <summary>
         ///     The weight function this consideration hands its query result to. A consideration with none reports neutral
         ///     values.
         /// </summary>
         public WeightFunctionBase? WeightFunction { get; internal set; }
+
+        /// <summary>Builds a WeightFunction child element into <see cref="WeightFunction" />.</summary>
+        internal bool TryLoadWeightFunction(SpecificationNode child, AiCreationData creationData)
+        {
+            if (!creationData.Factories.WeightFunctions.TryCreate(creationData.ForChild(child),
+                    out WeightFunctionBase? weightFunction))
+            {
+                return false;
+            }
+
+            WeightFunction = weightFunction;
+            return true;
+        }
 
         /// <inheritdoc />
         public override void Calculate()

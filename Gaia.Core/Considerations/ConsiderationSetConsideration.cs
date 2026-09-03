@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Gaia.Core.Factories;
 using Gaia.Core.Options;
 using Gaia.Core.WeightFunctions;
@@ -17,6 +18,11 @@ namespace Gaia.Core.Considerations
     {
         private readonly ConsiderationSet _set = new();
 
+        /// <summary>Creates a consideration whose contained set starts empty until a configuration loads.</summary>
+        internal ConsiderationSetConsideration() : this(Array.Empty<ConsiderationBase>())
+        {
+        }
+
         /// <summary>Creates a consideration whose contained set holds the given considerations.</summary>
         internal ConsiderationSetConsideration(IEnumerable<ConsiderationBase> considerations)
         {
@@ -29,9 +35,7 @@ namespace Gaia.Core.Considerations
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            // Configurations cannot presently be loaded successfully.
-            _set.Init(creationData);
-            return false;
+            return _set.Init(creationData);
         }
 
         /// <summary>

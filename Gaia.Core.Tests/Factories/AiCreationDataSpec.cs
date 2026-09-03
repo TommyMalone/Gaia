@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Factories;
+﻿using Gaia.Core.Blackboards;
+using Gaia.Core.Factories;
 using Gaia.Core.Services.Log;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Services.Time;
@@ -45,6 +46,8 @@ public class AiCreationDataSpec
             Assert.That(creationData.LogChannel, Is.EqualTo(AiString.Empty));
             Assert.That(creationData.TimeSource, Is.InstanceOf<SystemTimeSource>());
             Assert.That(creationData.RandomSource, Is.InstanceOf<SystemRandomSource>());
+            Assert.That(creationData.BrainBlackboard, Is.Null);
+            Assert.That(creationData.WorldBlackboard, Is.Null);
         });
     }
 
@@ -53,6 +56,8 @@ public class AiCreationDataSpec
     {
         ManualTimeSource timeSource = new();
         FixedRandomSource randomSource = new(0.5f);
+        BrainBlackboard brainBlackboard = new();
+        WorldBlackboard worldBlackboard = new();
         AiString guardChannel = "Guard";
 
         AiCreationData creationData = new(_root, _factories)
@@ -61,6 +66,8 @@ public class AiCreationDataSpec
             LogChannel = guardChannel,
             TimeSource = timeSource,
             RandomSource = randomSource,
+            BrainBlackboard = brainBlackboard,
+            WorldBlackboard = worldBlackboard,
         };
 
         AiCreationData childData = creationData.ForChild(_root.Children[0]);
@@ -73,6 +80,8 @@ public class AiCreationDataSpec
             Assert.That(childData.LogChannel, Is.EqualTo(guardChannel));
             Assert.That(childData.TimeSource, Is.SameAs(timeSource));
             Assert.That(childData.RandomSource, Is.SameAs(randomSource));
+            Assert.That(childData.BrainBlackboard, Is.SameAs(brainBlackboard));
+            Assert.That(childData.WorldBlackboard, Is.SameAs(worldBlackboard));
         });
     }
 }

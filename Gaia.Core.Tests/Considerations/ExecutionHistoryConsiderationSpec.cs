@@ -1,4 +1,5 @@
 ﻿using Gaia.Core.Considerations;
+using Gaia.Core.Factories;
 using Gaia.Core.Services.Time;
 using Gaia.Core.Tests.Helpers;
 using Gaia.Core.WeightFunctions;
@@ -397,5 +398,35 @@ public class ExecutionHistoryConsiderationSpec
     {
         _option.Calculate();
         _option.Select();
+    }
+
+    [Test]
+    public void LoadsItsRoleWeightFunctionsAndRetention()
+    {
+        const string snippet = """
+                               <Consideration Type="ExecutionHistory" RankRetentionFactor="0.5">
+                                   <WhileRunning Type="Constant" Addend="1"/>
+                                   <Finished Type="Constant" Multiplier="0"/>
+                                   <NeverRun Type="Constant" Addend="2"/>
+                                   <SinceLastRun Type="FloatSequence">
+                                       <Entry Threshold="5" Multiplier="0"/>
+                                   </SinceLastRun>
+                               </Consideration>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        ExecutionHistoryConsideration loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.RankRetentionFactor, Is.EqualTo(0.5f));
+            Assert.That(loaded.WhileRunningWeightFunction, Is.InstanceOf<ConstantWeightFunction>());
+            Assert.That(loaded.FinishedWeightFunction, Is.InstanceOf<ConstantWeightFunction>());
+            Assert.That(loaded.NeverRunWeightFunction, Is.InstanceOf<ConstantWeightFunction>());
+            Assert.That(loaded.SinceLastRunWeightFunction, Is.InstanceOf<FloatSequenceWeightFunction>());
+            Assert.That(logSink.Entries, Is.Empty);
+        });
     }
 }

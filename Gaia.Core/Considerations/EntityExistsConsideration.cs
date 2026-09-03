@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using Gaia.Core.DataStores;
 using Gaia.Core.Entities;
-using Gaia.Core.Factories;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Considerations
@@ -23,13 +22,6 @@ namespace Gaia.Core.Considerations
     /// <seealso>"Modular AI", Section 8.5.1</seealso>
     public sealed class EntityExistsConsideration : VariableConsiderationBase
     {
-        /// <inheritdoc />
-        protected override bool OnInit(AiCreationData creationData)
-        {
-            // Configurations cannot presently be loaded successfully.
-            return false;
-        }
-
         /// <inheritdoc />
         protected override WeightValues CalculateWeights(WeightFunctionBase weightFunction, DataStoreBase dataStore)
         {

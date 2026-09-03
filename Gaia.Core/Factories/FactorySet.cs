@@ -23,6 +23,15 @@ namespace Gaia.Core.Factories
         /// <summary>Creates a set holding every built-in component that can load itself.</summary>
         public FactorySet()
         {
+            Considerations.Register("BooleanVariable", () => new BooleanVariableConsideration());
+            Considerations.Register("ConsiderationSet", () => new ConsiderationSetConsideration());
+            Considerations.Register("EntityExists", () => new EntityExistsConsideration());
+            Considerations.Register("ExecutionHistory", () => new ExecutionHistoryConsideration());
+            Considerations.Register("FloatVariable", () => new FloatVariableConsideration());
+            Considerations.Register("IntVariable", () => new IntVariableConsideration());
+            Considerations.Register("StringVariable", () => new StringVariableConsideration());
+            Considerations.Register("Tuning", () => new TuningConsideration());
+
             WeightFunctions.Register("Constant", () => new ConstantWeightFunction());
             WeightFunctions.Register("Boolean", () => new BooleanWeightFunction());
             WeightFunctions.Register("String", () => new StringWeightFunction());

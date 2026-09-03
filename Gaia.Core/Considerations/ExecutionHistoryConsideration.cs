@@ -1,6 +1,8 @@
 ﻿using Gaia.Core.Factories;
 using Gaia.Core.Options;
 using Gaia.Core.Services.Time;
+using Gaia.Core.Specifications;
+using Gaia.Core.Strings;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Considerations
@@ -25,6 +27,12 @@ namespace Gaia.Core.Considerations
     /// <seealso>"Modular AI", Section 8.5.2</seealso>
     public sealed class ExecutionHistoryConsideration : ConsiderationBase
     {
+        private static readonly AiString FinishedElement = "Finished";
+        private static readonly AiString NeverRunElement = "NeverRun";
+        private static readonly AiString RankRetentionFactorAttribute = "RankRetentionFactor";
+        private static readonly AiString SinceLastRunElement = "SinceLastRun";
+        private static readonly AiString WhileRunningElement = "WhileRunning";
+
         /// <summary>The time the option was most recently deselected, meaningful once _hasRun is true.</summary>
         private Seconds _deselectedTime;
 
@@ -78,8 +86,69 @@ namespace Gaia.Core.Considerations
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            // Configurations cannot presently be loaded successfully.
-            return false;
+            SpecificationNode node = creationData.Node;
+
+            TimeSource = creationData.TimeSource;
+
+            if (node.HasAttribute(RankRetentionFactorAttribute))
+            {
+                if (!node.ReadFloat(RankRetentionFactorAttribute, out float rankRetentionFactor))
+                {
+                    return false;
+                }
+
+                RankRetentionFactor = rankRetentionFactor;
+            }
+
+            foreach (SpecificationNode child in node.Children)
+            {
+                WeightFunctionBase? weightFunction;
+
+                if (child.Name == WhileRunningElement)
+                {
+                    if (!TryLoadRoleWeightFunction(child, creationData, out weightFunction))
+                    {
+                        return false;
+                    }
+
+                    WhileRunningWeightFunction = weightFunction;
+                }
+                else if (child.Name == FinishedElement)
+                {
+                    if (!TryLoadRoleWeightFunction(child, creationData, out weightFunction))
+                    {
+                        return false;
+                    }
+
+                    FinishedWeightFunction = weightFunction;
+                }
+                else if (child.Name == NeverRunElement)
+                {
+                    if (!TryLoadRoleWeightFunction(child, creationData, out weightFunction))
+                    {
+                        return false;
+                    }
+
+                    NeverRunWeightFunction = weightFunction;
+                }
+                else if (child.Name == SinceLastRunElement)
+                {
+                    if (!TryLoadRoleWeightFunction(child, creationData, out weightFunction))
+                    {
+                        return false;
+                    }
+
+                    SinceLastRunWeightFunction = weightFunction;
+                }
+                else
+                {
+                    creationData.ReportError(
+                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <inheritdoc />
@@ -159,6 +228,17 @@ namespace Gaia.Core.Considerations
         private static WeightValues Convert(WeightFunctionBase? weightFunction, Seconds elapsedTime)
         {
             return weightFunction?.CalculateFloat(elapsedTime.Value) ?? WeightValues.Neutral;
+        }
+
+        /// <summary>Builds one of the four role weight functions from its role-named element.</summary>
+        /// <remarks>The factory reads only the element's Type, so a role element is an ordinary weight function node.</remarks>
+        private static bool TryLoadRoleWeightFunction(
+            SpecificationNode roleNode,
+            AiCreationData creationData,
+            out WeightFunctionBase? weightFunction)
+        {
+            return creationData.Factories.WeightFunctions.TryCreate(creationData.ForChild(roleNode),
+                out weightFunction);
         }
     }
 }

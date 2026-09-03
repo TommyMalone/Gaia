@@ -1,6 +1,7 @@
 ﻿using Gaia.Core.Blackboards;
 using Gaia.Core.Considerations;
 using Gaia.Core.Entities;
+using Gaia.Core.Factories;
 using Gaia.Core.Tests.Helpers;
 using Gaia.Core.WeightFunctions;
 
@@ -160,6 +161,44 @@ public class EntityExistsConsiderationSpec
         {
             Assert.That(killZone.Weights, Is.EqualTo(WeightValues.Vetoed));
             Assert.That(lineOfRetreat.Weights, Is.EqualTo(WeightValues.Neutral));
+        });
+    }
+
+    [Test]
+    public void LoadsItsListNameAndWeightFunction()
+    {
+        const string snippet = """
+                               <Consideration Type="EntityExists" Variable="Contacts">
+                                   <WeightFunction Type="Boolean">
+                                       <False Multiplier="0"/>
+                                   </WeightFunction>
+                               </Consideration>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        BrainBlackboard blackboard = new();
+        creationData.BrainBlackboard = blackboard;
+
+        StubEntity contact = new("Contact");
+        List<EntityBase> contacts = new() { contact };
+        blackboard.SetEntityList("Contacts", contacts);
+
+        EntityExistsConsideration loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+
+            loaded.Calculate();
+
+            Assert.That(loaded.Weights, Is.EqualTo(WeightValues.Neutral), "a valid entity takes the true side");
+
+            contact.IsValid = false;
+            loaded.Calculate();
+
+            Assert.That(loaded.Weights, Is.EqualTo(WeightValues.Vetoed),
+                "a list of invalid entities takes the false side");
         });
     }
 }

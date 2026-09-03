@@ -1,4 +1,5 @@
 ﻿using Gaia.Core.Considerations;
+using Gaia.Core.Factories;
 using Gaia.Core.Tests.Helpers;
 using Gaia.Core.Tests.Options;
 using Gaia.Core.WeightFunctions;
@@ -108,6 +109,32 @@ public class ConsiderationSetConsiderationSpec
             Assert.That(_group.IsSelected, Is.False);
             Assert.That(_firstInner.IsSelected, Is.False);
             Assert.That(_secondInner.IsSelected, Is.False);
+        });
+    }
+
+    [Test]
+    public void LoadsItsNestedConsiderations()
+    {
+        const string snippet = """
+                               <Consideration Type="ConsiderationSet">
+                                   <Consideration Type="Tuning" Addend="1"/>
+                                   <Consideration Type="Tuning" Addend="2" Rank="3"/>
+                               </Consideration>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        ConsiderationSetConsideration loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+
+            loaded.Calculate();
+
+            Assert.That(loaded.Weights, Is.EqualTo(new WeightValues(3f, 1f, 3f)),
+                "the addends sum and the highest rank is taken");
+            Assert.That(logSink.Entries, Is.Empty);
         });
     }
 }

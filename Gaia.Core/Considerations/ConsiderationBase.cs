@@ -30,15 +30,15 @@ namespace Gaia.Core.Considerations
         /// </remarks>
         public OptionBase? Option { get; private set; }
 
-        /// <summary>Load the configuration from data. Not yet implemented.</summary>
-        /// <returns>True if the configuration was loaded successfully.</returns>
+        /// <summary>Loads this consideration's configuration from the creation data's node.</summary>
+        /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         public bool Init(AiCreationData creationData)
         {
             return OnInit(creationData);
         }
 
         /// <summary>Loads the derived consideration's own configuration.</summary>
-        /// <returns>True if the configuration was loaded successfully.</returns>
+        /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         protected abstract bool OnInit(AiCreationData creationData);
 
         /// <summary>Called once per decision cycle to evaluate the situation and store the result in Weights.</summary>

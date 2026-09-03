@@ -1,5 +1,7 @@
 ﻿using Gaia.Core.Blackboards;
 using Gaia.Core.Considerations;
+using Gaia.Core.Factories;
+using Gaia.Core.Strings;
 using Gaia.Core.Tests.Helpers;
 using Gaia.Core.WeightFunctions;
 
@@ -194,5 +196,98 @@ public class VariableConsiderationSpec
         consideration.Calculate();
 
         Assert.That(_weightFunction.LastFloat, Is.EqualTo(0.25f));
+    }
+
+    [Test]
+    public void LoadsItsConfigurationFromANode()
+    {
+        const string snippet = """
+                               <Consideration Type="FloatVariable" Variable="Health">
+                                   <Missing Multiplier="0"/>
+                                   <WeightFunction Type="Constant" Addend="2"/>
+                               </Consideration>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        creationData.BrainBlackboard = _blackboard;
+
+        AiString healthName = "Health";
+        FloatVariableConsideration loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.DataStore, Is.SameAs(_blackboard), "the brain store is the default");
+            Assert.That(loaded.VariableName, Is.EqualTo(healthName));
+            Assert.That(loaded.MissingVariableWeights, Is.EqualTo(WeightValues.Vetoed));
+            Assert.That(loaded.WeightFunction, Is.InstanceOf<ConstantWeightFunction>());
+            Assert.That(logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void ReadsTheWorldStoreWhenAsked()
+    {
+        const string snippet = """
+                               <Consideration Type="BooleanVariable" Variable="IsRaining" Store="World">
+                                   <WeightFunction Type="Constant"/>
+                               </Consideration>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        WorldBlackboard worldBlackboard = new();
+        creationData.BrainBlackboard = _blackboard;
+        creationData.WorldBlackboard = worldBlackboard;
+
+        BooleanVariableConsideration loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.DataStore, Is.SameAs(worldBlackboard));
+        });
+    }
+
+    [Test]
+    public void RefusesAStoreItDoesNotKnow()
+    {
+        const string snippet = """
+                               <Consideration Type="BooleanVariable" Variable="IsRaining" Store="Global"/>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        BooleanVariableConsideration loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Consideration element's Store is not Brain or World, it reads \"Global\"",
+            }));
+        });
+    }
+
+    [Test]
+    public void RefusesANodeWithNoWeightFunction()
+    {
+        const string snippet = """
+                               <Consideration Type="FloatVariable" Variable="Health"/>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        FloatVariableConsideration loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Consideration element has no WeightFunction element",
+            }));
+        });
     }
 }
