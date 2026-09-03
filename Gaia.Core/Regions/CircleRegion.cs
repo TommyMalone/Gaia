@@ -1,6 +1,8 @@
 ﻿using System;
 using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
+using Gaia.Core.Specifications;
+using Gaia.Core.Strings;
 using Gaia.Core.Targets;
 
 namespace Gaia.Core.Regions
@@ -13,6 +15,10 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class CircleRegion : RegionBase
     {
+        private static readonly AiString CenterAttribute = "Center";
+        private static readonly AiString CenterTargetElement = "CenterTarget";
+        private static readonly AiString RadiusAttribute = "Radius";
+
         private float _radius;
         private float _radiusSquared;
 
@@ -38,8 +44,35 @@ namespace Gaia.Core.Regions
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            // Configurations cannot presently be loaded successfully.
-            return false;
+            SpecificationNode node = creationData.Node;
+
+            foreach (SpecificationNode child in node.Children)
+            {
+                if (child.Name != CenterTargetElement)
+                {
+                    creationData.ReportError(
+                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
+                    return false;
+                }
+
+                if (!creationData.Factories.Targets.TryCreate(creationData.ForChild(child),
+                        out TargetBase? centerTarget))
+                {
+                    return false;
+                }
+
+                CenterTarget = centerTarget;
+            }
+
+            if (!node.ReadVector3(CenterAttribute, out Vector3 center) ||
+                !node.ReadFloat(RadiusAttribute, out float radius))
+            {
+                return false;
+            }
+
+            Center = center;
+            Radius = radius;
+            return true;
         }
 
         /// <inheritdoc />

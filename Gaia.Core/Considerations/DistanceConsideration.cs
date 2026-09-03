@@ -1,5 +1,7 @@
 ﻿using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
+using Gaia.Core.Specifications;
+using Gaia.Core.Strings;
 using Gaia.Core.Targets;
 using Gaia.Core.WeightFunctions;
 
@@ -14,6 +16,11 @@ namespace Gaia.Core.Considerations
     /// <seealso>"Modular AI", Section 8.3.2</seealso>
     public sealed class DistanceConsideration : WeightedConsiderationBase
     {
+        private static readonly AiString FromElement = "From";
+        private static readonly AiString IgnoreHeightAttribute = "IgnoreHeight";
+        private static readonly AiString MissingElement = "Missing";
+        private static readonly AiString ToElement = "To";
+
         /// <summary>One end of the distance.</summary>
         public TargetBase? FromTarget { get; internal set; }
 
@@ -33,8 +40,77 @@ namespace Gaia.Core.Considerations
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            // Configurations cannot presently be loaded successfully.
-            return false;
+            SpecificationNode node = creationData.Node;
+
+            if (node.HasAttribute(IgnoreHeightAttribute))
+            {
+                if (!node.ReadBool(IgnoreHeightAttribute, out bool ignoreHeight))
+                {
+                    return false;
+                }
+
+                IgnoreHeight = ignoreHeight;
+            }
+
+            foreach (SpecificationNode child in node.Children)
+            {
+                if (child.Name == FromElement)
+                {
+                    if (!TryLoadTarget(child, creationData, out TargetBase? fromTarget))
+                    {
+                        return false;
+                    }
+
+                    FromTarget = fromTarget;
+                }
+                else if (child.Name == ToElement)
+                {
+                    if (!TryLoadTarget(child, creationData, out TargetBase? toTarget))
+                    {
+                        return false;
+                    }
+
+                    ToTarget = toTarget;
+                }
+                else if (child.Name == MissingElement)
+                {
+                    if (!WeightValues.TryRead(child, out WeightValues missingWeights))
+                    {
+                        return false;
+                    }
+
+                    MissingTargetWeights = missingWeights;
+                }
+                else if (child.Name == WeightFunctionElement)
+                {
+                    if (!TryLoadWeightFunction(child, creationData))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    creationData.ReportError(
+                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
+                    return false;
+                }
+            }
+
+            if (FromTarget == null || ToTarget == null)
+            {
+                creationData.ReportError(
+                    $"Line {node.LineNumber}, the {node.Name.Text} element needs both a From and a To element");
+                return false;
+            }
+
+            if (WeightFunction == null)
+            {
+                creationData.ReportError(
+                    $"Line {node.LineNumber}, the {node.Name.Text} element has no WeightFunction element");
+                return false;
+            }
+
+            return true;
         }
 
         /// <inheritdoc />
@@ -57,6 +133,16 @@ namespace Gaia.Core.Considerations
             }
 
             return weightFunction.CalculateFloat(Vector3.Distance(from, to));
+        }
+
+        /// <summary>Builds one end of the measurement from its role-named element.</summary>
+        /// <remarks>The factory reads only the element's Type, so a role element is an ordinary target node.</remarks>
+        private static bool TryLoadTarget(
+            SpecificationNode roleNode,
+            AiCreationData creationData,
+            out TargetBase? target)
+        {
+            return creationData.Factories.Targets.TryCreate(creationData.ForChild(roleNode), out target);
         }
     }
 }

@@ -25,12 +25,27 @@ namespace Gaia.Core.Factories
         {
             Considerations.Register("BooleanVariable", () => new BooleanVariableConsideration());
             Considerations.Register("ConsiderationSet", () => new ConsiderationSetConsideration());
+            Considerations.Register("Distance", () => new DistanceConsideration());
             Considerations.Register("EntityExists", () => new EntityExistsConsideration());
             Considerations.Register("ExecutionHistory", () => new ExecutionHistoryConsideration());
             Considerations.Register("FloatVariable", () => new FloatVariableConsideration());
             Considerations.Register("IntVariable", () => new IntVariableConsideration());
             Considerations.Register("StringVariable", () => new StringVariableConsideration());
             Considerations.Register("Tuning", () => new TuningConsideration());
+
+            Regions.Register("Box", () => new BoxRegion());
+            Regions.Register("Capsule", () => new CapsuleRegion());
+            Regions.Register("Circle", () => new CircleRegion());
+            Regions.Register("ConvexHull", () => new ConvexHullRegion());
+            Regions.Register("Cylinder", () => new CylinderRegion());
+            Regions.Register("ExtrudedPolygon", () => new ExtrudedPolygonRegion());
+            Regions.Register("Polygon", () => new PolygonRegion());
+            Regions.Register("Rectangle", () => new RectangleRegion());
+            Regions.Register("Sphere", () => new SphereRegion());
+
+            Targets.Register("ByName", () => new ByNameTarget());
+            Targets.Register("Position", () => new PositionTarget());
+            Targets.Register("Self", () => new SelfTarget());
 
             WeightFunctions.Register("Constant", () => new ConstantWeightFunction());
             WeightFunctions.Register("Boolean", () => new BooleanWeightFunction());

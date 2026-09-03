@@ -17,11 +17,8 @@ namespace Gaia.Core.Considerations
     /// <seealso>"Modular AI", Section 8.6.2.3, Listing 8.9</seealso>
     public abstract class VariableConsiderationBase : WeightedConsiderationBase
     {
-        private static readonly AiString BrainStoreName = "Brain";
         private static readonly AiString MissingElement = "Missing";
-        private static readonly AiString StoreAttribute = "Store";
         private static readonly AiString VariableAttribute = "Variable";
-        private static readonly AiString WorldStoreName = "World";
 
         /// <summary>The store to read from.</summary>
         public DataStoreBase? DataStore { get; internal set; }
@@ -106,33 +103,16 @@ namespace Gaia.Core.Considerations
         /// <returns>The weight values this consideration reports this cycle.</returns>
         protected abstract WeightValues CalculateWeights(WeightFunctionBase weightFunction, DataStoreBase dataStore);
 
-        /// <summary>Reads the optional Store attribute, which picks between the creation data's blackboards.</summary>
-        /// <remarks>The brain blackboard is the default, matching where a character's own knowledge lives.</remarks>
+        /// <summary>Reads the optional Store attribute through the creation data, which owns the blackboards.</summary>
         private bool TryReadStore(SpecificationNode node, AiCreationData creationData)
         {
-            DataStore = creationData.BrainBlackboard;
-
-            if (!node.TryGetString(StoreAttribute, out string text))
+            if (!creationData.TryReadStore(node, out DataStoreBase? store))
             {
-                return true;
+                return false;
             }
 
-            AiString storeName = text;
-
-            if (storeName == BrainStoreName)
-            {
-                return true;
-            }
-
-            if (storeName == WorldStoreName)
-            {
-                DataStore = creationData.WorldBlackboard;
-                return true;
-            }
-
-            creationData.ReportError(
-                $"Line {node.LineNumber}, the {node.Name.Text} element's Store is not Brain or World, it reads \"{text}\"");
-            return false;
+            DataStore = store;
+            return true;
         }
     }
 }

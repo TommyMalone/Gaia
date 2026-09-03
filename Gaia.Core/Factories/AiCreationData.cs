@@ -1,4 +1,6 @@
 ﻿using Gaia.Core.Blackboards;
+using Gaia.Core.DataStores;
+using Gaia.Core.Entities;
 using Gaia.Core.Services.Log;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Services.Time;
@@ -19,6 +21,10 @@ namespace Gaia.Core.Factories
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>
     public sealed class AiCreationData
     {
+        private static readonly AiString BrainStoreName = "Brain";
+        private static readonly AiString StoreAttribute = "Store";
+        private static readonly AiString WorldStoreName = "World";
+
         /// <param name="node">The specification node the component loads from.</param>
         /// <param name="factories">The factories a composite builds its children through.</param>
         internal AiCreationData(SpecificationNode node, FactorySet factories)
@@ -51,6 +57,9 @@ namespace Gaia.Core.Factories
         /// <summary>The blackboard every character shares, or null until a host supplies one.</summary>
         public WorldBlackboard? WorldBlackboard { get; internal set; }
 
+        /// <summary>The actor the brain being built belongs to, or null until a host supplies one.</summary>
+        public Actor? Self { get; internal set; }
+
         /// <summary>The creation data for one of this node's children, the same everything with the child's node.</summary>
         public AiCreationData ForChild(SpecificationNode childNode)
         {
@@ -62,7 +71,40 @@ namespace Gaia.Core.Factories
                 RandomSource = RandomSource,
                 BrainBlackboard = BrainBlackboard,
                 WorldBlackboard = WorldBlackboard,
+                Self = Self,
             };
+        }
+
+        /// <summary>Reads the node's optional Store attribute, which picks between the blackboards.</summary>
+        /// <remarks>
+        ///     The brain blackboard is the default, matching where a character's own knowledge lives. A store the data does
+        ///     not know is a reported error.
+        /// </remarks>
+        internal bool TryReadStore(SpecificationNode node, out DataStoreBase? store)
+        {
+            store = BrainBlackboard;
+
+            if (!node.TryGetString(StoreAttribute, out string text))
+            {
+                return true;
+            }
+
+            AiString storeName = text;
+
+            if (storeName == BrainStoreName)
+            {
+                return true;
+            }
+
+            if (storeName == WorldStoreName)
+            {
+                store = WorldBlackboard;
+                return true;
+            }
+
+            ReportError(
+                $"Line {node.LineNumber}, the {node.Name.Text} element's Store is not Brain or World, it reads \"{text}\"");
+            return false;
         }
 
         /// <summary>Reports a loading error against the node, filed under the node's source document name.</summary>

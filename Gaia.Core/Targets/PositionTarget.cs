@@ -1,5 +1,7 @@
 ﻿using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
+using Gaia.Core.Specifications;
+using Gaia.Core.Strings;
 
 namespace Gaia.Core.Targets
 {
@@ -12,14 +14,32 @@ namespace Gaia.Core.Targets
     /// <seealso>"Modular AI", Section 8.5.5</seealso>
     public sealed class PositionTarget : TargetBase
     {
+        private static readonly AiString PositionAttribute = "Position";
+
         /// <summary>Where this target is.</summary>
         public Vector3 Position { get; internal set; }
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            // Configurations cannot presently be loaded successfully.
-            return false;
+            SpecificationNode node = creationData.Node;
+
+            if (node.Children.Count > 0)
+            {
+                SpecificationNode child = node.Children[0];
+
+                creationData.ReportError(
+                    $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
+                return false;
+            }
+
+            if (!node.ReadVector3(PositionAttribute, out Vector3 position))
+            {
+                return false;
+            }
+
+            Position = position;
+            return true;
         }
 
         /// <inheritdoc />

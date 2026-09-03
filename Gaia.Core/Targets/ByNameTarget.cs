@@ -5,6 +5,7 @@ using Gaia.Core.DataStores;
 using Gaia.Core.Entities;
 using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
+using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
 
 namespace Gaia.Core.Targets
@@ -28,6 +29,9 @@ namespace Gaia.Core.Targets
     /// <seealso>"Modular AI", Section 8.5.5</seealso>
     public sealed class ByNameTarget : TargetBase
     {
+        private static readonly AiString EntityAttribute = "Entity";
+        private static readonly AiString ListAttribute = "List";
+
         /// <summary>The store holding the list to search.</summary>
         public DataStoreBase? DataStore { get; internal set; }
 
@@ -49,8 +53,32 @@ namespace Gaia.Core.Targets
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            // Configurations cannot presently be loaded successfully.
-            return false;
+            SpecificationNode node = creationData.Node;
+
+            if (node.Children.Count > 0)
+            {
+                SpecificationNode child = node.Children[0];
+
+                creationData.ReportError(
+                    $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
+                return false;
+            }
+
+            if (!node.ReadString(ListAttribute, out string listName) ||
+                !node.ReadString(EntityAttribute, out string entityName))
+            {
+                return false;
+            }
+
+            if (!creationData.TryReadStore(node, out DataStoreBase? store))
+            {
+                return false;
+            }
+
+            DataStore = store;
+            ListName = listName;
+            EntityName = entityName;
+            return true;
         }
 
         /// <inheritdoc />

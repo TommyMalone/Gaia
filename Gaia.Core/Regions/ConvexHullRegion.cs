@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
+using Gaia.Core.Specifications;
+using Gaia.Core.Strings;
 
 namespace Gaia.Core.Regions
 {
@@ -41,6 +43,10 @@ namespace Gaia.Core.Regions
         /// </summary>
         private const float ParallelTolerance = 0.000001f;
 
+        private static readonly AiString DistanceAttribute = "Distance";
+        private static readonly AiString NormalAttribute = "Normal";
+        private static readonly AiString PlaneElement = "Plane";
+
         private readonly List<Plane> _planes = new();
 
         /// <summary>True while the cached bounds reflect the current planes, so EnsureBounds can skip recomputing.</summary>
@@ -58,8 +64,42 @@ namespace Gaia.Core.Regions
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            // Configurations cannot presently be loaded successfully.
-            return false;
+            SpecificationNode node = creationData.Node;
+
+            foreach (SpecificationNode child in node.Children)
+            {
+                if (child.Name != PlaneElement)
+                {
+                    creationData.ReportError(
+                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
+                    return false;
+                }
+
+                if (!child.ReadVector3(NormalAttribute, out Vector3 normal) ||
+                    !child.ReadFloat(DistanceAttribute, out float distance))
+                {
+                    return false;
+                }
+
+                if (normal.SquaredMagnitude == 0f)
+                {
+                    creationData.ReportError(
+                        $"Line {child.LineNumber}, the {child.Name.Text} element's Normal has no length");
+                    return false;
+                }
+
+                AddPlane(new Plane(normal, distance));
+            }
+
+            if (_planes.Count < MinPlaneCount)
+            {
+                creationData.ReportError(
+                    $"Line {node.LineNumber}, the {node.Name.Text} element has fewer than {MinPlaneCount} Plane " +
+                    "elements, too few to close a volume");
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>Adds another plane to the boundary.</summary>

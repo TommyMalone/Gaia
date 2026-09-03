@@ -1,6 +1,8 @@
-﻿using Gaia.Core.Regions;
+﻿using Gaia.Core.Factories;
+using Gaia.Core.Regions;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Spatial;
+using Gaia.Core.Tests.Helpers;
 
 namespace Gaia.Core.Tests.Regions;
 
@@ -75,6 +77,55 @@ public class PolygonRegionSpec
         {
             Assert.That(line.IsInRegion(onTheLine), Is.False);
             Assert.That(line.TryGetRandomPosition(out _), Is.False);
+        });
+    }
+
+    [Test]
+    public void LoadsItsCornersFromCornerElements()
+    {
+        const string snippet = """
+                               <Region Type="Polygon">
+                                   <Corner Position="(0, 0, 0)"/>
+                                   <Corner Position="(10, 0, 0)"/>
+                                   <Corner Position="(0, 0, 10)"/>
+                               </Region>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        PolygonRegion loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.Corners, Has.Count.EqualTo(3));
+            Assert.That(loaded.IsInRegion(new Vector3(2f, 0f, 2f)), Is.True);
+            Assert.That(loaded.IsInRegion(new Vector3(9f, 0f, 9f)), Is.False, "beyond the diagonal edge");
+            Assert.That(logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void RefusesAFootprintWithoutArea()
+    {
+        const string snippet = """
+                               <Region Type="Polygon">
+                                   <Corner Position="(0, 0, 0)"/>
+                                   <Corner Position="(10, 0, 0)"/>
+                               </Region>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        PolygonRegion loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Region element has fewer than 3 Corner elements",
+            }));
         });
     }
 }

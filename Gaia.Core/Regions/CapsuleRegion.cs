@@ -1,6 +1,8 @@
 ﻿using System;
 using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
+using Gaia.Core.Specifications;
+using Gaia.Core.Strings;
 
 namespace Gaia.Core.Regions
 {
@@ -20,6 +22,10 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class CapsuleRegion : RegionBase
     {
+        private static readonly AiString CenterAttribute = "Center";
+        private static readonly AiString HalfHeightAttribute = "HalfHeight";
+        private static readonly AiString RadiusAttribute = "Radius";
+
         private float _radius;
         private float _radiusSquared;
 
@@ -45,8 +51,28 @@ namespace Gaia.Core.Regions
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            // Configurations cannot presently be loaded successfully.
-            return false;
+            SpecificationNode node = creationData.Node;
+
+            if (node.Children.Count > 0)
+            {
+                SpecificationNode child = node.Children[0];
+
+                creationData.ReportError(
+                    $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
+                return false;
+            }
+
+            if (!node.ReadVector3(CenterAttribute, out Vector3 center) ||
+                !node.ReadFloat(RadiusAttribute, out float radius) ||
+                !node.ReadFloat(HalfHeightAttribute, out float halfHeight))
+            {
+                return false;
+            }
+
+            Center = center;
+            Radius = radius;
+            HalfHeight = halfHeight;
+            return true;
         }
 
         /// <inheritdoc />

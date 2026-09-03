@@ -29,15 +29,15 @@ namespace Gaia.Core.Targets
         /// <summary>True if the target can be used this cycle. A target that tracks an entity is invalid while it cannot find one.</summary>
         public virtual bool IsValid => true;
 
-        /// <summary>Load the configuration from data. Not yet implemented.</summary>
-        /// <returns>True if the configuration was loaded successfully.</returns>
+        /// <summary>Loads this component's configuration from the creation data's node.</summary>
+        /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         public bool Init(AiCreationData creationData)
         {
             return OnInit(creationData);
         }
 
         /// <summary>Loads the derived target's own configuration.</summary>
-        /// <returns>True if the configuration was loaded successfully.</returns>
+        /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         protected abstract bool OnInit(AiCreationData creationData);
 
         /// <summary>Finds where the target is. A target with an Entity reports that entity's Position.</summary>

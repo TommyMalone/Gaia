@@ -1,6 +1,8 @@
 ﻿using Gaia.Core.Blackboards;
 using Gaia.Core.Entities;
+using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
+using Gaia.Core.Strings;
 using Gaia.Core.Targets;
 using Gaia.Core.Tests.Helpers;
 
@@ -211,5 +213,91 @@ public class TargetSpec
         };
 
         Assert.That(target.IsValid, Is.False);
+    }
+
+    [Test]
+    public void LoadsAFixedPositionFromItsAttribute()
+    {
+        const string snippet = """
+                               <Target Type="Position" Position="(1, 2, 3)"/>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        PositionTarget loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.Position, Is.EqualTo(new Vector3(1f, 2f, 3f)));
+            Assert.That(logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void LoadsSelfFromTheCreationData()
+    {
+        const string snippet = """
+                               <Target Type="Self"/>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        Actor sniper = new() { Name = "Sniper" };
+        creationData.Self = sniper;
+
+        SelfTarget loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.Self, Is.SameAs(sniper));
+        });
+    }
+
+    [Test]
+    public void LoadsAByNameLookupWithItsStore()
+    {
+        const string snippet = """
+                               <Target Type="ByName" List="Actors" Entity="Officer" Store="World"/>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        WorldBlackboard worldBlackboard = new();
+        creationData.WorldBlackboard = worldBlackboard;
+
+        AiString actorsName = "Actors";
+        AiString officerName = "Officer";
+        ByNameTarget loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.DataStore, Is.SameAs(worldBlackboard));
+            Assert.That(loaded.ListName, Is.EqualTo(actorsName));
+            Assert.That(loaded.EntityName, Is.EqualTo(officerName));
+        });
+    }
+
+    [Test]
+    public void RefusesAByNameLookupMissingItsList()
+    {
+        const string snippet = """
+                               <Target Type="ByName" Entity="Officer"/>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        ByNameTarget loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Target element has no List attribute",
+            }));
+        });
     }
 }

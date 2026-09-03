@@ -1,5 +1,6 @@
 ﻿using Gaia.Core.Considerations;
 using Gaia.Core.Entities;
+using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
 using Gaia.Core.Targets;
 using Gaia.Core.Tests.Helpers;
@@ -193,6 +194,63 @@ public class DistanceConsiderationSpec
             Assert.That(tooClose, Is.EqualTo(WeightValues.Vetoed));
             Assert.That(inRange, Is.EqualTo(WeightValues.Neutral));
             Assert.That(tooFar, Is.EqualTo(WeightValues.Vetoed));
+        });
+    }
+
+    [Test]
+    public void LoadsItsEndsAndWeightFunction()
+    {
+        const string snippet = """
+                               <Consideration Type="Distance" IgnoreHeight="true">
+                                   <From Type="Position" Position="(0, 50, 0)"/>
+                                   <To Type="Position" Position="(0, 0, 100)"/>
+                                   <Missing Multiplier="0"/>
+                                   <WeightFunction Type="FloatSequence">
+                                       <Entry Threshold="50" Multiplier="0"/>
+                                       <Entry Threshold="300" Addend="1"/>
+                                       <Default Multiplier="0"/>
+                                   </WeightFunction>
+                               </Consideration>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        DistanceConsideration loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.MissingTargetWeights, Is.EqualTo(WeightValues.Vetoed));
+
+            loaded.Calculate();
+
+            // With height ignored, the measured distance is 100, inside the loaded 50 to 300 band.
+            Assert.That(loaded.Weights, Is.EqualTo(new WeightValues(1f, 1f, float.MinValue)));
+            Assert.That(logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void RefusesANodeMissingAnEnd()
+    {
+        const string snippet = """
+                               <Consideration Type="Distance">
+                                   <From Type="Position" Position="(0, 0, 0)"/>
+                                   <WeightFunction Type="Constant"/>
+                               </Consideration>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        DistanceConsideration loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Consideration element needs both a From and a To element",
+            }));
         });
     }
 }

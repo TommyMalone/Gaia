@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
+using Gaia.Core.Specifications;
+using Gaia.Core.Strings;
 
 namespace Gaia.Core.Regions
 {
@@ -28,6 +31,9 @@ namespace Gaia.Core.Regions
         /// <summary>The fewest corners that enclose any area at all.</summary>
         private const int MinCornerCount = 3;
 
+        private static readonly AiString CornerElement = "Corner";
+        private static readonly AiString PositionAttribute = "Position";
+
         private readonly List<Vector3> _corners = new();
         private float _boundsMaxX;
         private float _boundsMaxZ;
@@ -47,6 +53,42 @@ namespace Gaia.Core.Regions
         protected Vector3 BoundsMax => new(_boundsMaxX, 0f, _boundsMaxZ);
 
         /// <summary>Adds the next corner around the edge.</summary>
+        /// <summary>Loads the footprint's corners from the node's Corner children.</summary>
+        /// <remarks>
+        ///     Every child must be a Corner element carrying a Position, and fewer than three corners is refused, since a
+        ///     footprint without area contains nothing and can only have been a mistake.
+        /// </remarks>
+        internal bool LoadFootprint(AiCreationData creationData)
+        {
+            SpecificationNode node = creationData.Node;
+
+            foreach (SpecificationNode child in node.Children)
+            {
+                if (child.Name != CornerElement)
+                {
+                    creationData.ReportError(
+                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
+                    return false;
+                }
+
+                if (!child.ReadVector3(PositionAttribute, out Vector3 corner))
+                {
+                    return false;
+                }
+
+                AddCorner(corner);
+            }
+
+            if (!HasArea)
+            {
+                creationData.ReportError(
+                    $"Line {node.LineNumber}, the {node.Name.Text} element has fewer than {MinCornerCount} Corner elements");
+                return false;
+            }
+
+            return true;
+        }
+
         internal void AddCorner(Vector3 corner)
         {
             if (_corners.Count == 0)

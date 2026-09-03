@@ -1,6 +1,8 @@
-﻿using Gaia.Core.Regions;
+﻿using Gaia.Core.Factories;
+using Gaia.Core.Regions;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Spatial;
+using Gaia.Core.Tests.Helpers;
 
 namespace Gaia.Core.Tests.Regions;
 
@@ -178,5 +180,79 @@ public class ConvexHullRegionSpec
         tube.AddPlane(diagonal);
 
         Assert.That(tube.TryGetBounds(out _, out _), Is.False);
+    }
+
+    [Test]
+    public void LoadsItsPlanesFromPlaneElements()
+    {
+        const string snippet = """
+                               <Region Type="ConvexHull">
+                                   <Plane Normal="(1, 0, 0)" Distance="1"/>
+                                   <Plane Normal="(-1, 0, 0)" Distance="1"/>
+                                   <Plane Normal="(0, 1, 0)" Distance="1"/>
+                                   <Plane Normal="(0, -1, 0)" Distance="1"/>
+                                   <Plane Normal="(0, 0, 1)" Distance="1"/>
+                                   <Plane Normal="(0, 0, -1)" Distance="1"/>
+                               </Region>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        ConvexHullRegion loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.Planes, Has.Count.EqualTo(6));
+            Assert.That(loaded.IsInRegion(Vector3.Zero), Is.True);
+            Assert.That(loaded.IsInRegion(new Vector3(2f, 0f, 0f)), Is.False);
+            Assert.That(logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void RefusesAHullWithTooFewPlanes()
+    {
+        const string snippet = """
+                               <Region Type="ConvexHull">
+                                   <Plane Normal="(0, 1, 0)" Distance="1"/>
+                               </Region>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        ConvexHullRegion loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Region element has fewer than 4 Plane elements, too few to close a volume",
+            }));
+        });
+    }
+
+    [Test]
+    public void RefusesAPlaneWhoseNormalHasNoLength()
+    {
+        const string snippet = """
+                               <Region Type="ConvexHull">
+                                   <Plane Normal="(0, 0, 0)" Distance="1"/>
+                               </Region>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        ConvexHullRegion loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 2, the Plane element's Normal has no length",
+            }));
+        });
     }
 }

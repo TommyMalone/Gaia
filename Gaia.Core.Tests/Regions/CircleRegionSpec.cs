@@ -1,7 +1,9 @@
-﻿using Gaia.Core.Regions;
+﻿using Gaia.Core.Factories;
+using Gaia.Core.Regions;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Spatial;
 using Gaia.Core.Targets;
+using Gaia.Core.Tests.Helpers;
 
 namespace Gaia.Core.Tests.Regions;
 
@@ -107,6 +109,52 @@ public class CircleRegionSpec
         {
             Assert.That(_circle.IsInRegion(initialCenter), Is.False);
             Assert.That(_circle.TryGetRandomPosition(out _), Is.False);
+        });
+    }
+
+    [Test]
+    public void LoadsItsGeometryAndCenterTarget()
+    {
+        const string snippet = """
+                               <Region Type="Circle" Center="(0, 0, 0)" Radius="5">
+                                   <CenterTarget Type="Position" Position="(100, 0, 100)"/>
+                               </Region>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        CircleRegion loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.Radius, Is.EqualTo(5f));
+            Assert.That(loaded.CenterTarget, Is.InstanceOf<PositionTarget>());
+            Assert.That(loaded.IsInRegion(new Vector3(102f, 0f, 102f)), Is.True,
+                "containment follows the loaded center target rather than the fixed center");
+            Assert.That(loaded.IsInRegion(new Vector3(2f, 0f, 2f)), Is.False);
+            Assert.That(logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void RefusesANodeMissingItsRadius()
+    {
+        const string snippet = """
+                               <Region Type="Circle" Center="(0, 0, 0)"/>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        CircleRegion loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Region element has no Radius attribute",
+            }));
         });
     }
 }

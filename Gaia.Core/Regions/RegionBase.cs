@@ -23,15 +23,17 @@ namespace Gaia.Core.Regions
         /// <summary>Where the region draws the numbers that pick a random position.</summary>
         public IRandomSource RandomSource { get; internal set; } = new SystemRandomSource();
 
-        /// <summary>Load the configuration from data. Not yet implemented.</summary>
-        /// <returns>True if the configuration was loaded successfully.</returns>
+        /// <summary>Loads this region's configuration from the creation data's node.</summary>
+        /// <remarks>Every region samples through the creation data's random source, so the base takes it before OnInit.</remarks>
+        /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         public bool Init(AiCreationData creationData)
         {
+            RandomSource = creationData.RandomSource;
             return OnInit(creationData);
         }
 
         /// <summary>Loads the derived region's own configuration.</summary>
-        /// <returns>True if the configuration was loaded successfully.</returns>
+        /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         protected abstract bool OnInit(AiCreationData creationData);
 
         /// <summary>Tests whether a position is inside the region.</summary>

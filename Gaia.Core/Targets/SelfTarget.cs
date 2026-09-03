@@ -1,14 +1,14 @@
 ﻿using Gaia.Core.Entities;
 using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
+using Gaia.Core.Specifications;
 
 namespace Gaia.Core.Targets
 {
     /// <summary>The character the AI controls.</summary>
     /// <remarks>
-    ///     The chapter's Self target reaches its actor through the brain it was created for. Nothing here has that
-    ///     back-reference until a configuration loader supplies it through the creation data, so for now Self is a configured
-    ///     property, which is also what a spec sets.
+    ///     The chapter's Self target reaches its actor through the brain it was created for. Init reads Self from the
+    ///     creation data's back-reference, the actor the brain being built belongs to, and a spec sets it directly.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.5</seealso>
     public sealed class SelfTarget : TargetBase
@@ -28,8 +28,19 @@ namespace Gaia.Core.Targets
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            // Configurations cannot presently be loaded successfully.
-            return false;
+            SpecificationNode node = creationData.Node;
+
+            if (node.Children.Count > 0)
+            {
+                SpecificationNode child = node.Children[0];
+
+                creationData.ReportError(
+                    $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
+                return false;
+            }
+
+            Self = creationData.Self;
+            return true;
         }
 
         /// <inheritdoc />

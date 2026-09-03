@@ -11,8 +11,7 @@ namespace Gaia.Core.Regions
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            // Configurations cannot presently be loaded successfully.
-            return false;
+            return LoadFootprint(creationData);
         }
 
         /// <inheritdoc />

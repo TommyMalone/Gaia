@@ -1,5 +1,7 @@
 ﻿using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
+using Gaia.Core.Specifications;
+using Gaia.Core.Strings;
 
 namespace Gaia.Core.Regions
 {
@@ -14,6 +16,9 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class ExtrudedPolygonRegion : PolygonRegionBase
     {
+        private static readonly AiString CeilingAttribute = "Ceiling";
+        private static readonly AiString FloorAttribute = "Floor";
+
         /// <summary>The lowest height inside the region.</summary>
         public float Floor { get; internal set; }
 
@@ -23,8 +28,17 @@ namespace Gaia.Core.Regions
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            // Configurations cannot presently be loaded successfully.
-            return false;
+            SpecificationNode node = creationData.Node;
+
+            if (!node.ReadFloat(FloorAttribute, out float floor) ||
+                !node.ReadFloat(CeilingAttribute, out float ceiling))
+            {
+                return false;
+            }
+
+            Floor = floor;
+            Ceiling = ceiling;
+            return LoadFootprint(creationData);
         }
 
         /// <inheritdoc />
