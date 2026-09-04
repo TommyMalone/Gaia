@@ -69,12 +69,12 @@ public class SniperSpec
         };
         _sniper.Brain = _brain;
 
-        List<EntityBase> killZoneContacts = new();
-        List<EntityBase> retreatRouteContacts = new();
+        _killZoneContacts = new List<EntityBase>();
+        _retreatRouteContacts = new List<EntityBase>();
 
         _brain.Blackboard.SetBool("IsUnderFire", false);
-        _brain.Blackboard.SetEntityList("KillZoneContacts", killZoneContacts);
-        _brain.Blackboard.SetEntityList("RetreatRouteContacts", retreatRouteContacts);
+        _brain.Blackboard.SetEntityList("KillZoneContacts", _killZoneContacts);
+        _brain.Blackboard.SetEntityList("RetreatRouteContacts", _retreatRouteContacts);
 
         RuleBasedReasoner reasoner = new()
         {
@@ -92,6 +92,9 @@ public class SniperSpec
 
     private const string CharacterName = "Sniper";
 
+    private static readonly Vector3 InKillZone = new(10f, 0f, 140f);
+    private static readonly Vector3 OnRetreatRoute = new(0f, 0f, -50f);
+
     private static readonly Seconds OneCycleTime = new(1f);
     private static readonly Seconds CooldownMinTime = new(60f);
     private static readonly Seconds CooldownMaxTime = new(120f);
@@ -102,6 +105,8 @@ public class SniperSpec
     private RecordingLogSink _logSink;
     private RecordActionFactory _recordActionFactory;
     private List<EntityBase> _contacts;
+    private List<EntityBase> _killZoneContacts;
+    private List<EntityBase> _retreatRouteContacts;
 
     private Actor _sniper;
     private Brain _brain;
@@ -121,11 +126,9 @@ public class SniperSpec
     [Test]
     public void TakesAShotWhenAnEnemyEntersTheKillZone()
     {
-        Vector3 inKillZone = new(10f, 0f, 140f);
-
         Cycle();
 
-        AddContact("Patrol", inKillZone);
+        AddContact("Patrol", InKillZone);
 
         // One cycle each for set pose and raise weapon, one to start the aim pause, and a final cycle that advances
         // the clock by AimTime so the pause completes and the sequence fires.
@@ -151,11 +154,8 @@ public class SniperSpec
     [Test]
     public void HoldsFireWhileTheLineOfRetreatIsBlocked()
     {
-        Vector3 inKillZone = new(10f, 0f, 140f);
-        Vector3 onRetreatRoute = new(0f, 0f, -50f);
-
-        AddContact("Patrol", inKillZone);
-        AddContact("Flanker", onRetreatRoute);
+        AddContact("Patrol", InKillZone);
+        AddContact("Flanker", OnRetreatRoute);
 
         Cycle();
 
@@ -165,8 +165,7 @@ public class SniperSpec
     [Test]
     public void RetreatsWhenUnderFireWithAClearLineOfRetreat()
     {
-        Vector3 inKillZone = new(10f, 0f, 140f);
-        AddContact("Patrol", inKillZone);
+        AddContact("Patrol", InKillZone);
         Cycle();
 
         _brain.Blackboard.SetBool("IsUnderFire", true);
@@ -178,8 +177,7 @@ public class SniperSpec
     [Test]
     public void FightsBackWhenUnderFireWithTheLineOfRetreatBlocked()
     {
-        Vector3 onRetreatRoute = new(0f, 0f, -50f);
-        AddContact("Flanker", onRetreatRoute);
+        AddContact("Flanker", OnRetreatRoute);
         _brain.Blackboard.SetBool("IsUnderFire", true);
 
         Cycle();
@@ -190,10 +188,9 @@ public class SniperSpec
     [Test]
     public void WaitsOutTheCooldownBeforeTheNextShot()
     {
-        Vector3 inKillZone = new(10f, 0f, 140f);
         Vector3 alsoInKillZone = new(-10f, 0f, 160f);
 
-        StubEntity patrol = AddContact("Patrol", inKillZone);
+        StubEntity patrol = AddContact("Patrol", InKillZone);
 
         Cycle();
         Cycle();
@@ -226,8 +223,7 @@ public class SniperSpec
         // fired, the Snipe option reports IsDone and its ExecutionHistoryConsideration vetoes it through
         // FinishedWeightFunction. Deselection starts the SinceLastRunWeightFunction cooldown, and the sniper hides
         // until it has passed.
-        Vector3 inKillZone = new(10f, 0f, 140f);
-        AddContact("Patrol", inKillZone);
+        AddContact("Patrol", InKillZone);
 
         Cycle();
         Cycle();
@@ -256,10 +252,9 @@ public class SniperSpec
     {
         // The sniper has relocated well outside the range band its Snipe option allows.
         Vector3 farBehindTheKillZone = new(0f, 10f, -300f);
-        Vector3 inKillZone = new(10f, 0f, 140f);
 
         _sniper.Position = farBehindTheKillZone;
-        AddContact("Patrol", inKillZone);
+        AddContact("Patrol", InKillZone);
 
         Cycle();
 
@@ -272,11 +267,10 @@ public class SniperSpec
         // The same shot TakesAShotWhenAnEnemyEntersTheKillZone covers, read from the sink instead of the executed
         // list. Both levels of the tree write to the same sink, so the sequence's steps appear underneath the Snipe
         // option that started them, which is what a nested reasoner looks like from outside.
-        Vector3 inKillZone = new(10f, 0f, 140f);
 
         Cycle();
 
-        AddContact("Patrol", inKillZone);
+        AddContact("Patrol", InKillZone);
 
         Cycle();
         Cycle();
@@ -468,11 +462,8 @@ public class SniperSpec
     /// <summary>Sorts the valid contacts into the kill zone and retreat route lists, as the game's sensors would.</summary>
     private void Sense()
     {
-        _brain.Blackboard.TryGetEntityList("KillZoneContacts", out List<EntityBase>? killZoneContacts);
-        _brain.Blackboard.TryGetEntityList("RetreatRouteContacts", out List<EntityBase>? retreatRouteContacts);
-
-        killZoneContacts!.Clear();
-        retreatRouteContacts!.Clear();
+        _killZoneContacts.Clear();
+        _retreatRouteContacts.Clear();
 
         foreach (EntityBase contact in _contacts)
         {
@@ -483,12 +474,12 @@ public class SniperSpec
 
             if (_killZone.IsInRegion(contact.Position))
             {
-                killZoneContacts.Add(contact);
+                _killZoneContacts.Add(contact);
             }
 
             if (_retreatRoute.IsInRegion(contact.Position))
             {
-                retreatRouteContacts.Add(contact);
+                _retreatRouteContacts.Add(contact);
             }
         }
     }

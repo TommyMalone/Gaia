@@ -20,6 +20,7 @@ public class DistanceConsiderationSpec
     [SetUp]
     public void BuildConsideration()
     {
+        _logSink = new RecordingLogSink();
         _reportedWeights = new WeightValues(3f, 0.5f, 2f);
         _missingWeights = WeightValues.Vetoed;
 
@@ -41,6 +42,8 @@ public class DistanceConsiderationSpec
             MissingTargetWeights = _missingWeights,
         };
     }
+
+    private RecordingLogSink _logSink;
 
     private WeightValues _reportedWeights;
     private WeightValues _missingWeights;
@@ -212,8 +215,7 @@ public class DistanceConsiderationSpec
                                    </WeightFunction>
                                </Consideration>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         DistanceConsideration loaded = new();
 
@@ -226,7 +228,7 @@ public class DistanceConsiderationSpec
 
             // With height ignored, the measured distance is 100, inside the loaded 50 to 300 band.
             Assert.That(loaded.Weights, Is.EqualTo(new WeightValues(1f, 1f, float.MinValue)));
-            Assert.That(logSink.Entries, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 
@@ -239,15 +241,14 @@ public class DistanceConsiderationSpec
                                    <WeightFunction Type="Constant"/>
                                </Consideration>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         DistanceConsideration loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 1, the Consideration element needs both a From and a To element",
             }));

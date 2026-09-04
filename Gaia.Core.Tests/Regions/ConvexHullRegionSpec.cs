@@ -18,20 +18,14 @@ public class ConvexHullRegionSpec
     public void BuildRegions()
     {
         _randomSource = new SystemRandomSource(12345);
+        _logSink = new RecordingLogSink();
 
-        Vector3 towardNegativeX = new(-1f, 0f, 0f);
-        Vector3 towardPositiveX = new(1f, 0f, 0f);
-        Vector3 towardNegativeY = new(0f, -1f, 0f);
-        Vector3 towardPositiveY = new(0f, 1f, 0f);
-        Vector3 towardNegativeZ = new(0f, 0f, -1f);
-        Vector3 towardPositiveZ = new(0f, 0f, 1f);
-
-        Plane leftWall = new(towardNegativeX, 0f);
-        Plane rightWall = new(towardPositiveX, 10f);
-        Plane floor = new(towardNegativeY, 0f);
-        Plane ceiling = new(towardPositiveY, 3f);
-        Plane nearWall = new(towardNegativeZ, 0f);
-        Plane farWall = new(towardPositiveZ, 20f);
+        Plane leftWall = new(TowardNegativeX, 0f);
+        Plane rightWall = new(TowardPositiveX, 10f);
+        Plane floor = new(TowardNegativeY, 0f);
+        Plane ceiling = new(TowardPositiveY, 3f);
+        Plane nearWall = new(TowardNegativeZ, 0f);
+        Plane farWall = new(TowardPositiveZ, 20f);
 
         // A box from the origin to (10, 3, 20), as six outward-facing planes.
         _hullBox = new ConvexHullRegion { RandomSource = _randomSource };
@@ -45,8 +39,7 @@ public class ConvexHullRegionSpec
         // A wedge, the box above cut by the diagonal plane x + z <= 10, keeping the corner at the origin. The right
         // and far walls are left out, since the diagonal with the near and left walls already caps x and z at 10.
         Vector3 pointOnDiagonal = new(10f, 0f, 0f);
-        Vector3 diagonalNormal = new(1f, 0f, 1f);
-        Plane diagonal = Plane.FromPointAndNormal(pointOnDiagonal, diagonalNormal);
+        Plane diagonal = Plane.FromPointAndNormal(pointOnDiagonal, DiagonalNormal);
 
         _hullWedge = new ConvexHullRegion { RandomSource = _randomSource };
         _hullWedge.AddPlane(leftWall);
@@ -56,7 +49,16 @@ public class ConvexHullRegionSpec
         _hullWedge.AddPlane(diagonal);
     }
 
+    private static readonly Vector3 TowardNegativeX = new(-1f, 0f, 0f);
+    private static readonly Vector3 TowardPositiveX = new(1f, 0f, 0f);
+    private static readonly Vector3 TowardNegativeY = new(0f, -1f, 0f);
+    private static readonly Vector3 TowardPositiveY = new(0f, 1f, 0f);
+    private static readonly Vector3 TowardNegativeZ = new(0f, 0f, -1f);
+    private static readonly Vector3 TowardPositiveZ = new(0f, 0f, 1f);
+    private static readonly Vector3 DiagonalNormal = new(1f, 0f, 1f);
+
     private SystemRandomSource _randomSource;
+    private RecordingLogSink _logSink;
 
     private ConvexHullRegion _hullBox;
     private ConvexHullRegion _hullWedge;
@@ -144,10 +146,8 @@ public class ConvexHullRegionSpec
     {
         // A slab between two parallel planes goes on forever, so there is nowhere to sample from, and the region has
         // to say so rather than hand back a position outside itself.
-        Vector3 towardPositiveX = new(1f, 0f, 0f);
-        Vector3 towardNegativeX = new(-1f, 0f, 0f);
-        Plane upperFace = new(towardPositiveX, 8f);
-        Plane lowerFace = new(towardNegativeX, -2f);
+        Plane upperFace = new(TowardPositiveX, 8f);
+        Plane lowerFace = new(TowardNegativeX, -2f);
         Vector3 farFromTheOriginInsideTheSlab = new(5f, 100f, -100f);
 
         ConvexHullRegion slab = new() { RandomSource = _randomSource };
@@ -167,12 +167,9 @@ public class ConvexHullRegionSpec
     {
         // Three planes around the Y axis make a triangular tube with no top or bottom. Its walls meet pairwise along
         // vertical lines, never three at a point, so the tube has no corners for the bounds to be worked out from.
-        Vector3 towardNegativeX = new(-1f, 0f, 0f);
-        Vector3 towardNegativeZ = new(0f, 0f, -1f);
-        Vector3 diagonalNormal = new(1f, 0f, 1f);
-        Plane leftWall = new(towardNegativeX, 0f);
-        Plane nearWall = new(towardNegativeZ, 0f);
-        Plane diagonal = new(diagonalNormal, 10f);
+        Plane leftWall = new(TowardNegativeX, 0f);
+        Plane nearWall = new(TowardNegativeZ, 0f);
+        Plane diagonal = new(DiagonalNormal, 10f);
 
         ConvexHullRegion tube = new() { RandomSource = _randomSource };
         tube.AddPlane(leftWall);
@@ -195,8 +192,7 @@ public class ConvexHullRegionSpec
                                    <Plane Normal="(0, 0, -1)" Distance="1"/>
                                </Region>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         ConvexHullRegion loaded = new();
 
@@ -206,7 +202,7 @@ public class ConvexHullRegionSpec
             Assert.That(loaded.Planes, Has.Count.EqualTo(6));
             Assert.That(loaded.IsInRegion(Vector3.Zero), Is.True);
             Assert.That(loaded.IsInRegion(new Vector3(2f, 0f, 0f)), Is.False);
-            Assert.That(logSink.Entries, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 
@@ -218,15 +214,14 @@ public class ConvexHullRegionSpec
                                    <Plane Normal="(0, 1, 0)" Distance="1"/>
                                </Region>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         ConvexHullRegion loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 1, the Region element has fewer than 4 Plane elements, too few to close a volume",
             }));
@@ -241,15 +236,14 @@ public class ConvexHullRegionSpec
                                    <Plane Normal="(0, 0, 0)" Distance="1"/>
                                </Region>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         ConvexHullRegion loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 2, the Plane element's Normal has no length",
             }));

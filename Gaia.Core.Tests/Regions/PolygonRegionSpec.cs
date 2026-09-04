@@ -17,11 +17,14 @@ public class PolygonRegionSpec
     [SetUp]
     public void BuildRegion()
     {
+        _logSink = new RecordingLogSink();
         _randomSource = new SystemRandomSource(12345);
 
         _polygon = new PolygonRegion { RandomSource = _randomSource };
         RegionSpecHelpers.AddLShapedFootprint(_polygon);
     }
+
+    private RecordingLogSink _logSink;
 
     private SystemRandomSource _randomSource;
 
@@ -90,8 +93,7 @@ public class PolygonRegionSpec
                                    <Corner Position="(0, 0, 10)"/>
                                </Region>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         PolygonRegion loaded = new();
 
@@ -101,7 +103,7 @@ public class PolygonRegionSpec
             Assert.That(loaded.Corners, Has.Count.EqualTo(3));
             Assert.That(loaded.IsInRegion(new Vector3(2f, 0f, 2f)), Is.True);
             Assert.That(loaded.IsInRegion(new Vector3(9f, 0f, 9f)), Is.False, "beyond the diagonal edge");
-            Assert.That(logSink.Entries, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 
@@ -114,15 +116,14 @@ public class PolygonRegionSpec
                                    <Corner Position="(10, 0, 0)"/>
                                </Region>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         PolygonRegion loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 1, the Region element has fewer than 3 Corner elements",
             }));

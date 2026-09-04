@@ -12,6 +12,7 @@ public class FloatSequenceWeightFunctionSpec
     [SetUp]
     public void BuildWeightFunction()
     {
+        _logSink = new RecordingLogSink();
         _inRangeWeights = new WeightValues(2f, 1f, float.MinValue);
 
         _weightFunction = new FloatSequenceWeightFunction(WeightValues.Vetoed);
@@ -21,11 +22,17 @@ public class FloatSequenceWeightFunctionSpec
 
         _weightFunction.AddEntry(tooCloseEntry);
         _weightFunction.AddEntry(inRangeEntry);
+
+        // Rolls its threshold between 50 and 150 when selected. Not on the sequence above, for the tests about rolling.
+        _randomizedEntry = new FloatSequenceEntry(50f, 150f, _inRangeWeights);
     }
+
+    private RecordingLogSink _logSink;
 
     private WeightValues _inRangeWeights;
 
     private FloatSequenceWeightFunction _weightFunction;
+    private FloatSequenceEntry _randomizedEntry;
 
     [Test]
     public void ReportsTheFirstEntryTheInputFallsWithin()
@@ -85,8 +92,7 @@ public class FloatSequenceWeightFunctionSpec
         FloatSequenceWeightFunction weightFunction = new(WeightValues.Vetoed);
         weightFunction.RandomSource = new FixedRandomSource(0.9f);
 
-        FloatSequenceEntry randomizedEntry = new(50f, 150f, _inRangeWeights);
-        weightFunction.AddEntry(randomizedEntry);
+        weightFunction.AddEntry(_randomizedEntry);
 
         // Threshold sits at ThresholdMin until Select rolls it, so 100 falls past the entry.
         Assert.That(weightFunction.CalculateFloat(100f), Is.EqualTo(WeightValues.Vetoed));
@@ -129,11 +135,10 @@ public class FloatSequenceWeightFunctionSpec
     {
         FloatSequenceWeightFunction weightFunction = new(WeightValues.Vetoed);
 
-        FloatSequenceEntry rolledEntry = new(50f, 150f, _inRangeWeights);
         FloatSequenceEntry tooEarlyEntry = new(120f, 200f, WeightValues.Vetoed);
         FloatSequenceEntry lateEnoughEntry = new(150f, 200f, WeightValues.Vetoed);
 
-        weightFunction.AddEntry(rolledEntry);
+        weightFunction.AddEntry(_randomizedEntry);
 
         Assert.Multiple(() =>
         {
@@ -152,12 +157,11 @@ public class FloatSequenceWeightFunctionSpec
     public void ReportsWhichEntriesRollTheirThreshold()
     {
         FloatSequenceEntry fixedEntry = new(100f, _inRangeWeights);
-        FloatSequenceEntry randomizedEntry = new(50f, 150f, _inRangeWeights);
 
         Assert.Multiple(() =>
         {
             Assert.That(fixedEntry.IsRandomized, Is.False);
-            Assert.That(randomizedEntry.IsRandomized, Is.True);
+            Assert.That(_randomizedEntry.IsRandomized, Is.True);
         });
     }
 
@@ -171,8 +175,7 @@ public class FloatSequenceWeightFunctionSpec
                                    <Default Multiplier="0"/>
                                </WeightFunction>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         FloatSequenceWeightFunction loaded = new();
 
@@ -183,7 +186,7 @@ public class FloatSequenceWeightFunctionSpec
             Assert.That(loaded.CalculateFloat(100f), Is.EqualTo(new WeightValues(1f, 1f, float.MinValue)),
                 "between the thresholds");
             Assert.That(loaded.CalculateFloat(400f), Is.EqualTo(WeightValues.Vetoed), "above both, the default");
-            Assert.That(logSink.Entries, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 
@@ -195,8 +198,7 @@ public class FloatSequenceWeightFunctionSpec
                                    <Entry ThresholdMin="10" ThresholdMax="20" Multiplier="0"/>
                                </WeightFunction>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
         creationData.RandomSource = new FixedRandomSource(0.5f);
 
         FloatSequenceWeightFunction loaded = new();
@@ -221,15 +223,14 @@ public class FloatSequenceWeightFunctionSpec
                                    <Entry Threshold="50" ThresholdMin="10" ThresholdMax="20"/>
                                </WeightFunction>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         FloatSequenceWeightFunction loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 2, the Entry element mixes Threshold with ThresholdMin and ThresholdMax",
             }));
@@ -245,15 +246,14 @@ public class FloatSequenceWeightFunctionSpec
                                    <Entry Threshold="50" Multiplier="0"/>
                                </WeightFunction>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         FloatSequenceWeightFunction loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 3, the Entry element is out of order, it starts at 50 and the entry before " +
                 "it reaches 300",
@@ -269,15 +269,14 @@ public class FloatSequenceWeightFunctionSpec
                                    <Entry ThresholdMin="20" ThresholdMax="10" Multiplier="0"/>
                                </WeightFunction>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         FloatSequenceWeightFunction loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 2, the Entry element's ThresholdMax 10 is below its ThresholdMin 20",
             }));

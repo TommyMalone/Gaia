@@ -9,6 +9,14 @@ namespace Gaia.Core.Tests.Options;
 [TestFixture]
 public class ConsiderationAndActionOptionSpec
 {
+    [SetUp]
+    public void BuildSink()
+    {
+        _logSink = new RecordingLogSink();
+    }
+
+    private RecordingLogSink _logSink;
+
     [Test]
     public void LoadsItsConsiderationsAndActions()
     {
@@ -18,8 +26,7 @@ public class ConsiderationAndActionOptionSpec
                                    <Action Type="Pause" Name="Hold" Duration="1"/>
                                </Option>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         AiString snipeName = "Snipe";
         ConsiderationAndActionOption loaded = new();
@@ -33,7 +40,7 @@ public class ConsiderationAndActionOptionSpec
 
             Assert.That(loaded.Weight, Is.EqualTo(2f), "the loaded tuning scores, so no default was added");
             Assert.That(loaded.IsDone, Is.True, "the pause has not started, so nothing is left to finish");
-            Assert.That(logSink.Entries, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 
@@ -43,8 +50,7 @@ public class ConsiderationAndActionOptionSpec
         const string snippet = """
                                <Option Type="ConsiderationAndAction" Name="Idle"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         ConsiderationAndActionOption loaded = new();
 
@@ -65,15 +71,14 @@ public class ConsiderationAndActionOptionSpec
         const string snippet = """
                                <Option Type="ConsiderationAndAction"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         ConsiderationAndActionOption loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 1, the Option element has no Name attribute",
             }));
@@ -88,15 +93,14 @@ public class ConsiderationAndActionOptionSpec
                                    <Reasoner Type="RuleBased"/>
                                </Option>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         ConsiderationAndActionOption loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 2, the Option element does not take Reasoner elements",
             }));

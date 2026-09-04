@@ -14,9 +14,11 @@ public class DataStoreBaseSpec
     public void BuildDataStore()
     {
         _dataStore = new StubDataStore();
+        _guard = new StubEntity("Guard");
     }
 
     private StubDataStore _dataStore;
+    private StubEntity _guard;
 
     [Test]
     public void ReportsABoolItWasGiven()
@@ -83,16 +85,14 @@ public class DataStoreBaseSpec
     [Test]
     public void ReportsAnEntityItWasGiven()
     {
-        StubEntity target = new("Guard");
-
-        _dataStore.SetEntity("SnipeTarget", target);
+        _dataStore.SetEntity("SnipeTarget", _guard);
 
         Assert.Multiple(() =>
         {
             Assert.That(_dataStore.TryGetEntity("SnipeTarget", out EntityBase? storedTarget), Is.True);
 
             // The store holds the entity itself rather than a copy of what it contained.
-            Assert.That(storedTarget, Is.SameAs(target));
+            Assert.That(storedTarget, Is.SameAs(_guard));
         });
     }
 
@@ -225,10 +225,8 @@ public class DataStoreBaseSpec
     [Test]
     public void ForgetsEveryNameWhenCleared()
     {
-        StubEntity target = new("Guard");
-
         _dataStore.SetBool("IsOfficer", true);
-        _dataStore.SetEntity("SnipeTarget", target);
+        _dataStore.SetEntity("SnipeTarget", _guard);
 
         _dataStore.Clear();
 

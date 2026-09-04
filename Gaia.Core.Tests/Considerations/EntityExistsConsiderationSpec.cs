@@ -19,6 +19,7 @@ public class EntityExistsConsiderationSpec
     [SetUp]
     public void BuildConsideration()
     {
+        _logSink = new RecordingLogSink();
         _blackboard = new BrainBlackboard();
 
         _reportedWeights = new WeightValues(3f, 0.5f, 2f);
@@ -29,8 +30,9 @@ public class EntityExistsConsiderationSpec
         _contacts = new List<EntityBase>();
         _blackboard.SetEntityList("Contacts", _contacts);
 
-        // Not in the list until a test puts it there.
+        // Neither is in the list until a test puts it there.
         _lookout = new StubEntity("Lookout");
+        _gone = new StubEntity("Gone") { IsValid = false };
 
         _consideration = new EntityExistsConsideration
         {
@@ -41,6 +43,8 @@ public class EntityExistsConsiderationSpec
         };
     }
 
+    private RecordingLogSink _logSink;
+
     private BrainBlackboard _blackboard;
 
     private WeightValues _reportedWeights;
@@ -50,6 +54,7 @@ public class EntityExistsConsiderationSpec
 
     private List<EntityBase> _contacts;
     private StubEntity _lookout;
+    private StubEntity _gone;
 
     private EntityExistsConsideration _consideration;
 
@@ -83,8 +88,7 @@ public class EntityExistsConsiderationSpec
     public void ReportsFalseWhenEverythingInTheListHasGone()
     {
         // A list that was never cleaned up must not keep an option alive.
-        StubEntity gone = new("Gone") { IsValid = false };
-        _contacts.Add(gone);
+        _contacts.Add(_gone);
 
         _consideration.Calculate();
 
@@ -94,9 +98,8 @@ public class EntityExistsConsiderationSpec
     [Test]
     public void ReportsTrueWhenAnyEntryIsStillValid()
     {
-        StubEntity gone = new("Gone") { IsValid = false };
         StubEntity present = new("Present");
-        _contacts.Add(gone);
+        _contacts.Add(_gone);
         _contacts.Add(present);
 
         _consideration.Calculate();
@@ -174,8 +177,7 @@ public class EntityExistsConsiderationSpec
                                    </WeightFunction>
                                </Consideration>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         BrainBlackboard blackboard = new();
         creationData.BrainBlackboard = blackboard;

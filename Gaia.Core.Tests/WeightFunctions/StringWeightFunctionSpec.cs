@@ -11,11 +11,14 @@ public class StringWeightFunctionSpec
     [SetUp]
     public void BuildWeightFunction()
     {
+        _logSink = new RecordingLogSink();
         _enemyWeights = new WeightValues(2f, 1f, float.MinValue);
 
         _weightFunction = new StringWeightFunction(WeightValues.Vetoed);
         _weightFunction.AddEntry("Enemy", _enemyWeights);
     }
+
+    private RecordingLogSink _logSink;
 
     private WeightValues _enemyWeights;
 
@@ -66,8 +69,7 @@ public class StringWeightFunctionSpec
                                    <Default Addend="1"/>
                                </WeightFunction>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         StringWeightFunction loaded = new();
 
@@ -76,7 +78,7 @@ public class StringWeightFunctionSpec
             Assert.That(loaded.Init(creationData), Is.True);
             Assert.That(loaded.CalculateString("Enemy"), Is.EqualTo(WeightValues.Vetoed));
             Assert.That(loaded.CalculateString("Friend"), Is.EqualTo(new WeightValues(1f, 1f, float.MinValue)));
-            Assert.That(logSink.Entries, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 
@@ -88,15 +90,14 @@ public class StringWeightFunctionSpec
                                    <Entry Multiplier="0"/>
                                </WeightFunction>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         StringWeightFunction loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 2, the Entry element has no Text attribute",
             }));

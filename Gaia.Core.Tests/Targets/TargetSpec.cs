@@ -21,6 +21,7 @@ public class TargetSpec
     [SetUp]
     public void BuildTargets()
     {
+        _logSink = new RecordingLogSink();
         _blackboard = new BrainBlackboard();
 
         _sniperPosition = new Vector3(5f, 0f, 5f);
@@ -47,6 +48,8 @@ public class TargetSpec
             EntityName = "Lookout",
         };
     }
+
+    private RecordingLogSink _logSink;
 
     private BrainBlackboard _blackboard;
 
@@ -221,8 +224,7 @@ public class TargetSpec
         const string snippet = """
                                <Target Type="Position" Position="(1, 2, 3)"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         PositionTarget loaded = new();
 
@@ -230,7 +232,7 @@ public class TargetSpec
         {
             Assert.That(loaded.Init(creationData), Is.True);
             Assert.That(loaded.Position, Is.EqualTo(new Vector3(1f, 2f, 3f)));
-            Assert.That(logSink.Entries, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 
@@ -240,8 +242,7 @@ public class TargetSpec
         const string snippet = """
                                <Target Type="Self"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         Actor sniper = new() { Name = "Sniper" };
         creationData.Self = sniper;
@@ -261,8 +262,7 @@ public class TargetSpec
         const string snippet = """
                                <Target Type="ByName" List="Actors" Entity="Officer" Store="World"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         WorldBlackboard worldBlackboard = new();
         creationData.WorldBlackboard = worldBlackboard;
@@ -286,15 +286,14 @@ public class TargetSpec
         const string snippet = """
                                <Target Type="ByName" Entity="Officer"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         ByNameTarget loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 1, the Target element has no List attribute",
             }));

@@ -23,6 +23,7 @@ public class DualUtilityReasonerSpec
     [SetUp]
     public void BuildReasoner()
     {
+        _logSink = new RecordingLogSink();
         _executed = new List<string>();
 
         _dualUtilityReasoner = new DualUtilityReasoner();
@@ -57,6 +58,8 @@ public class DualUtilityReasonerSpec
         _highRankButLight = new WeightValues(1f, 1f, 1f);
         _lowRankButHeavy = new WeightValues(100f, 1f, 0f);
     }
+
+    private RecordingLogSink _logSink;
 
     private List<string> _executed;
 
@@ -261,8 +264,7 @@ public class DualUtilityReasonerSpec
         const string snippet = """
                                <Reasoner Type="DualUtility" WeightScreeningFactor="0.6"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         FixedRandomSource randomSource = new(0.5f);
         creationData.RandomSource = randomSource;
@@ -274,7 +276,7 @@ public class DualUtilityReasonerSpec
             Assert.That(loaded.Init(creationData), Is.True);
             Assert.That(loaded.WeightScreeningFactor, Is.EqualTo(0.6f));
             Assert.That(loaded.RandomSource, Is.SameAs(randomSource));
-            Assert.That(logSink.Entries, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 }

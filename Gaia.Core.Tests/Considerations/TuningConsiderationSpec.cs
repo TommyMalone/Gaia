@@ -9,6 +9,14 @@ namespace Gaia.Core.Tests.Considerations;
 [TestFixture]
 public class TuningConsiderationSpec
 {
+    [SetUp]
+    public void BuildSink()
+    {
+        _logSink = new RecordingLogSink();
+    }
+
+    private RecordingLogSink _logSink;
+
     [Test]
     public void ReportsItsConfiguredValuesWithoutCalculating()
     {
@@ -27,8 +35,7 @@ public class TuningConsiderationSpec
         const string snippet = """
                                <Consideration Type="Tuning" Addend="1" Multiplier="0.5" Rank="2"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         TuningConsideration loaded = new();
 
@@ -36,7 +43,7 @@ public class TuningConsiderationSpec
         {
             Assert.That(loaded.Init(creationData), Is.True);
             Assert.That(loaded.Weights, Is.EqualTo(new WeightValues(1f, 0.5f, 2f)));
-            Assert.That(logSink.Entries, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 
@@ -48,15 +55,14 @@ public class TuningConsiderationSpec
                                    <Extra/>
                                </Consideration>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         TuningConsideration loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 2, the Consideration element does not take Extra elements",
             }));

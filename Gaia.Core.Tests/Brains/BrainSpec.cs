@@ -16,6 +16,7 @@ public class BrainSpec
     [SetUp]
     public void BuildBrain()
     {
+        _logSink = new RecordingLogSink();
         _executed = new List<string>();
 
         RecordAction action = new("Idle", _executed, false);
@@ -26,6 +27,8 @@ public class BrainSpec
 
         _brain = new Brain { RootReasoner = _reasoner };
     }
+
+    private RecordingLogSink _logSink;
 
     private List<string> _executed;
 
@@ -186,16 +189,14 @@ public class BrainSpec
     [Test]
     public void WarnsWhenItIsEnabledWithNoReasoner()
     {
-        RecordingLogSink logSink = new();
-
         Brain emptyBrain = new()
         {
-            LogSink = logSink,
+            LogSink = _logSink,
             LogChannel = "Sentry",
         };
 
         emptyBrain.Enable();
 
-        Assert.That(logSink.Entries, Is.EqualTo(new[] { "Warning Sentry brain enabled with no root reasoner" }));
+        Assert.That(_logSink.Entries, Is.EqualTo(new[] { "Warning Sentry brain enabled with no root reasoner" }));
     }
 }

@@ -18,6 +18,7 @@ public class SubreasonerActionSpec
     [SetUp]
     public void BuildReasoners()
     {
+        _logSink = new RecordingLogSink();
         _executed = new List<string>();
 
         _reasoner = new RuleBasedReasoner();
@@ -68,6 +69,8 @@ public class SubreasonerActionSpec
         _subreasoner2.AddOption(subreasoner2Option1);
         _subreasoner2.AddOption(subreasoner2Option2);
     }
+
+    private RecordingLogSink _logSink;
 
     private List<string> _executed;
 
@@ -345,8 +348,7 @@ public class SubreasonerActionSpec
                                    <Reasoner Type="Sequence"/>
                                </Action>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         SubreasonerAction loaded = new();
 
@@ -354,7 +356,7 @@ public class SubreasonerActionSpec
         {
             Assert.That(loaded.Init(creationData), Is.True);
             Assert.That(loaded.Reasoner, Is.InstanceOf<SequenceReasoner>());
-            Assert.That(logSink.Entries, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 
@@ -364,15 +366,14 @@ public class SubreasonerActionSpec
         const string snippet = """
                                <Action Type="Subreasoner" Name="Investigate"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         SubreasonerAction loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 1, the Action element has no Reasoner element",
             }));

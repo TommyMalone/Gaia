@@ -15,16 +15,20 @@ public class CircleRegionSpec
     public void BuildRegion()
     {
         _randomSource = new SystemRandomSource(12345);
+        _logSink = new RecordingLogSink();
 
         _circle = new CircleRegion
         {
-            Center = new Vector3(10f, 0f, 10f),
+            Center = InitialCenter,
             Radius = 5f,
             RandomSource = _randomSource,
         };
     }
 
+    private static readonly Vector3 InitialCenter = new(10f, 0f, 10f);
+
     private SystemRandomSource _randomSource;
+    private RecordingLogSink _logSink;
 
     private CircleRegion _circle;
 
@@ -79,7 +83,6 @@ public class CircleRegionSpec
     [Test]
     public void FollowsItsCenterTarget()
     {
-        Vector3 initialCenter = new(10f, 0f, 10f);
         Vector3 nearFirstTargetPosition = new(102f, 0f, 100f);
         Vector3 nearSecondTargetPosition = new(202f, 0f, 200f);
 
@@ -88,7 +91,7 @@ public class CircleRegionSpec
 
         Assert.Multiple(() =>
         {
-            Assert.That(_circle.IsInRegion(initialCenter), Is.False, "the initial center no longer applies");
+            Assert.That(_circle.IsInRegion(InitialCenter), Is.False, "the initial center no longer applies");
             Assert.That(_circle.IsInRegion(nearFirstTargetPosition), Is.True);
         });
 
@@ -100,14 +103,12 @@ public class CircleRegionSpec
     [Test]
     public void ContainsNothingWhenItsCenterTargetHasNoPosition()
     {
-        Vector3 initialCenter = new(10f, 0f, 10f);
-
         SelfTarget target = new();
         _circle.CenterTarget = target;
 
         Assert.Multiple(() =>
         {
-            Assert.That(_circle.IsInRegion(initialCenter), Is.False);
+            Assert.That(_circle.IsInRegion(InitialCenter), Is.False);
             Assert.That(_circle.TryGetRandomPosition(out _), Is.False);
         });
     }
@@ -120,8 +121,7 @@ public class CircleRegionSpec
                                    <CenterTarget Type="Position" Position="(100, 0, 100)"/>
                                </Region>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         CircleRegion loaded = new();
 
@@ -133,7 +133,7 @@ public class CircleRegionSpec
             Assert.That(loaded.IsInRegion(new Vector3(102f, 0f, 102f)), Is.True,
                 "containment follows the loaded center target rather than the fixed center");
             Assert.That(loaded.IsInRegion(new Vector3(2f, 0f, 2f)), Is.False);
-            Assert.That(logSink.Entries, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 
@@ -143,15 +143,14 @@ public class CircleRegionSpec
         const string snippet = """
                                <Region Type="Circle" Center="(0, 0, 0)"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         CircleRegion loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 1, the Region element has no Radius attribute",
             }));

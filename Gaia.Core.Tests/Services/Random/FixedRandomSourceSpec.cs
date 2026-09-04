@@ -16,11 +16,14 @@ public class FixedRandomSourceSpec
     public void BuildRandomSource()
     {
         _randomSource = new FixedRandomSource(ConfiguredValue);
+        _wholeNumberSource = new FixedRandomSource(WholeNumberValue);
     }
 
     private const float ConfiguredValue = 0.75f;
+    private const float WholeNumberValue = 3f;
 
     private FixedRandomSource _randomSource;
+    private FixedRandomSource _wholeNumberSource;
 
     [Test]
     public void ReportsItsConfiguredValueAsAFloat()
@@ -31,26 +34,22 @@ public class FixedRandomSourceSpec
     [Test]
     public void ReportsItsConfiguredValueTruncatedAsAnInt()
     {
-        FixedRandomSource wholeNumberSource = new(3f);
-
         Assert.Multiple(() =>
         {
             Assert.That(_randomSource.NextInt(), Is.EqualTo(0));
-            Assert.That(wholeNumberSource.NextInt(), Is.EqualTo(3));
+            Assert.That(_wholeNumberSource.NextInt(), Is.EqualTo(3));
         });
     }
 
     [Test]
     public void ClampsIntoTheRangeItIsGiven()
     {
-        FixedRandomSource wholeNumberSource = new(3f);
-
         Assert.Multiple(() =>
         {
-            Assert.That(wholeNumberSource.NextInt(2), Is.EqualTo(1));
-            Assert.That(wholeNumberSource.NextInt(10), Is.EqualTo(3));
-            Assert.That(wholeNumberSource.NextInt(5, 10), Is.EqualTo(5));
-            Assert.That(wholeNumberSource.NextInt(-10, -5), Is.EqualTo(-6));
+            Assert.That(_wholeNumberSource.NextInt(2), Is.EqualTo(1));
+            Assert.That(_wholeNumberSource.NextInt(10), Is.EqualTo(3));
+            Assert.That(_wholeNumberSource.NextInt(5, 10), Is.EqualTo(5));
+            Assert.That(_wholeNumberSource.NextInt(-10, -5), Is.EqualTo(-6));
         });
     }
 

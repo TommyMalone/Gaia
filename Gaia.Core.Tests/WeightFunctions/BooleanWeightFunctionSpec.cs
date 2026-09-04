@@ -11,11 +11,14 @@ public class BooleanWeightFunctionSpec
     [SetUp]
     public void BuildWeightFunction()
     {
+        _logSink = new RecordingLogSink();
         _trueWeights = new WeightValues(2f, 1f, float.MinValue);
         _falseWeights = WeightValues.Vetoed;
 
         _weightFunction = new BooleanWeightFunction(_trueWeights, _falseWeights);
     }
+
+    private RecordingLogSink _logSink;
 
     private WeightValues _trueWeights;
     private WeightValues _falseWeights;
@@ -52,8 +55,7 @@ public class BooleanWeightFunctionSpec
                                    <False Multiplier="0"/>
                                </WeightFunction>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         BooleanWeightFunction loaded = new();
 
@@ -62,7 +64,7 @@ public class BooleanWeightFunctionSpec
             Assert.That(loaded.Init(creationData), Is.True);
             Assert.That(loaded.CalculateBool(true), Is.EqualTo(new WeightValues(2f, 1f, float.MinValue)));
             Assert.That(loaded.CalculateBool(false), Is.EqualTo(WeightValues.Vetoed));
-            Assert.That(logSink.Entries, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 
@@ -74,8 +76,7 @@ public class BooleanWeightFunctionSpec
                                    <False Multiplier="0"/>
                                </WeightFunction>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         BooleanWeightFunction loaded = new();
 
@@ -94,15 +95,14 @@ public class BooleanWeightFunctionSpec
                                    <Maybe/>
                                </WeightFunction>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         BooleanWeightFunction loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 2, the WeightFunction element does not take Maybe elements",
             }));

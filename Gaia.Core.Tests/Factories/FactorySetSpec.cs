@@ -14,6 +14,14 @@ namespace Gaia.Core.Tests.Factories;
 [TestFixture]
 public class FactorySetSpec
 {
+    [SetUp]
+    public void BuildSink()
+    {
+        _logSink = new RecordingLogSink();
+    }
+
+    private RecordingLogSink _logSink;
+
     [Test]
     public void BuildsEveryBuiltInWeightFunctionByItsTypeName()
     {
@@ -31,15 +39,14 @@ public class FactorySetSpec
             foreach ((string typeName, Type componentType) in catalog)
             {
                 string snippet = $"""<WeightFunction Type="{typeName}"/>""";
-                RecordingLogSink logSink = new();
-                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
                 bool created = creationData.Factories.WeightFunctions.TryCreate(creationData,
                     out WeightFunctionBase? weightFunction);
 
                 Assert.That(created, Is.True, typeName);
                 Assert.That(weightFunction, Is.InstanceOf(componentType), typeName);
-                Assert.That(logSink.Entries, Is.Empty, typeName);
+                Assert.That(_logSink.Entries, Is.Empty, typeName);
             }
         });
     }
@@ -64,15 +71,14 @@ public class FactorySetSpec
         {
             foreach ((string typeName, string snippet, Type componentType) in catalog)
             {
-                RecordingLogSink logSink = new();
-                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
                 bool created = creationData.Factories.Considerations.TryCreate(creationData,
                     out ConsiderationBase? consideration);
 
                 Assert.That(created, Is.True, typeName);
                 Assert.That(consideration, Is.InstanceOf(componentType), typeName);
-                Assert.That(logSink.Entries, Is.Empty, typeName);
+                Assert.That(_logSink.Entries, Is.Empty, typeName);
             }
         });
     }
@@ -91,14 +97,13 @@ public class FactorySetSpec
         {
             foreach ((string typeName, string snippet, Type componentType) in catalog)
             {
-                RecordingLogSink logSink = new();
-                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
                 bool created = creationData.Factories.Targets.TryCreate(creationData, out TargetBase? target);
 
                 Assert.That(created, Is.True, typeName);
                 Assert.That(target, Is.InstanceOf(componentType), typeName);
-                Assert.That(logSink.Entries, Is.Empty, typeName);
+                Assert.That(_logSink.Entries, Is.Empty, typeName);
             }
         });
     }
@@ -126,14 +131,13 @@ public class FactorySetSpec
         {
             foreach ((string typeName, string snippet, Type componentType) in catalog)
             {
-                RecordingLogSink logSink = new();
-                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
                 bool created = creationData.Factories.Regions.TryCreate(creationData, out RegionBase? region);
 
                 Assert.That(created, Is.True, typeName);
                 Assert.That(region, Is.InstanceOf(componentType), typeName);
-                Assert.That(logSink.Entries, Is.Empty, typeName);
+                Assert.That(_logSink.Entries, Is.Empty, typeName);
             }
         });
     }
@@ -151,14 +155,13 @@ public class FactorySetSpec
         {
             foreach ((string typeName, string snippet, Type componentType) in catalog)
             {
-                RecordingLogSink logSink = new();
-                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
                 bool created = creationData.Factories.Actions.TryCreate(creationData, out ActionBase? action);
 
                 Assert.That(created, Is.True, typeName);
                 Assert.That(action, Is.InstanceOf(componentType), typeName);
-                Assert.That(logSink.Entries, Is.Empty, typeName);
+                Assert.That(_logSink.Entries, Is.Empty, typeName);
             }
         });
     }
@@ -169,8 +172,7 @@ public class FactorySetSpec
         const string snippet = """
                                <Option Type="ConsiderationAndAction" Name="Idle"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         bool created = creationData.Factories.Options.TryCreate(creationData, out OptionBase? option);
 
@@ -178,7 +180,7 @@ public class FactorySetSpec
         {
             Assert.That(created, Is.True);
             Assert.That(option, Is.InstanceOf<ConsiderationAndActionOption>());
-            Assert.That(logSink.Entries, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 
@@ -197,14 +199,13 @@ public class FactorySetSpec
             foreach ((string typeName, Type componentType) in catalog)
             {
                 string snippet = $"""<Reasoner Type="{typeName}"/>""";
-                RecordingLogSink logSink = new();
-                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
                 bool created = creationData.Factories.Reasoners.TryCreate(creationData, out ReasonerBase? reasoner);
 
                 Assert.That(created, Is.True, typeName);
                 Assert.That(reasoner, Is.InstanceOf(componentType), typeName);
-                Assert.That(logSink.Entries, Is.Empty, typeName);
+                Assert.That(_logSink.Entries, Is.Empty, typeName);
             }
         });
     }

@@ -21,6 +21,7 @@ public class ConsiderationSetConsiderationSpec
     [SetUp]
     public void BuildGroup()
     {
+        _logSink = new RecordingLogSink();
         WeightValues firstReport = new(2f, 0.5f, 1f);
         WeightValues secondReport = new(3f, 0.5f, 4f);
 
@@ -29,6 +30,8 @@ public class ConsiderationSetConsiderationSpec
 
         _group = new ConsiderationSetConsideration([_firstInner, _secondInner]);
     }
+
+    private RecordingLogSink _logSink;
 
     private StubConsideration _firstInner;
     private StubConsideration _secondInner;
@@ -121,8 +124,7 @@ public class ConsiderationSetConsiderationSpec
                                    <Consideration Type="Tuning" Addend="2" Rank="3"/>
                                </Consideration>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         ConsiderationSetConsideration loaded = new();
 
@@ -134,7 +136,7 @@ public class ConsiderationSetConsiderationSpec
 
             Assert.That(loaded.Weights, Is.EqualTo(new WeightValues(3f, 1f, 3f)),
                 "the addends sum and the highest rank is taken");
-            Assert.That(logSink.Entries, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 }

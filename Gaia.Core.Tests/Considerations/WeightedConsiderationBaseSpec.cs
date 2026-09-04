@@ -20,6 +20,7 @@ public class WeightedConsiderationBaseSpec
             WeightFunction = _weightFunction,
             QueryResult = 7f,
         };
+        _bareConsideration = new StubWeightedConsideration();
     }
 
     private WeightValues _reportedWeights;
@@ -27,6 +28,7 @@ public class WeightedConsiderationBaseSpec
     private RecordingWeightFunction _weightFunction;
 
     private StubWeightedConsideration _consideration;
+    private StubWeightedConsideration _bareConsideration;
 
     [Test]
     public void ReportsWhatItsWeightFunctionReturned()
@@ -47,16 +49,14 @@ public class WeightedConsiderationBaseSpec
     [Test]
     public void ReportsNeutralValuesWithNoWeightFunction()
     {
-        StubWeightedConsideration consideration = new();
-
-        consideration.Calculate();
+        _bareConsideration.Calculate();
 
         Assert.Multiple(() =>
         {
-            Assert.That(consideration.Weights, Is.EqualTo(WeightValues.Neutral));
+            Assert.That(_bareConsideration.Weights, Is.EqualTo(WeightValues.Neutral));
 
             // CalculateWeights is never reached, so a consideration cannot measure anything it has nowhere to send.
-            Assert.That(consideration.CalculateWeightsCount, Is.EqualTo(0));
+            Assert.That(_bareConsideration.CalculateWeightsCount, Is.EqualTo(0));
         });
     }
 
@@ -88,12 +88,10 @@ public class WeightedConsiderationBaseSpec
     [Test]
     public void SelectsAndDeselectsWithNoWeightFunction()
     {
-        StubWeightedConsideration consideration = new();
-
         Assert.Multiple(() =>
         {
-            Assert.That(() => consideration.Select(), Throws.Nothing);
-            Assert.That(() => consideration.Deselect(), Throws.Nothing);
+            Assert.That(() => _bareConsideration.Select(), Throws.Nothing);
+            Assert.That(() => _bareConsideration.Deselect(), Throws.Nothing);
         });
     }
 }

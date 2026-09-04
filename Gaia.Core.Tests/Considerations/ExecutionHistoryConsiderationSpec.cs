@@ -31,6 +31,7 @@ public class ExecutionHistoryConsiderationSpec
     public void BuildConsideration()
     {
         _timeSource = new ManualTimeSource();
+        _logSink = new RecordingLogSink();
 
         _whileRunningWeights = new WeightValues(1f, 1f, float.MinValue);
         _finishedWeights = new WeightValues(2f, 1f, float.MinValue);
@@ -62,7 +63,11 @@ public class ExecutionHistoryConsiderationSpec
         _option = new StubOption([_consideration, _rankConsideration], [_action]);
     }
 
+    private static readonly Seconds RunningTime = new(5f);
+    private static readonly Seconds CooldownTime = new(3f);
+
     private ManualTimeSource _timeSource;
+    private RecordingLogSink _logSink;
 
     private WeightValues _whileRunningWeights;
     private WeightValues _finishedWeights;
@@ -91,15 +96,14 @@ public class ExecutionHistoryConsiderationSpec
         SelectTheOption();
         _action.SetDone(true);
 
-        Seconds runningTime = new(5f);
-        _timeSource.Advance(runningTime);
+        _timeSource.Advance(RunningTime);
 
         _consideration.Calculate();
 
         Assert.Multiple(() =>
         {
             Assert.That(_consideration.Weights, Is.EqualTo(_finishedWeights));
-            Assert.That(_finishedWeightFunction.LastFloat, Is.EqualTo(runningTime.Value));
+            Assert.That(_finishedWeightFunction.LastFloat, Is.EqualTo(RunningTime.Value));
             Assert.That(_whileRunningWeightFunction.CalculationCount, Is.EqualTo(0));
         });
     }
@@ -238,8 +242,7 @@ public class ExecutionHistoryConsiderationSpec
     {
         _consideration.Select();
 
-        Seconds runningTime = new(5f);
-        _timeSource.Advance(runningTime);
+        _timeSource.Advance(RunningTime);
 
         _consideration.Calculate();
 
@@ -251,12 +254,11 @@ public class ExecutionHistoryConsiderationSpec
     {
         _consideration.Select();
 
-        Seconds runningTime = new(5f);
-        _timeSource.Advance(runningTime);
+        _timeSource.Advance(RunningTime);
 
         _consideration.Calculate();
 
-        Assert.That(_whileRunningWeightFunction.LastFloat, Is.EqualTo(runningTime.Value));
+        Assert.That(_whileRunningWeightFunction.LastFloat, Is.EqualTo(RunningTime.Value));
     }
 
     [Test]
@@ -264,13 +266,11 @@ public class ExecutionHistoryConsiderationSpec
     {
         _consideration.Select();
 
-        Seconds runningTime = new(5f);
-        _timeSource.Advance(runningTime);
+        _timeSource.Advance(RunningTime);
 
         _consideration.Deselect();
 
-        Seconds cooldownTime = new(3f);
-        _timeSource.Advance(cooldownTime);
+        _timeSource.Advance(CooldownTime);
 
         _consideration.Calculate();
 
@@ -285,17 +285,15 @@ public class ExecutionHistoryConsiderationSpec
         // it started.
         _consideration.Select();
 
-        Seconds runningTime = new(5f);
-        _timeSource.Advance(runningTime);
+        _timeSource.Advance(RunningTime);
 
         _consideration.Deselect();
 
-        Seconds cooldownTime = new(3f);
-        _timeSource.Advance(cooldownTime);
+        _timeSource.Advance(CooldownTime);
 
         _consideration.Calculate();
 
-        Assert.That(_sinceLastRunWeightFunction.LastFloat, Is.EqualTo(cooldownTime.Value));
+        Assert.That(_sinceLastRunWeightFunction.LastFloat, Is.EqualTo(CooldownTime.Value));
     }
 
     [Test]
@@ -413,8 +411,7 @@ public class ExecutionHistoryConsiderationSpec
                                    </SinceLastRun>
                                </Consideration>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         ExecutionHistoryConsideration loaded = new();
 
@@ -426,7 +423,7 @@ public class ExecutionHistoryConsiderationSpec
             Assert.That(loaded.FinishedWeightFunction, Is.InstanceOf<ConstantWeightFunction>());
             Assert.That(loaded.NeverRunWeightFunction, Is.InstanceOf<ConstantWeightFunction>());
             Assert.That(loaded.SinceLastRunWeightFunction, Is.InstanceOf<FloatSequenceWeightFunction>());
-            Assert.That(logSink.Entries, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 }

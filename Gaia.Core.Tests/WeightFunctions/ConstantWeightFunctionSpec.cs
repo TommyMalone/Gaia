@@ -11,10 +11,13 @@ public class ConstantWeightFunctionSpec
     [SetUp]
     public void BuildWeightFunction()
     {
+        _logSink = new RecordingLogSink();
         _configuredWeights = new WeightValues(3f, 0.5f, 2f);
 
         _weightFunction = new ConstantWeightFunction { Weights = _configuredWeights };
     }
+
+    private RecordingLogSink _logSink;
 
     private WeightValues _configuredWeights;
 
@@ -40,8 +43,7 @@ public class ConstantWeightFunctionSpec
         const string snippet = """
                                <WeightFunction Type="Constant" Addend="3" Multiplier="0.5" Rank="2"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         ConstantWeightFunction loaded = new();
 
@@ -49,7 +51,7 @@ public class ConstantWeightFunctionSpec
         {
             Assert.That(loaded.Init(creationData), Is.True);
             Assert.That(loaded.Weights, Is.EqualTo(new WeightValues(3f, 0.5f, 2f)));
-            Assert.That(logSink.Entries, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 
@@ -59,8 +61,7 @@ public class ConstantWeightFunctionSpec
         const string snippet = """
                                <WeightFunction Type="Constant"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         ConstantWeightFunction loaded = new();
 
@@ -79,15 +80,14 @@ public class ConstantWeightFunctionSpec
         const string snippet = """
                                <WeightFunction Type="Constant" Multiplier="-1"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         ConstantWeightFunction loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 1, the WeightFunction element's Multiplier is not 0 or above, it reads \"-1\"",
             }));
@@ -100,15 +100,14 @@ public class ConstantWeightFunctionSpec
         const string snippet = """
                                <WeightFunction Type="Constant" Multiplier="high"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         ConstantWeightFunction loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 1, the WeightFunction element's Multiplier is not a number, it reads \"high\"",
             }));
@@ -123,15 +122,14 @@ public class ConstantWeightFunctionSpec
                                    <Extra/>
                                </WeightFunction>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         ConstantWeightFunction loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 2, the WeightFunction element does not take Extra elements",
             }));

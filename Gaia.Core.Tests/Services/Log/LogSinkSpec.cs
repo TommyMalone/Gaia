@@ -17,6 +17,8 @@ public class LogSinkSpec
     public void BuildSinks()
     {
         _recordingSink = new RecordingLogSink();
+        _traceSink = new TraceLogSink();
+        _nullSink = new NullLogSink();
         _capturedLines = new List<string>();
         _traceListener = new CapturingTraceListener(_capturedLines);
         Trace.Listeners.Add(_traceListener);
@@ -30,6 +32,8 @@ public class LogSinkSpec
     }
 
     private RecordingLogSink _recordingSink;
+    private TraceLogSink _traceSink;
+    private NullLogSink _nullSink;
     private List<string> _capturedLines;
     private CapturingTraceListener _traceListener;
 
@@ -51,22 +55,18 @@ public class LogSinkSpec
     [Test]
     public void IsEnabledForEverySeverityAsATraceSink()
     {
-        TraceLogSink sink = new();
-
         Assert.Multiple(() =>
         {
-            Assert.That(sink.IsEnabled(LogSeverity.Message), Is.True);
-            Assert.That(sink.IsEnabled(LogSeverity.Warning), Is.True);
-            Assert.That(sink.IsEnabled(LogSeverity.Error), Is.True);
+            Assert.That(_traceSink.IsEnabled(LogSeverity.Message), Is.True);
+            Assert.That(_traceSink.IsEnabled(LogSeverity.Warning), Is.True);
+            Assert.That(_traceSink.IsEnabled(LogSeverity.Error), Is.True);
         });
     }
 
     [Test]
     public void WritesOneLineThroughTraceAsATraceSink()
     {
-        TraceLogSink sink = new();
-
-        sink.LogWarning("Guard", "no waypoints");
+        _traceSink.LogWarning("Guard", "no waypoints");
 
         Assert.That(_capturedLines, Is.EqualTo(new[] { "Warning Guard no waypoints" }));
     }
@@ -74,22 +74,18 @@ public class LogSinkSpec
     [Test]
     public void IsEnabledForNothingAsANullSink()
     {
-        NullLogSink sink = new();
-
         Assert.Multiple(() =>
         {
-            Assert.That(sink.IsEnabled(LogSeverity.Message), Is.False);
-            Assert.That(sink.IsEnabled(LogSeverity.Warning), Is.False);
-            Assert.That(sink.IsEnabled(LogSeverity.Error), Is.False);
+            Assert.That(_nullSink.IsEnabled(LogSeverity.Message), Is.False);
+            Assert.That(_nullSink.IsEnabled(LogSeverity.Warning), Is.False);
+            Assert.That(_nullSink.IsEnabled(LogSeverity.Error), Is.False);
         });
     }
 
     [Test]
     public void DiscardsWhatItIsGivenAsANullSink()
     {
-        NullLogSink sink = new();
-
-        sink.LogError("Guard", "no brain");
+        _nullSink.LogError("Guard", "no brain");
 
         Assert.That(_capturedLines, Is.Empty);
     }

@@ -19,6 +19,7 @@ public class VariableConsiderationSpec
     [SetUp]
     public void BuildConsiderations()
     {
+        _logSink = new RecordingLogSink();
         _blackboard = new BrainBlackboard();
 
         _reportedWeights = new WeightValues(3f, 0.5f, 2f);
@@ -26,6 +27,8 @@ public class VariableConsiderationSpec
 
         _weightFunction = new RecordingWeightFunction { Result = _reportedWeights };
     }
+
+    private RecordingLogSink _logSink;
 
     private BrainBlackboard _blackboard;
 
@@ -207,8 +210,7 @@ public class VariableConsiderationSpec
                                    <WeightFunction Type="Constant" Addend="2"/>
                                </Consideration>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
         creationData.BrainBlackboard = _blackboard;
 
         AiString healthName = "Health";
@@ -221,7 +223,7 @@ public class VariableConsiderationSpec
             Assert.That(loaded.VariableName, Is.EqualTo(healthName));
             Assert.That(loaded.MissingVariableWeights, Is.EqualTo(WeightValues.Vetoed));
             Assert.That(loaded.WeightFunction, Is.InstanceOf<ConstantWeightFunction>());
-            Assert.That(logSink.Entries, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 
@@ -233,8 +235,7 @@ public class VariableConsiderationSpec
                                    <WeightFunction Type="Constant"/>
                                </Consideration>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         WorldBlackboard worldBlackboard = new();
         creationData.BrainBlackboard = _blackboard;
@@ -255,15 +256,14 @@ public class VariableConsiderationSpec
         const string snippet = """
                                <Consideration Type="BooleanVariable" Variable="IsRaining" Store="Global"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         BooleanVariableConsideration loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 1, the Consideration element's Store is not Brain or World, it reads \"Global\"",
             }));
@@ -276,15 +276,14 @@ public class VariableConsiderationSpec
         const string snippet = """
                                <Consideration Type="FloatVariable" Variable="Health"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         FloatVariableConsideration loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 1, the Consideration element has no WeightFunction element",
             }));

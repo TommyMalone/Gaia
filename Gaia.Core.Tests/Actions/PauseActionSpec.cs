@@ -18,12 +18,17 @@ public class PauseActionSpec
     public void BuildAction()
     {
         _timeSource = new ManualTimeSource();
+        _logSink = new RecordingLogSink();
         _duration = new Seconds(10f);
 
         _pauseAction = new PauseAction(_duration) { TimeSource = _timeSource };
     }
 
+    private static readonly Seconds PartOfTheDuration = new(5f);
+    private static readonly Seconds PastTheDuration = new(15f);
+
     private ManualTimeSource _timeSource;
+    private RecordingLogSink _logSink;
 
     private Seconds _duration;
 
@@ -71,12 +76,11 @@ public class PauseActionSpec
     {
         _pauseAction.Select();
 
-        Seconds pastTheDuration = new(15f);
-        _timeSource.Advance(pastTheDuration);
+        _timeSource.Advance(PastTheDuration);
 
         Assert.That(_pauseAction.IsDone, Is.True);
 
-        _timeSource.Advance(pastTheDuration);
+        _timeSource.Advance(PastTheDuration);
 
         Assert.That(_pauseAction.IsDone, Is.True);
     }
@@ -90,8 +94,7 @@ public class PauseActionSpec
 
         _pauseAction.Select();
 
-        Seconds partOfTheDuration = new(5f);
-        _timeSource.Advance(partOfTheDuration);
+        _timeSource.Advance(PartOfTheDuration);
 
         Assert.That(_pauseAction.IsDone, Is.False);
     }
@@ -101,14 +104,12 @@ public class PauseActionSpec
     {
         _pauseAction.Select();
 
-        Seconds pastTheDuration = new(15f);
-        _timeSource.Advance(pastTheDuration);
+        _timeSource.Advance(PastTheDuration);
 
         _pauseAction.Deselect();
         _pauseAction.Select();
 
-        Seconds partOfTheDuration = new(5f);
-        _timeSource.Advance(partOfTheDuration);
+        _timeSource.Advance(PartOfTheDuration);
 
         Assert.That(_pauseAction.IsDone, Is.False);
     }
@@ -116,9 +117,7 @@ public class PauseActionSpec
     [Test]
     public void IsDoneImmediatelyWithNoDuration()
     {
-        ManualTimeSource timeSource = new();
-
-        PauseAction pauseAction = new(Seconds.Zero) { TimeSource = timeSource };
+        PauseAction pauseAction = new(Seconds.Zero) { TimeSource = _timeSource };
 
         pauseAction.Select();
 
@@ -131,11 +130,9 @@ public class PauseActionSpec
         const string snippet = """
                                <Action Type="Pause" Name="Wait" Duration="2"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
-        ManualTimeSource timeSource = new();
-        creationData.TimeSource = timeSource;
+        creationData.TimeSource = _timeSource;
 
         AiString waitName = "Wait";
         Seconds waitTime = new(2f);
@@ -151,7 +148,7 @@ public class PauseActionSpec
 
             Assert.That(loaded.IsDone, Is.False, "the loaded wait has just started");
 
-            timeSource.Advance(waitTime);
+            _timeSource.Advance(waitTime);
 
             Assert.That(loaded.IsDone, Is.True, "the loaded clock came from the creation data");
         });
@@ -163,15 +160,14 @@ public class PauseActionSpec
         const string snippet = """
                                <Action Type="Pause" Name="Wait"/>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         PauseAction loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 1, the Action element has no Duration attribute",
             }));

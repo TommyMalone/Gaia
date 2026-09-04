@@ -12,9 +12,12 @@ public class CurveWeightFunctionSpec
     [SetUp]
     public void BuildCurves()
     {
+        _logSink = new RecordingLogSink();
         _risingCurve = BuildStraightLine(0f, 4f);
         _fallingCurve = BuildStraightLine(1f, 0f);
     }
+
+    private RecordingLogSink _logSink;
 
     private const float Tolerance = 0.0001f;
 
@@ -142,8 +145,7 @@ public class CurveWeightFunctionSpec
                                    </MultiplierCurve>
                                </WeightFunction>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         CurveWeightFunction loaded = new();
 
@@ -156,7 +158,7 @@ public class CurveWeightFunctionSpec
             Assert.That(atTheTop.Addend, Is.EqualTo(4f).Within(Tolerance));
             Assert.That(atTheTop.Multiplier, Is.EqualTo(1f).Within(Tolerance));
             Assert.That(atTheTop.Rank, Is.EqualTo(5f));
-            Assert.That(logSink.Entries, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 
@@ -171,8 +173,7 @@ public class CurveWeightFunctionSpec
                                    </AddendCurve>
                                </WeightFunction>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         CurveWeightFunction loaded = new();
 
@@ -196,15 +197,14 @@ public class CurveWeightFunctionSpec
                                    </MultiplierCurve>
                                </WeightFunction>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         CurveWeightFunction loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.True, "a diving curve loads, clamped rather than refused");
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Warning guard.xml Line 2, the MultiplierCurve element dips below 0 and will be clamped to 0",
             }));
@@ -219,15 +219,14 @@ public class CurveWeightFunctionSpec
                                    <AddendCurve/>
                                </WeightFunction>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         CurveWeightFunction loaded = new();
 
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.False);
-            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 2, the AddendCurve element has no Keyframe elements",
             }));

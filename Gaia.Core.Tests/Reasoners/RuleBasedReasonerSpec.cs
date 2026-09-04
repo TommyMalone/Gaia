@@ -24,6 +24,7 @@ public class RuleBasedReasonerSpec
     public void BuildReasoner()
     {
         _executed = new List<string>();
+        _logSink = new RecordingLogSink();
 
         _ruleBasedReasoner = new RuleBasedReasoner();
         _ruleBasedReasoner.Enable();
@@ -41,6 +42,9 @@ public class RuleBasedReasonerSpec
         _ruleBasedReasoner.AddOption(firstOption);
         _ruleBasedReasoner.AddOption(secondOption);
 
+        // Done the moment it is selected, for the tests about an option that finishes.
+        _instantlyDoneAction = new RecordAction("InstantlyDone", _executed);
+
         _lightWeight = new WeightValues(1f, 1f, float.MinValue);
         _heavyWeight = new WeightValues(100f, 1f, float.MinValue);
 
@@ -49,11 +53,14 @@ public class RuleBasedReasonerSpec
     }
 
     private List<string> _executed;
+    private RecordingLogSink _logSink;
 
     private RuleBasedReasoner _ruleBasedReasoner;
 
     private StubConsideration _firstConsideration;
     private StubConsideration _secondConsideration;
+
+    private RecordAction _instantlyDoneAction;
 
     private WeightValues _lightWeight;
     private WeightValues _heavyWeight;
@@ -166,8 +173,7 @@ public class RuleBasedReasonerSpec
     {
         // The reasoner takes no notice of the option's actions finishing. An action that is done the moment it runs
         // leaves its option selected, being updated every cycle, the same as one that never finishes.
-        RecordAction instantlyDoneAction = new("InstantlyDone", _executed);
-        StubOption instantlyDoneOption = new([], [instantlyDoneAction]);
+        StubOption instantlyDoneOption = new([], [_instantlyDoneAction]);
 
         RuleBasedReasoner reasoner = new();
         reasoner.AddOption(instantlyDoneOption);
@@ -201,10 +207,9 @@ public class RuleBasedReasonerSpec
             FinishedWeightFunction = vetoWhenFinished,
         };
 
-        RecordAction instantlyDoneAction = new("InstantlyDone", _executed);
         RecordAction fallbackAction = new("Fallback", _executed, false);
 
-        StubOption instantlyDoneOption = new([endsWhenFinished], [instantlyDoneAction]);
+        StubOption instantlyDoneOption = new([endsWhenFinished], [_instantlyDoneAction]);
         StubOption fallbackOption = new([], [fallbackAction]);
 
         RuleBasedReasoner reasoner = new();
@@ -255,8 +260,7 @@ public class RuleBasedReasonerSpec
                                    <Option Type="ConsiderationAndAction" Name="Idle"/>
                                </Reasoner>
                                """;
-        RecordingLogSink logSink = new();
-        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
         AiString idleName = "Idle";
         RuleBasedReasoner loaded = new();
@@ -264,7 +268,7 @@ public class RuleBasedReasonerSpec
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.True);
-            Assert.That(logSink.Entries, Is.Empty, "loading reports nothing");
+            Assert.That(_logSink.Entries, Is.Empty, "loading reports nothing");
 
             loaded.Enable();
             loaded.Update();
