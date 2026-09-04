@@ -1,0 +1,76 @@
+<Brain>
+    <Reasoner Type="RuleBased">
+        <Option Type="ConsiderationAndAction" Name="Retreat">
+            <!-- Vetoes unless the game has flagged the sniper as under fire. -->
+            <Consideration Type="BooleanVariable" Variable="IsUnderFire">
+                <WeightFunction Type="Boolean">
+                    <False Multiplier="0"/>
+                </WeightFunction>
+            </Consideration>
+            <!-- Vetoes while any contact stands on the retreat route. -->
+            <Consideration Type="EntityExists" Variable="RetreatRouteContacts">
+                <WeightFunction Type="Boolean">
+                    <True Multiplier="0"/>
+                </WeightFunction>
+            </Consideration>
+            <Action Type="Record" Name="Retreat" Done="false"/>
+        </Option>
+        <Option Type="ConsiderationAndAction" Name="FightBack">
+            <Consideration Type="BooleanVariable" Variable="IsUnderFire">
+                <WeightFunction Type="Boolean">
+                    <False Multiplier="0"/>
+                </WeightFunction>
+            </Consideration>
+            <Action Type="Record" Name="FightBack" Done="false"/>
+        </Option>
+        <Option Type="ConsiderationAndAction" Name="Snipe">
+            <Consideration Type="EntityExists" Variable="RetreatRouteContacts">
+                <WeightFunction Type="Boolean">
+                    <True Multiplier="0"/>
+                </WeightFunction>
+            </Consideration>
+            <!-- Vetoes until some contact is in the kill zone. -->
+            <Consideration Type="EntityExists" Variable="KillZoneContacts">
+                <WeightFunction Type="Boolean">
+                    <False Multiplier="0"/>
+                </WeightFunction>
+            </Consideration>
+            <!-- Vetoes unless the kill zone is between 50 and 300 meters from the sniper. -->
+            <Consideration Type="Distance">
+                <From Type="Self"/>
+                <To Type="Position" Position="(0, 0, 150)"/>
+                <WeightFunction Type="FloatSequence">
+                    <Entry Threshold="50" Multiplier="0"/>
+                    <Entry Threshold="300"/>
+                    <Default Multiplier="0"/>
+                </WeightFunction>
+            </Consideration>
+            <!-- Ends the shot once the sequence has fired, and vetoes for a minute or two after, rolled each time. -->
+            <Consideration Type="ExecutionHistory">
+                <Finished Type="Constant" Multiplier="0"/>
+                <SinceLastRun Type="FloatSequence">
+                    <Entry ThresholdMin="60" ThresholdMax="120" Multiplier="0"/>
+                </SinceLastRun>
+            </Consideration>
+            <Action Type="Subreasoner" Name="TakeTheShot">
+                <Reasoner Type="Sequence">
+                    <Option Type="ConsiderationAndAction" Name="SetPoseStep">
+                        <Action Type="Record" Name="SetPose"/>
+                    </Option>
+                    <Option Type="ConsiderationAndAction" Name="RaiseWeaponStep">
+                        <Action Type="Record" Name="RaiseWeapon"/>
+                    </Option>
+                    <Option Type="ConsiderationAndAction" Name="AimStep">
+                        <Action Type="Pause" Name="Aim" Duration="2"/>
+                    </Option>
+                    <Option Type="ConsiderationAndAction" Name="FireStep">
+                        <Action Type="Record" Name="Fire"/>
+                    </Option>
+                </Reasoner>
+            </Action>
+        </Option>
+        <Option Type="ConsiderationAndAction" Name="Hide">
+            <Action Type="Record" Name="Hide" Done="false"/>
+        </Option>
+    </Reasoner>
+</Brain>

@@ -2,6 +2,7 @@
 using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Log;
+using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
 
 namespace Gaia.Core.Brains
@@ -17,6 +18,8 @@ namespace Gaia.Core.Brains
     /// <seealso>"Modular AI", Section 8.3.1</seealso>
     public class Brain
     {
+        private static readonly AiString ReasonerElement = "Reasoner";
+
         /// <summary>The values the components of this character share among themselves.</summary>
         public BrainBlackboard Blackboard { get; } = new();
 
@@ -32,12 +35,56 @@ namespace Gaia.Core.Brains
         /// <summary>True while the brain is in control of its character.</summary>
         public bool IsEnabled { get; private set; }
 
-        /// <summary>Load the configuration from data. Not yet implemented.</summary>
-        /// <returns>True if the configuration was loaded successfully.</returns>
+        /// <summary>Loads this brain's configuration from the creation data's node.</summary>
+        /// <remarks>
+        ///     <para>
+        ///         The brain stamps the tree beneath it. Its LogChannel comes from the creation data's Self actor when one is
+        ///         supplied, and its own Blackboard becomes the BrainBlackboard every descendant loads against, so a host never
+        ///         wires either by hand.
+        ///     </para>
+        ///     <para>
+        ///         A Brain element with no Reasoner child loads, matching the runtime rule that a brain may decide nothing, and
+        ///         Enable warns about it. A second Reasoner child is refused, because silently keeping one of them would ship half
+        ///         the author's tree.
+        ///     </para>
+        /// </remarks>
+        /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         public bool Init(AiCreationData creationData)
         {
-            // Configurations cannot presently be loaded successfully.
-            return false;
+            SpecificationNode node = creationData.Node;
+
+            LogSink = creationData.LogSink;
+            LogChannel = creationData.Self?.Name ?? creationData.LogChannel;
+
+            foreach (SpecificationNode child in node.Children)
+            {
+                if (child.Name != ReasonerElement)
+                {
+                    creationData.ReportError(
+                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
+                    return false;
+                }
+
+                if (RootReasoner != null)
+                {
+                    creationData.ReportError(
+                        $"Line {child.LineNumber}, the {node.Name.Text} element takes only one Reasoner element");
+                    return false;
+                }
+
+                AiCreationData childData = creationData.ForChild(child);
+                childData.LogChannel = LogChannel;
+                childData.BrainBlackboard = Blackboard;
+
+                if (!creationData.Factories.Reasoners.TryCreate(childData, out ReasonerBase? rootReasoner))
+                {
+                    return false;
+                }
+
+                RootReasoner = rootReasoner;
+            }
+
+            return true;
         }
 
         /// <summary>Hands control to the brain, which starts RootReasoner deciding.</summary>

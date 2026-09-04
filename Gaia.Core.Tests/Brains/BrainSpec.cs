@@ -1,5 +1,8 @@
 ﻿using Gaia.Core.Brains;
+using Gaia.Core.Entities;
+using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
+using Gaia.Core.Strings;
 using Gaia.Core.Tests.Helpers;
 
 namespace Gaia.Core.Tests.Brains;
@@ -198,5 +201,90 @@ public class BrainSpec
         emptyBrain.Enable();
 
         Assert.That(_logSink.Entries, Is.EqualTo(new[] { "Warning Sentry brain enabled with no root reasoner" }));
+    }
+
+    [Test]
+    public void LoadsItsRootReasonerAndStampsItsChannel()
+    {
+        const string snippet = """
+                               <Brain>
+                                   <Reasoner Type="RuleBased">
+                                       <Option Type="ConsiderationAndAction" Name="Idle"/>
+                                   </Reasoner>
+                               </Brain>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        Actor guard = new() { Name = "Guard" };
+        creationData.Self = guard;
+
+        AiString guardChannel = "Guard";
+        Brain loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.RootReasoner, Is.InstanceOf<RuleBasedReasoner>());
+            Assert.That(loaded.LogChannel, Is.EqualTo(guardChannel), "the channel comes from the Self actor's name");
+            Assert.That(loaded.RootReasoner!.LogChannel, Is.EqualTo(guardChannel), "and reaches the tree beneath");
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void GivesItsOwnBlackboardToWhatItLoads()
+    {
+        // The Watch option vetoes while SeesPlayer is missing, so it only runs if the loaded consideration reads
+        // the brain's own blackboard, the one the host writes to after loading.
+        const string snippet = """
+                               <Brain>
+                                   <Reasoner Type="RuleBased">
+                                       <Option Type="ConsiderationAndAction" Name="Watch">
+                                           <Consideration Type="BooleanVariable" Variable="SeesPlayer">
+                                               <Missing Multiplier="0"/>
+                                               <WeightFunction Type="Boolean"/>
+                                           </Consideration>
+                                       </Option>
+                                   </Reasoner>
+                               </Brain>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        Brain loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+
+            loaded.Blackboard.SetBool("SeesPlayer", true);
+            loaded.Enable();
+            loaded.Update();
+
+            Assert.That(loaded.RootReasoner!.SelectedOption, Is.Not.Null,
+                "the loaded consideration read the value off the brain's own blackboard");
+        });
+    }
+
+    [Test]
+    public void RefusesASecondReasoner()
+    {
+        const string snippet = """
+                               <Brain>
+                                   <Reasoner Type="RuleBased"/>
+                                   <Reasoner Type="RuleBased"/>
+                               </Brain>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        Brain loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 3, the Brain element takes only one Reasoner element",
+            }), "silently keeping one of two reasoners would ship half the author's tree");
+        });
     }
 }

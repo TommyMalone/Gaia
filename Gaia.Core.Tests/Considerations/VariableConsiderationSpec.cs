@@ -289,4 +289,28 @@ public class VariableConsiderationSpec
             }));
         });
     }
+
+    [Test]
+    public void RefusesTheWorldStoreWhenNoneWasSupplied()
+    {
+        // The loader knows at load time that no world blackboard exists, so a configuration that asks for one is
+        // refused there rather than silently reading missing values forever.
+        const string snippet = """
+                               <Consideration Type="BooleanVariable" Variable="IsRaining" Store="World">
+                                   <WeightFunction Type="Boolean"/>
+                               </Consideration>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        BooleanVariableConsideration loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Consideration element's Store is World and no world blackboard was supplied",
+            }));
+        });
+    }
 }

@@ -98,6 +98,13 @@ namespace Gaia.Core.Factories
 
             if (storeName == WorldStoreName)
             {
+                if (WorldBlackboard == null)
+                {
+                    ReportError($"Line {node.LineNumber}, the {node.Name.Text} element's Store is World and no world " +
+                                "blackboard was supplied");
+                    return false;
+                }
+
                 store = WorldBlackboard;
                 return true;
             }
