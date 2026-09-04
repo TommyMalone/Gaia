@@ -1,5 +1,8 @@
 ﻿using Gaia.Core.Actions;
+using Gaia.Core.Factories;
 using Gaia.Core.Services.Time;
+using Gaia.Core.Strings;
+using Gaia.Core.Tests.Helpers;
 
 namespace Gaia.Core.Tests.Actions;
 
@@ -120,5 +123,58 @@ public class PauseActionSpec
         pauseAction.Select();
 
         Assert.That(pauseAction.IsDone, Is.True);
+    }
+
+    [Test]
+    public void LoadsItsNameAndDuration()
+    {
+        const string snippet = """
+                               <Action Type="Pause" Name="Wait" Duration="2"/>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        ManualTimeSource timeSource = new();
+        creationData.TimeSource = timeSource;
+
+        AiString waitName = "Wait";
+        Seconds waitTime = new(2f);
+        PauseAction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.Name, Is.EqualTo(waitName));
+            Assert.That(loaded.Duration, Is.EqualTo(waitTime));
+
+            loaded.Select();
+
+            Assert.That(loaded.IsDone, Is.False, "the loaded wait has just started");
+
+            timeSource.Advance(waitTime);
+
+            Assert.That(loaded.IsDone, Is.True, "the loaded clock came from the creation data");
+        });
+    }
+
+    [Test]
+    public void RefusesANodeWithNoDuration()
+    {
+        const string snippet = """
+                               <Action Type="Pause" Name="Wait"/>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        PauseAction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Action element has no Duration attribute",
+            }));
+        });
     }
 }

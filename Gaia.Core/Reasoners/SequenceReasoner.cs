@@ -1,5 +1,4 @@
-﻿using Gaia.Core.Factories;
-using Gaia.Core.Options;
+﻿using Gaia.Core.Options;
 
 namespace Gaia.Core.Reasoners
 {
@@ -14,12 +13,6 @@ namespace Gaia.Core.Reasoners
         /// <summary>The position in the sequence, the index of the running option or of the next one to start.</summary>
         private int _currentIndex;
 
-        /// <inheritdoc />
-        protected override bool OnInit(AiCreationData creationData)
-        {
-            // Configurations cannot presently be loaded successfully.
-            return false;
-        }
 
         /// <summary>Starts the sequence over, so that being enabled again runs it from the top.</summary>
         protected override void OnEnable()

@@ -5,6 +5,7 @@ using Gaia.Core.Brains;
 using Gaia.Core.Factories;
 using Gaia.Core.Options;
 using Gaia.Core.Services.Log;
+using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
 
 namespace Gaia.Core.Reasoners
@@ -16,6 +17,8 @@ namespace Gaia.Core.Reasoners
     /// <seealso>"Modular AI", Section 8.5.3, Listing 8.3</seealso>
     public abstract class ReasonerBase : IAiComponent
     {
+        private static readonly AiString OptionElement = "Option";
+
         private readonly List<OptionBase> _options = new();
 
         /// <summary>The options this reasoner chooses among, in the order they were added.</summary>
@@ -39,16 +42,57 @@ namespace Gaia.Core.Reasoners
         /// </summary>
         public virtual bool IsDone => SelectedOption == null;
 
-        /// <summary>Load the configuration from data. Not yet implemented.</summary>
-        /// <returns>True if the configuration was loaded successfully.</returns>
+        /// <summary>Loads this reasoner's configuration from the creation data's node.</summary>
+        /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         public bool Init(AiCreationData creationData)
         {
+            if (!LoadOptions(creationData))
+            {
+                return false;
+            }
+
             return OnInit(creationData);
         }
 
-        /// <summary>Loads the derived reasoner's own configuration.</summary>
-        /// <returns>True if the configuration was loaded successfully.</returns>
-        protected abstract bool OnInit(AiCreationData creationData);
+        /// <summary>Loads the derived reasoner's own configuration, once the shared configuration and the Option children are in.</summary>
+        /// <remarks>The base reports true, so a reasoner with nothing of its own to load leaves this alone.</remarks>
+        /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
+        protected virtual bool OnInit(AiCreationData creationData)
+        {
+            return true;
+        }
+
+        /// <summary>Loads the configuration every reasoner shares, the reporting services and the Option children.</summary>
+        /// <remarks>
+        ///     The reasoner types differ in how they decide rather than in what they hold, so Init loads this for all of them
+        ///     before OnInit.
+        /// </remarks>
+        private bool LoadOptions(AiCreationData creationData)
+        {
+            SpecificationNode node = creationData.Node;
+
+            LogSink = creationData.LogSink;
+            LogChannel = creationData.LogChannel;
+
+            foreach (SpecificationNode child in node.Children)
+            {
+                if (child.Name != OptionElement)
+                {
+                    creationData.ReportError(
+                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
+                    return false;
+                }
+
+                if (!creationData.Factories.Options.TryCreate(creationData.ForChild(child), out OptionBase? option))
+                {
+                    return false;
+                }
+
+                AddOption(option!);
+            }
+
+            return true;
+        }
 
         /// <summary>Adds an option to the current set of options.</summary>
         /// <param name="option">The option to add.</param>

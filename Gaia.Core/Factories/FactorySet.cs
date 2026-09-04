@@ -23,6 +23,9 @@ namespace Gaia.Core.Factories
         /// <summary>Creates a set holding every built-in component that can load itself.</summary>
         public FactorySet()
         {
+            Actions.Register("Pause", () => new PauseAction());
+            Actions.Register("Subreasoner", () => new SubreasonerAction());
+
             Considerations.Register("BooleanVariable", () => new BooleanVariableConsideration());
             Considerations.Register("ConsiderationSet", () => new ConsiderationSetConsideration());
             Considerations.Register("Distance", () => new DistanceConsideration());
@@ -32,6 +35,12 @@ namespace Gaia.Core.Factories
             Considerations.Register("IntVariable", () => new IntVariableConsideration());
             Considerations.Register("StringVariable", () => new StringVariableConsideration());
             Considerations.Register("Tuning", () => new TuningConsideration());
+
+            Options.Register("ConsiderationAndAction", () => new ConsiderationAndActionOption());
+
+            Reasoners.Register("DualUtility", () => new DualUtilityReasoner());
+            Reasoners.Register("RuleBased", () => new RuleBasedReasoner());
+            Reasoners.Register("Sequence", () => new SequenceReasoner());
 
             Regions.Register("Box", () => new BoxRegion());
             Regions.Register("Capsule", () => new CapsuleRegion());

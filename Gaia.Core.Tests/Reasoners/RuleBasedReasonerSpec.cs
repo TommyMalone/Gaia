@@ -1,6 +1,8 @@
 ﻿using Gaia.Core.Considerations;
+using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Time;
+using Gaia.Core.Strings;
 using Gaia.Core.Tests.Helpers;
 using Gaia.Core.WeightFunctions;
 
@@ -240,5 +242,36 @@ public class RuleBasedReasonerSpec
             "First.Deselect", "Second.Select", "Second.Update",
             // @formatter:on
         }));
+    }
+
+    [Test]
+    public void LoadsItsOptionsAndRunsTheFirstValidOne()
+    {
+        const string snippet = """
+                               <Reasoner Type="RuleBased">
+                                   <Option Type="ConsiderationAndAction" Name="Patrol">
+                                       <Consideration Type="Tuning" Multiplier="0"/>
+                                   </Option>
+                                   <Option Type="ConsiderationAndAction" Name="Idle"/>
+                               </Reasoner>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        AiString idleName = "Idle";
+        RuleBasedReasoner loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(logSink.Entries, Is.Empty, "loading reports nothing");
+
+            loaded.Enable();
+            loaded.Update();
+
+            // The loaded tuning vetoes Patrol, so the first valid rule is Idle.
+            Assert.That(loaded.SelectedOption, Is.Not.Null);
+            Assert.That(loaded.SelectedOption!.Name, Is.EqualTo(idleName));
+        });
     }
 }

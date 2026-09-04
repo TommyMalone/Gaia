@@ -1,4 +1,5 @@
 ﻿using Gaia.Core.Considerations;
+using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Services.Time;
@@ -252,5 +253,28 @@ public class DualUtilityReasonerSpec
         firstRank.Set(WeightValues.Neutral);
 
         reasoner.Update();
+    }
+
+    [Test]
+    public void LoadsItsScreeningFactorAndRandomSource()
+    {
+        const string snippet = """
+                               <Reasoner Type="DualUtility" WeightScreeningFactor="0.6"/>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        FixedRandomSource randomSource = new(0.5f);
+        creationData.RandomSource = randomSource;
+
+        DualUtilityReasoner loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.WeightScreeningFactor, Is.EqualTo(0.6f));
+            Assert.That(loaded.RandomSource, Is.SameAs(randomSource));
+            Assert.That(logSink.Entries, Is.Empty);
+        });
     }
 }

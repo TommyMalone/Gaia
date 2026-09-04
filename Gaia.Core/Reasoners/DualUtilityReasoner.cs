@@ -1,6 +1,8 @@
 ﻿using Gaia.Core.Factories;
 using Gaia.Core.Options;
 using Gaia.Core.Services.Random;
+using Gaia.Core.Specifications;
+using Gaia.Core.Strings;
 
 namespace Gaia.Core.Reasoners
 {
@@ -12,6 +14,8 @@ namespace Gaia.Core.Reasoners
     /// <seealso>Kevin Dill, "Dual-Utility Reasoning", Game AI Pro 2, CRC Press, 2015</seealso>
     public class DualUtilityReasoner : ReasonerBase
     {
+        private static readonly AiString WeightScreeningFactorAttribute = "WeightScreeningFactor";
+
         /// <summary>Where the reasoner draws the roll that picks among the surviving options.</summary>
         public IRandomSource RandomSource { get; internal set; } = new SystemRandomSource();
 
@@ -25,8 +29,21 @@ namespace Gaia.Core.Reasoners
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            // Configurations cannot presently be loaded successfully.
-            return false;
+            SpecificationNode node = creationData.Node;
+
+            RandomSource = creationData.RandomSource;
+
+            if (node.HasAttribute(WeightScreeningFactorAttribute))
+            {
+                if (!node.ReadFloat(WeightScreeningFactorAttribute, out float weightScreeningFactor))
+                {
+                    return false;
+                }
+
+                WeightScreeningFactor = weightScreeningFactor;
+            }
+
+            return true;
         }
 
         /// <inheritdoc />

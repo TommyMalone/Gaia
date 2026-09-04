@@ -1,5 +1,8 @@
-﻿using Gaia.Core.Considerations;
+﻿using Gaia.Core.Actions;
+using Gaia.Core.Considerations;
 using Gaia.Core.Factories;
+using Gaia.Core.Options;
+using Gaia.Core.Reasoners;
 using Gaia.Core.Regions;
 using Gaia.Core.Targets;
 using Gaia.Core.Tests.Helpers;
@@ -133,6 +136,87 @@ public class FactorySetSpec
                 Assert.That(logSink.Entries, Is.Empty, typeName);
             }
         });
+    }
+
+    [Test]
+    public void BuildsEveryBuiltInActionByItsTypeName()
+    {
+        (string typeName, string snippet, Type componentType)[] catalog =
+        {
+            ("Pause", """<Action Type="Pause" Name="Wait" Duration="2"/>""", typeof(PauseAction)),
+            ("Subreasoner", SubreasonerSnippet(), typeof(SubreasonerAction)),
+        };
+
+        Assert.Multiple(() =>
+        {
+            foreach ((string typeName, string snippet, Type componentType) in catalog)
+            {
+                RecordingLogSink logSink = new();
+                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+                bool created = creationData.Factories.Actions.TryCreate(creationData, out ActionBase? action);
+
+                Assert.That(created, Is.True, typeName);
+                Assert.That(action, Is.InstanceOf(componentType), typeName);
+                Assert.That(logSink.Entries, Is.Empty, typeName);
+            }
+        });
+    }
+
+    [Test]
+    public void BuildsTheBuiltInOptionByItsTypeName()
+    {
+        const string snippet = """
+                               <Option Type="ConsiderationAndAction" Name="Idle"/>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        bool created = creationData.Factories.Options.TryCreate(creationData, out OptionBase? option);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(created, Is.True);
+            Assert.That(option, Is.InstanceOf<ConsiderationAndActionOption>());
+            Assert.That(logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void BuildsEveryBuiltInReasonerByItsTypeName()
+    {
+        (string typeName, Type componentType)[] catalog =
+        {
+            ("RuleBased", typeof(RuleBasedReasoner)),
+            ("DualUtility", typeof(DualUtilityReasoner)),
+            ("Sequence", typeof(SequenceReasoner)),
+        };
+
+        Assert.Multiple(() =>
+        {
+            foreach ((string typeName, Type componentType) in catalog)
+            {
+                string snippet = $"""<Reasoner Type="{typeName}"/>""";
+                RecordingLogSink logSink = new();
+                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+                bool created = creationData.Factories.Reasoners.TryCreate(creationData, out ReasonerBase? reasoner);
+
+                Assert.That(created, Is.True, typeName);
+                Assert.That(reasoner, Is.InstanceOf(componentType), typeName);
+                Assert.That(logSink.Entries, Is.Empty, typeName);
+            }
+        });
+    }
+
+    /// <summary>Builds the smallest loadable snippet for a Subreasoner action.</summary>
+    private static string SubreasonerSnippet()
+    {
+        return """
+               <Action Type="Subreasoner" Name="Investigate">
+                   <Reasoner Type="Sequence"/>
+               </Action>
+               """;
     }
 
     /// <summary>Builds the smallest loadable snippet for a Distance consideration.</summary>

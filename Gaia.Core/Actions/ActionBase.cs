@@ -12,6 +12,8 @@ namespace Gaia.Core.Actions
     /// <seealso>"Modular AI", Section 8.5.4, Listing 8.4</seealso>
     public abstract class ActionBase : IAiComponent
     {
+        private static readonly AiString NameAttribute = "Name";
+
         /// <summary>What this action is called, which is how its entries are recognized in the log.</summary>
         public AiString Name { get; internal set; } = AiString.Empty;
 
@@ -28,15 +30,24 @@ namespace Gaia.Core.Actions
         /// </summary>
         public virtual bool IsDone => true;
 
-        /// <summary>Load the configuration from data. Not yet implemented.</summary>
-        /// <returns>True if the configuration was loaded successfully.</returns>
+        /// <summary>Loads this action's configuration from the creation data's node.</summary>
+        /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         public bool Init(AiCreationData creationData)
         {
+            if (!creationData.Node.ReadString(NameAttribute, out string name))
+            {
+                return false;
+            }
+
+            Name = name;
+            LogSink = creationData.LogSink;
+            LogChannel = creationData.LogChannel;
+
             return OnInit(creationData);
         }
 
         /// <summary>Loads the derived action's own configuration.</summary>
-        /// <returns>True if the configuration was loaded successfully.</returns>
+        /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         protected abstract bool OnInit(AiCreationData creationData);
 
         /// <summary>Starts the action.</summary>

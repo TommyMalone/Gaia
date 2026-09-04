@@ -15,6 +15,8 @@ namespace Gaia.Core.Options
     /// <seealso>"Modular AI", Section 8.3.1, Listing 8.11</seealso>
     public abstract class OptionBase : IAiComponent
     {
+        private static readonly AiString NameAttribute = "Name";
+
         private readonly List<ActionBase> _actions = new();
         private readonly ConsiderationSet _considerations = new();
 
@@ -85,22 +87,28 @@ namespace Gaia.Core.Options
             }
         }
 
-        /// <summary>Load the configuration from data.</summary>
-        /// <returns>True if the configuration was loaded successfully.</returns>
+        /// <summary>Loads this option's configuration from the creation data's node.</summary>
+        /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         public bool Init(AiCreationData creationData)
         {
+            if (!creationData.Node.ReadString(NameAttribute, out string name))
+            {
+                return false;
+            }
+
+            Name = name;
+
             if (!OnInit(creationData))
             {
                 return false;
             }
 
             EnsureTuningConsideration();
-            // Configurations cannot presently be loaded successfully.
-            return false;
+            return true;
         }
 
-        /// <summary>Load the configuration from data. Not yet implemented.</summary>
-        /// <returns>True if the configuration was loaded successfully.</returns>
+        /// <summary>Loads the derived option's own configuration.</summary>
+        /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         protected abstract bool OnInit(AiCreationData creationData);
 
         /// <summary>Adds a consideration to the set that scores this option.</summary>

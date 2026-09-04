@@ -1,5 +1,7 @@
 ﻿using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
+using Gaia.Core.Specifications;
+using Gaia.Core.Strings;
 
 namespace Gaia.Core.Actions
 {
@@ -14,8 +16,14 @@ namespace Gaia.Core.Actions
     /// <seealso>"Modular AI", Section 8.5.4</seealso>
     public sealed class SubreasonerAction : ActionBase
     {
-        /// <summary>Internal constructor used for testing.</summary>
-        /// <param name="reasoner">The reasoner to run while this action is selected.</param>
+        private static readonly AiString ReasonerElement = "Reasoner";
+
+        /// <summary>Creates an action with no reasoner, which does nothing until a configuration loads one.</summary>
+        internal SubreasonerAction()
+        {
+        }
+
+        /// <summary>Creates an action that runs the given reasoner while this action is selected.</summary>
         internal SubreasonerAction(ReasonerBase reasoner)
         {
             Reasoner = reasoner;
@@ -30,8 +38,34 @@ namespace Gaia.Core.Actions
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            // Configurations cannot presently be loaded successfully.
-            return false;
+            SpecificationNode node = creationData.Node;
+
+            foreach (SpecificationNode child in node.Children)
+            {
+                if (child.Name != ReasonerElement)
+                {
+                    creationData.ReportError(
+                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
+                    return false;
+                }
+
+                if (!creationData.Factories.Reasoners.TryCreate(creationData.ForChild(child),
+                        out ReasonerBase? reasoner))
+                {
+                    return false;
+                }
+
+                Reasoner = reasoner;
+            }
+
+            if (Reasoner == null)
+            {
+                creationData.ReportError(
+                    $"Line {node.LineNumber}, the {node.Name.Text} element has no Reasoner element");
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>Calls Enable on Reasoner so that it begins making decisions.</summary>

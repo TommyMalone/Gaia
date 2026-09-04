@@ -1,5 +1,4 @@
-﻿using Gaia.Core.Factories;
-using Gaia.Core.Options;
+﻿using Gaia.Core.Options;
 
 namespace Gaia.Core.Reasoners
 {
@@ -7,13 +6,6 @@ namespace Gaia.Core.Reasoners
     /// <seealso>"Modular AI", Section 8.5.3</seealso>
     public class RuleBasedReasoner : ReasonerBase
     {
-        /// <inheritdoc />
-        protected override bool OnInit(AiCreationData creationData)
-        {
-            // Configurations cannot presently be loaded successfully.
-            return false;
-        }
-
         /// <inheritdoc />
         protected override void Think()
         {

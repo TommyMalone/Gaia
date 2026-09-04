@@ -1,4 +1,5 @@
 ﻿using Gaia.Core.Actions;
+using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Tests.Helpers;
 using Gaia.Core.WeightFunctions;
@@ -333,6 +334,48 @@ public class SubreasonerActionSpec
 
             Assert.That(childReasoner.IsEnabled, Is.False);
             Assert.That(grandchildReasoner.IsEnabled, Is.False);
+        });
+    }
+
+    [Test]
+    public void LoadsItsContainedReasoner()
+    {
+        const string snippet = """
+                               <Action Type="Subreasoner" Name="Investigate">
+                                   <Reasoner Type="Sequence"/>
+                               </Action>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        SubreasonerAction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.Reasoner, Is.InstanceOf<SequenceReasoner>());
+            Assert.That(logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void RefusesANodeWithNoReasoner()
+    {
+        const string snippet = """
+                               <Action Type="Subreasoner" Name="Investigate"/>
+                               """;
+        RecordingLogSink logSink = new();
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+        SubreasonerAction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Action element has no Reasoner element",
+            }));
         });
     }
 }

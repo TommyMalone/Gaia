@@ -1,5 +1,7 @@
 ﻿using Gaia.Core.Actions;
 using Gaia.Core.Factories;
+using Gaia.Core.Specifications;
+using Gaia.Core.Strings;
 
 namespace Gaia.Core.Tests.Helpers;
 
@@ -11,9 +13,21 @@ namespace Gaia.Core.Tests.Helpers;
 /// <remarks>Specs that compare whole logs write the expected entries grouped a cycle per line.</remarks>
 internal sealed class RecordAction : ActionBase
 {
+    private static readonly AiString DoneAttribute = "Done";
+
     private readonly List<string> _log;
-    private readonly string _name;
     private bool _isDone;
+
+    private string _name;
+
+    /// <summary>Creates an action for the factories to build, appending to the given log under its loaded Name.</summary>
+    /// <param name="log">The shared list every lifecycle call is appended to. The spec owns it and reads it back.</param>
+    internal RecordAction(List<string> log)
+    {
+        _name = string.Empty;
+        _log = log;
+        _isDone = true;
+    }
 
     /// <summary>Creates an action that appends to the given log under the given name.</summary>
     /// <param name="name">The prefix each recorded entry is written with, as name.Phase.</param>
@@ -34,11 +48,24 @@ internal sealed class RecordAction : ActionBase
     /// <summary>Whatever the constructor or SetDone last set.</summary>
     public override bool IsDone => _isDone;
 
-    /// <inheritdoc />
+    /// <summary>Takes the loaded Name for the log entries, and an optional Done attribute for actions that keep running.</summary>
     protected override bool OnInit(AiCreationData creationData)
     {
-        // Configurations cannot presently be loaded successfully.
-        return false;
+        SpecificationNode node = creationData.Node;
+
+        _name = Name.Text;
+
+        if (node.HasAttribute(DoneAttribute))
+        {
+            if (!node.ReadBool(DoneAttribute, out bool isDone))
+            {
+                return false;
+            }
+
+            _isDone = isDone;
+        }
+
+        return true;
     }
 
     /// <summary>Records "Name.Select".</summary>
