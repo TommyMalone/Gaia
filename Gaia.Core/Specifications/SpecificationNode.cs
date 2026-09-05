@@ -27,9 +27,12 @@ namespace Gaia.Core.Specifications
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>
     public sealed class SpecificationNode
     {
+        private readonly List<AiString> _attributeNames = new();
         private readonly Dictionary<AiString, string> _attributes = new();
         private readonly List<SpecificationNode> _children = new();
+        private readonly List<string> _leadingComments = new();
         private readonly ILogSink _logSink;
+        private readonly List<string> _trailingComments = new();
 
         /// <summary>Creates an empty node. The reader fills it through SetAttribute and AddChild.</summary>
         internal SpecificationNode(
@@ -64,15 +67,53 @@ namespace Gaia.Core.Specifications
         /// <summary>The child elements, in document order.</summary>
         public IReadOnlyList<SpecificationNode> Children => _children;
 
+        /// <summary>The attribute names this element carries, in the order they were set.</summary>
+        /// <remarks>Document order for a parsed tree, which is what lets the writer give back what was written.</remarks>
+        internal IReadOnlyList<AiString> AttributeNames => _attributeNames;
+
+        /// <summary>The comments that stood immediately above this element, in order, without their markers.</summary>
+        /// <remarks>
+        ///     Comments are designer documentation and no loader reads them, but the node carries them so that a tree written
+        ///     back out keeps what its author wrote. The text is kept exactly as it appeared between the markers, surrounding
+        ///     spaces included.
+        /// </remarks>
+        public IReadOnlyList<string> LeadingComments => _leadingComments;
+
+        /// <summary>The comments that stood inside this element after its last child.</summary>
+        public IReadOnlyList<string> TrailingComments => _trailingComments;
+
         /// <summary>Adds a child node. Called by the reader while building the tree.</summary>
         internal void AddChild(SpecificationNode child)
         {
             _children.Add(child);
         }
 
+        /// <summary>Records a comment that stood above this element. Called by the reader while building the tree.</summary>
+        internal void AddLeadingComment(string text)
+        {
+            _leadingComments.Add(text);
+        }
+
+        /// <summary>Records a comment that stood after this element's last child. Called by the reader.</summary>
+        internal void AddTrailingComment(string text)
+        {
+            _trailingComments.Add(text);
+        }
+
+        /// <summary>The raw text of the named attribute, for the writer. The typed accessors are how loaders read.</summary>
+        internal string GetAttributeText(AiString name)
+        {
+            return _attributes[name];
+        }
+
         /// <summary>Stores an attribute's raw text. Called by the reader while building the tree.</summary>
         internal void SetAttribute(AiString name, string value)
         {
+            if (!_attributes.ContainsKey(name))
+            {
+                _attributeNames.Add(name);
+            }
+
             _attributes[name] = value;
         }
 

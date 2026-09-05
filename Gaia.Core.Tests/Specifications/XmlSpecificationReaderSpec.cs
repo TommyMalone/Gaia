@@ -69,14 +69,69 @@ public class XmlSpecificationReaderSpec
     }
 
     [Test]
-    public void IgnoresComments()
+    public void AttachesACommentToTheElementBelowIt()
     {
         _reader.TryRead(Snippet, SourceName, out SpecificationNode? root);
 
         Assert.Multiple(() =>
         {
             Assert.That(root!.Children, Has.Count.EqualTo(2), "the comment is not a child");
+            Assert.That(root.Children[0].LeadingComments, Is.EqualTo(new[] { " The marketplace kill zone. " }));
+            Assert.That(root.Children[1].LeadingComments, Is.Empty);
             Assert.That(_logSink.Entries, Is.Empty, "the comment is not stray text");
+        });
+    }
+
+    [Test]
+    public void AttachesATrailingCommentToItsContainingElement()
+    {
+        const string snippet = """
+                               <Option Type="ConsiderationAndAction">
+                                   <Action Type="Pause" Duration="2"/>
+                                   <!-- More actions land here. -->
+                               </Option>
+                               """;
+
+        _reader.TryRead(snippet, SourceName, out SpecificationNode? root);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(root!.TrailingComments, Is.EqualTo(new[] { " More actions land here. " }));
+            Assert.That(root.Children[0].LeadingComments, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void AttachesACommentAboveTheRootToTheRoot()
+    {
+        const string snippet = """
+                               <!-- The guard's whole brain. -->
+                               <Brain/>
+                               """;
+
+        _reader.TryRead(snippet, SourceName, out SpecificationNode? root);
+
+        Assert.That(root!.LeadingComments, Is.EqualTo(new[] { " The guard's whole brain. " }));
+    }
+
+    [Test]
+    public void WarnsAboutACommentAfterTheRootElement()
+    {
+        const string snippet = """
+                               <Brain/>
+                               <!-- Nothing below can carry this. -->
+                               """;
+
+        bool wasRead = _reader.TryRead(snippet, SourceName, out SpecificationNode? root);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wasRead, Is.True, "a lost comment does not fail the read");
+            Assert.That(root!.LeadingComments, Is.Empty);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Warning test.xml Line 2, the comment after the root element is not kept",
+            }));
         });
     }
 
