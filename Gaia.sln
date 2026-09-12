@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gaia.Core", "Gaia.Core\Gaia
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gaia.Core.Tests", "Gaia.Core.Tests\Gaia.Core.Tests.csproj", "{596C8F04-C602-44EA-8848-61EEFA3B182C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gaia.Core.HostSpecs", "Gaia.Core.HostSpecs\Gaia.Core.HostSpecs.csproj", "{4B7E2D19-9C5A-4F3E-B1D8-73A6C0E52F41}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,18 @@ Global
 		{596C8F04-C602-44EA-8848-61EEFA3B182C}.Release|x64.Build.0 = Release|Any CPU
 		{596C8F04-C602-44EA-8848-61EEFA3B182C}.Release|x86.ActiveCfg = Release|Any CPU
 		{596C8F04-C602-44EA-8848-61EEFA3B182C}.Release|x86.Build.0 = Release|Any CPU
+		{4B7E2D19-9C5A-4F3E-B1D8-73A6C0E52F41}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B7E2D19-9C5A-4F3E-B1D8-73A6C0E52F41}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B7E2D19-9C5A-4F3E-B1D8-73A6C0E52F41}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4B7E2D19-9C5A-4F3E-B1D8-73A6C0E52F41}.Debug|x64.Build.0 = Debug|Any CPU
+		{4B7E2D19-9C5A-4F3E-B1D8-73A6C0E52F41}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4B7E2D19-9C5A-4F3E-B1D8-73A6C0E52F41}.Debug|x86.Build.0 = Debug|Any CPU
+		{4B7E2D19-9C5A-4F3E-B1D8-73A6C0E52F41}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B7E2D19-9C5A-4F3E-B1D8-73A6C0E52F41}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B7E2D19-9C5A-4F3E-B1D8-73A6C0E52F41}.Release|x64.ActiveCfg = Release|Any CPU
+		{4B7E2D19-9C5A-4F3E-B1D8-73A6C0E52F41}.Release|x64.Build.0 = Release|Any CPU
+		{4B7E2D19-9C5A-4F3E-B1D8-73A6C0E52F41}.Release|x86.ActiveCfg = Release|Any CPU
+		{4B7E2D19-9C5A-4F3E-B1D8-73A6C0E52F41}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

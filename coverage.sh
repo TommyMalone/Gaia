@@ -21,12 +21,12 @@ if ! command -v reportgenerator >/dev/null; then
 fi
 
 echo "Running tests with coverage ..."
-rm -rf Gaia.Core.Tests/TestResults
+rm -rf Gaia.Core.Tests/TestResults Gaia.Core.HostSpecs/TestResults
 dotnet test --collect:"XPlat Code Coverage" --nologo
 
 echo "Building the HTML report ..."
 reportgenerator \
-    -reports:"Gaia.Core.Tests/TestResults/*/coverage.cobertura.xml" \
+    -reports:"Gaia.Core.Tests/TestResults/*/coverage.cobertura.xml;Gaia.Core.HostSpecs/TestResults/*/coverage.cobertura.xml" \
     -targetdir:coverage \
     -reporttypes:"Html;TextSummary"
 
