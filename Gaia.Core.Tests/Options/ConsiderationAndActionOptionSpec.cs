@@ -1,5 +1,6 @@
 ﻿using Gaia.Core.Factories;
 using Gaia.Core.Options;
+using Gaia.Core.Reasoners;
 using Gaia.Core.Strings;
 using Gaia.Core.Tests.Helpers;
 
@@ -16,6 +17,27 @@ public class ConsiderationAndActionOptionSpec
     }
 
     private RecordingLogSink _logSink;
+
+    [Test]
+    public void AssemblesInCodeWithANameAndADefaultTuning()
+    {
+        AiString patrolName = "Patrol";
+
+        ConsiderationAndActionOption assembled = new(patrolName);
+
+        // An assembled option gets its default tuning consideration from its reasoner at enable.
+        RuleBasedReasoner reasoner = new();
+        reasoner.AddOption(assembled);
+        reasoner.Enable();
+
+        assembled.Calculate();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(assembled.Name, Is.EqualTo(patrolName));
+            Assert.That(assembled.Weight, Is.EqualTo(1f), "the default tuning is what makes a bare option selectable");
+        });
+    }
 
     [Test]
     public void LoadsItsConsiderationsAndActions()

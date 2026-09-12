@@ -20,6 +20,17 @@ namespace Gaia.Core.Brains
     {
         private static readonly AiString ReasonerElement = "Reasoner";
 
+        /// <summary>Creates a brain that decides nothing until a configuration or a host supplies its reasoner.</summary>
+        public Brain()
+        {
+        }
+
+        /// <summary>Creates a brain over the given reasoner, for a host assembling its structure in code.</summary>
+        public Brain(ReasonerBase rootReasoner)
+        {
+            RootReasoner = rootReasoner;
+        }
+
         /// <summary>The values the components of this character share among themselves.</summary>
         /// <remarks>
         ///     The brain makes its own blackboard, and <see cref="Factories.GaiaLoader" /> accepts a kept one at load, so a
@@ -33,10 +44,10 @@ namespace Gaia.Core.Brains
         public ReasonerBase? RootReasoner { get; internal set; }
 
         /// <summary>Where this brain reports taking control of its character and giving it up.</summary>
-        public ILogSink LogSink { get; internal set; } = new TraceLogSink();
+        public ILogSink LogSink { get; set; } = new TraceLogSink();
 
         /// <summary>The character this brain belongs to, which its entries are filed under.</summary>
-        public AiString LogChannel { get; internal set; } = AiString.Empty;
+        public AiString LogChannel { get; set; } = AiString.Empty;
 
         /// <summary>True while the brain is in control of its character.</summary>
         public bool IsEnabled { get; private set; }

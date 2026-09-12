@@ -25,10 +25,14 @@ namespace Gaia.Core.Reasoners
         protected IReadOnlyList<OptionBase> Options => _options;
 
         /// <summary>Where this reasoner reports the decisions it makes.</summary>
-        public ILogSink LogSink { get; internal set; } = new TraceLogSink();
+        /// <remarks>
+        ///     The setter is public, like every service on the public structure, because hand assembly has no factory to
+        ///     inject them. Loading stamps them from the creation data, so a loaded tree needs no hand wiring.
+        /// </remarks>
+        public ILogSink LogSink { get; set; } = new TraceLogSink();
 
         /// <summary>The character this reasoner decides for, which its entries are filed under.</summary>
-        public AiString LogChannel { get; internal set; } = AiString.Empty;
+        public AiString LogChannel { get; set; } = AiString.Empty;
 
         /// <summary>True while the reasoner is allowed to decide.</summary>
         public bool IsEnabled { get; private set; }
@@ -111,6 +115,15 @@ namespace Gaia.Core.Reasoners
         public void Enable()
         {
             IsEnabled = true;
+
+            // Loading supplies each option's default tuning consideration from Init. An option assembled in code never
+            // runs Init, and by the time its reasoner is enabled the assembler has added the considerations it means
+            // to, so the default is supplied here instead. An option that already has one is left alone.
+            foreach (OptionBase option in _options)
+            {
+                option.EnsureTuningConsideration();
+            }
+
             OnEnable();
         }
 

@@ -17,7 +17,7 @@ namespace Gaia.Core.Reasoners
         private static readonly AiString WeightScreeningFactorAttribute = "WeightScreeningFactor";
 
         /// <summary>Where the reasoner draws the roll that picks among the surviving options.</summary>
-        public IRandomSource RandomSource { get; internal set; } = new SystemRandomSource();
+        public IRandomSource RandomSource { get; set; } = new SystemRandomSource();
 
         /// <summary>
         ///     How close to the best weight an option must come to remain a candidate for random-weighted selection, from 0

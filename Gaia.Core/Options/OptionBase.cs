@@ -30,7 +30,7 @@ namespace Gaia.Core.Options
         }
 
         /// <summary>What this option is called, which is how a reasoner names it when it reports a decision.</summary>
-        public AiString Name { get; internal set; } = AiString.Empty;
+        public AiString Name { get; protected internal set; } = AiString.Empty;
 
         /// <summary>True while this option is the one its reasoner has selected.</summary>
         public bool IsSelected { get; private set; }
@@ -123,10 +123,17 @@ namespace Gaia.Core.Options
             _actions.Add(action);
         }
 
-        /// <summary>Adds a default <see cref="TuningConsideration" /> if the configuration supplied none.</summary>
+        /// <summary>Adds a default <see cref="TuningConsideration" /> if the option holds none.</summary>
         /// <remarks>
-        ///     The default contributes an addend of 1 and a multiplier of 1. An option whose other considerations only
-        ///     multiply would otherwise sum its addends to 0, leaving a weight of 0, and could never be selected.
+        ///     <para>
+        ///         The default contributes an addend of 1 and a multiplier of 1. An option whose other considerations only
+        ///         multiply would otherwise sum its addends to 0, leaving a weight of 0, and could never be selected.
+        ///     </para>
+        ///     <para>
+        ///         A loaded option gets this from Init once its configuration is complete. An option assembled in code never
+        ///         runs Init, so <see cref="ReasonerBase.Enable" /> calls this on every option the reasoner holds, by which point
+        ///         the assembler has added the considerations it means the option to have.
+        ///     </para>
         /// </remarks>
         internal void EnsureTuningConsideration()
         {

@@ -23,10 +23,14 @@ namespace Gaia.Core.Considerations
         ///     The weight function this consideration hands its query result to. A consideration with none reports neutral
         ///     values.
         /// </summary>
-        public WeightFunctionBase? WeightFunction { get; internal set; }
+        /// <remarks>
+        ///     Settable by a derived type as well as by loading, so a game's own consideration built outside the assembly can
+        ///     hold a weight function of the game's own.
+        /// </remarks>
+        public WeightFunctionBase? WeightFunction { get; protected internal set; }
 
         /// <summary>Builds a WeightFunction child element into <see cref="WeightFunction" />.</summary>
-        internal bool TryLoadWeightFunction(SpecificationNode child, AiCreationData creationData)
+        protected internal bool TryLoadWeightFunction(SpecificationNode child, AiCreationData creationData)
         {
             if (!creationData.Factories.WeightFunctions.TryCreate(creationData.ForChild(child),
                     out WeightFunctionBase? weightFunction))

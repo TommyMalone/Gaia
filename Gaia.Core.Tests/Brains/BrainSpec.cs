@@ -61,6 +61,14 @@ public class BrainSpec
     }
 
     [Test]
+    public void TakesItsRootReasonerAtConstruction()
+    {
+        Brain constructed = new(_reasoner);
+
+        Assert.That(constructed.RootReasoner, Is.SameAs(_reasoner));
+    }
+
+    [Test]
     public void EnablesItsReasonerWhenEnabled()
     {
         _brain.Enable();
@@ -262,6 +270,28 @@ public class BrainSpec
 
             Assert.That(loaded.RootReasoner!.SelectedOption, Is.Not.Null,
                 "the loaded consideration read the value off the brain's own blackboard");
+        });
+    }
+
+    [Test]
+    public void RefusesElementsItDoesNotTake()
+    {
+        const string snippet = """
+                               <Brain>
+                                   <Option Type="ConsiderationAndAction" Name="Stray"/>
+                               </Brain>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        Brain loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 2, the Brain element does not take Option elements",
+            }));
         });
     }
 

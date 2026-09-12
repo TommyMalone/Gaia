@@ -21,17 +21,22 @@ namespace Gaia.Core.Considerations
         private static readonly AiString VariableAttribute = "Variable";
 
         /// <summary>The store to read from.</summary>
-        public DataStoreBase? DataStore { get; internal set; }
+        /// <remarks>
+        ///     Settable by a derived type as well as by loading, like <see cref="VariableName" /> and
+        ///     <see cref="MissingVariableWeights" />, so a game's own variable consideration built outside the assembly can point
+        ///     at a store of the game's choosing.
+        /// </remarks>
+        public DataStoreBase? DataStore { get; protected internal set; }
 
         /// <summary>The name to read.</summary>
-        public AiString VariableName { get; internal set; } = AiString.Empty;
+        public AiString VariableName { get; protected internal set; } = AiString.Empty;
 
         /// <summary>What to report when DataStore is null, or it has nothing under VariableName.</summary>
         /// <remarks>
         ///     Neutral by default, so a variable that has not been written yet leaves its option alone. A configuration that
         ///     would rather veto the option until the value arrives sets this to do so.
         /// </remarks>
-        public WeightValues MissingVariableWeights { get; internal set; } = WeightValues.Neutral;
+        public WeightValues MissingVariableWeights { get; protected internal set; } = WeightValues.Neutral;
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)

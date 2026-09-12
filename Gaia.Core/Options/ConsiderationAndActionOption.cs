@@ -18,6 +18,21 @@ namespace Gaia.Core.Options
         private static readonly AiString ActionElement = "Action";
         private static readonly AiString ConsiderationElement = "Consideration";
 
+        /// <summary>Creates an option for the factories to build. Init loads its name and children.</summary>
+        internal ConsiderationAndActionOption()
+        {
+        }
+
+        /// <summary>Creates a named option for a host to assemble in code through AddConsideration and AddAction.</summary>
+        /// <remarks>
+        ///     An assembled option never runs Init. The default tuning consideration Init supplies to a loaded option arrives
+        ///     when the option's reasoner is enabled, so a host adds considerations and actions and nothing more.
+        /// </remarks>
+        public ConsiderationAndActionOption(AiString name)
+        {
+            Name = name;
+        }
+
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
