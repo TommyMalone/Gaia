@@ -15,7 +15,7 @@ public class XmlSpecificationWriterSpec
     public void BuildWriter()
     {
         _logSink = new RecordingLogSink();
-        _reader = new XmlSpecificationReader { LogSink = _logSink };
+        _reader = new XmlSpecificationReader(_logSink);
         _writer = new XmlSpecificationWriter();
     }
 

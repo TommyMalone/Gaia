@@ -122,7 +122,7 @@ public class ComponentFactorySpec
     /// <summary>Creation data whose node is the given document's root and whose reports reach the fixture's sink.</summary>
     private AiCreationData CreationDataFor(string xml)
     {
-        XmlSpecificationReader reader = new() { LogSink = _logSink };
+        XmlSpecificationReader reader = new(_logSink);
         reader.TryRead(xml, SourceName, out SpecificationNode? root);
 
         return new AiCreationData(root!, _factories) { LogSink = _logSink };

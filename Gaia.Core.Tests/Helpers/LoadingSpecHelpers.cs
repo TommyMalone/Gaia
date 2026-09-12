@@ -13,7 +13,7 @@ internal static class LoadingSpecHelpers
     /// <summary>Parses the snippet and wraps its root node in creation data reporting to the sink.</summary>
     internal static AiCreationData ParseForLoad(string snippet, RecordingLogSink logSink)
     {
-        XmlSpecificationReader reader = new() { LogSink = logSink };
+        XmlSpecificationReader reader = new(logSink);
         reader.TryRead(snippet, "guard.xml", out SpecificationNode? root);
 
         return new AiCreationData(root!, new FactorySet()) { LogSink = logSink };

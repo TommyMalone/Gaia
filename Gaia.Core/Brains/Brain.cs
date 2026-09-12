@@ -21,7 +21,13 @@ namespace Gaia.Core.Brains
         private static readonly AiString ReasonerElement = "Reasoner";
 
         /// <summary>The values the components of this character share among themselves.</summary>
-        public BrainBlackboard Blackboard { get; } = new();
+        /// <remarks>
+        ///     The brain makes its own blackboard, and <see cref="Factories.GaiaLoader" /> accepts a kept one at load, so a
+        ///     character whose brain is swapped keeps what it knew. What survives a swap is decided by the host, since the brain
+        ///     never clears what it is handed. Blackboard swapping is supported primarily to allow for runtime editing and
+        ///     iteration.
+        /// </remarks>
+        public BrainBlackboard Blackboard { get; internal set; } = new();
 
         /// <summary>The reasoner at the top of this character's decision tree. Null means the brain decides nothing.</summary>
         public ReasonerBase? RootReasoner { get; internal set; }

@@ -16,7 +16,7 @@ public class XmlSpecificationReaderSpec
     public void BuildReader()
     {
         _logSink = new RecordingLogSink();
-        _reader = new XmlSpecificationReader { LogSink = _logSink };
+        _reader = new XmlSpecificationReader(_logSink);
     }
 
     private const string SourceName = "test.xml";

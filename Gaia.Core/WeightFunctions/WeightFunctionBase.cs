@@ -8,6 +8,11 @@ namespace Gaia.Core.WeightFunctions
     ///     A conversion from what a consideration measured to the weight values it reports, each derived function giving
     ///     the measurement a different shape.
     /// </summary>
+    /// <remarks>
+    ///     A shipped function is made by loading rather than by construction from game code, since its values load
+    ///     through Init and its setters are internal. Loading through <see cref="Factories.GaiaLoader" /> is the public way to
+    ///     make one. A game's own derived functions belong to the game and expose whatever constructors it wants.
+    /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.2, Listing 8.2</seealso>
     public abstract class WeightFunctionBase : IAiComponent
     {

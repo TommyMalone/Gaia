@@ -20,7 +20,7 @@ public class SpecificationNodeSpec
     {
         _logSink = new RecordingLogSink();
 
-        XmlSpecificationReader reader = new() { LogSink = _logSink };
+        XmlSpecificationReader reader = new(_logSink);
         reader.TryRead(Snippet, SourceName, out SpecificationNode? root);
 
         _node = root!;

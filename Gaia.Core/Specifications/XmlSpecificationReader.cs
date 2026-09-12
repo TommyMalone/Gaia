@@ -31,8 +31,14 @@ namespace Gaia.Core.Specifications
         /// <summary>The name of the attribute that picks the component a factory builds.</summary>
         private const string TypeAttributeName = "Type";
 
+        /// <summary>Creates a reader reporting to the given sink, or to a <see cref="TraceLogSink" /> when given none.</summary>
+        public XmlSpecificationReader(ILogSink? logSink = null)
+        {
+            LogSink = logSink ?? new TraceLogSink();
+        }
+
         /// <summary>Where the reader and every node it builds report their errors.</summary>
-        public ILogSink LogSink { get; internal set; } = new TraceLogSink();
+        public ILogSink LogSink { get; }
 
         /// <summary>Parses one document into a node tree.</summary>
         /// <returns>True when the document parsed. False after reporting one error filed under the source name.</returns>

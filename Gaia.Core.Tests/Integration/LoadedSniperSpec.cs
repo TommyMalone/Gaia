@@ -16,10 +16,10 @@ namespace Gaia.Core.Tests.Integration;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The spec plays the host. It supplies the services, the actor and the sensor work exactly as
-///         <see cref="SniperSpec" /> does, registers the Record action the file's Action elements name, and writes the
-///         variables the loaded considerations read onto the brain's own blackboard. Everything the sniper decides with
-///         comes from the file.
+///         The spec plays the host, through the same <see cref="GaiaLoader" /> surface a game uses. It supplies the
+///         services, the actor and the sensor work exactly as <see cref="SniperSpec" /> does, registers the Record action
+///         the file's Action elements name, and writes the variables the loaded considerations read onto the brain's own
+///         blackboard. Everything the sniper decides with comes from the file.
 ///     </para>
 ///     <para>
 ///         The registration of Record on the factory set is the game-facing extension surface in use, a component the
@@ -59,22 +59,21 @@ public class LoadedSniperSpec
 
         string configurationText = File.ReadAllText(ConfigurationPath);
 
-        XmlSpecificationReader reader = new() { LogSink = _logSink };
-        reader.TryRead(configurationText, "sniper.xml", out SpecificationNode? root);
-
         FactorySet factories = new();
         factories.Actions.Register("Record", () => new RecordAction(_executed));
 
-        AiCreationData creationData = new(root!, factories)
-        {
-            LogSink = _logSink,
-            TimeSource = _timeSource,
-            RandomSource = new FixedRandomSource(CooldownRoll),
-            Self = _sniper,
-        };
+        // The cooldown roll is scripted through the brain's own source. The loader's master source only seeds
+        // streams for brains that bring none, so the fixture hands its fixed rolls to the load itself.
+        FixedRandomSource cooldownRolls = new(CooldownRoll);
+        GaiaLoader loader = new(factories, _timeSource, new SystemRandomSource(1), _logSink);
 
-        _brain = new Brain();
-        _loaded = _brain.Init(creationData);
+        Brain? brain = null;
+        _loaded = loader.TryParse(configurationText, "sniper.xml", out SpecificationNode? root) &&
+                  loader.TryLoadBrain(root!, out brain, self: _sniper, randomSource: cooldownRolls);
+
+        // A failed load yields no brain. An empty stand-in keeps the fixture alive so LoadsTheWholeBrainFromTheFile
+        // can report the failure instead of every test failing in SetUp.
+        _brain = brain ?? new Brain();
         _sniper.Brain = _brain;
 
         _killZoneContacts = new List<EntityBase>();
