@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Options;
+﻿using Gaia.Core.Actions;
+using Gaia.Core.Options;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Tests.Helpers;
 using Gaia.Core.WeightFunctions;
@@ -12,8 +13,9 @@ namespace Gaia.Core.Tests.Reasoners;
 ///     part in which option runs.
 /// </summary>
 /// <remarks>
-///     The fixture is three options, each holding a single <see cref="RecordAction" /> whose
-///     <see cref="RecordAction.IsDone" /> is true by default.
+///     The fixture is three options, each holding a single <see cref="RecordAction" /> constructed with work left to
+///     do, so the sequence holds each step until a test marks it done. The instantaneous tests mark steps done up front,
+///     which is the done-at-Select contract documented on <see cref="ActionBase" />.
 /// </remarks>
 /// <seealso>"Modular AI", Section 8.5.3</seealso>
 [TestFixture]
@@ -31,9 +33,9 @@ public class SequenceReasonerSpec
         _option2Consideration = new StubConsideration(WeightValues.Neutral);
         _option3Consideration = new StubConsideration(WeightValues.Neutral);
 
-        _option1RecordAction = new RecordAction("Option1", _executed);
-        _option2RecordAction = new RecordAction("Option2", _executed);
-        _option3RecordAction = new RecordAction("Option3", _executed);
+        _option1RecordAction = new RecordAction("Option1", _executed, false);
+        _option2RecordAction = new RecordAction("Option2", _executed, false);
+        _option3RecordAction = new RecordAction("Option3", _executed, false);
 
         StubOption option1 = new([_option1Consideration], [_option1RecordAction]);
         StubOption option2 = new([_option2Consideration], [_option2RecordAction]);
@@ -68,6 +70,9 @@ public class SequenceReasonerSpec
     public void AdvancesToTheNextOptionWhenTheCurrentOneIsDone()
     {
         _sequenceReasoner.Update();
+
+        _option1RecordAction.SetDone(true);
+
         _sequenceReasoner.Update();
 
         Assert.That(_executed, Is.EqualTo(new[]
@@ -82,8 +87,6 @@ public class SequenceReasonerSpec
     [Test]
     public void StaysWithAnOptionThatIsNotDone()
     {
-        _option1RecordAction.SetDone(false);
-
         _sequenceReasoner.Update();
         _sequenceReasoner.Update();
         _sequenceReasoner.Update();
@@ -106,6 +109,47 @@ public class SequenceReasonerSpec
     }
 
     [Test]
+    public void RunsInstantaneousStepsInASingleCycle()
+    {
+        _option1RecordAction.SetDone(true);
+        _option2RecordAction.SetDone(true);
+
+        _sequenceReasoner.Update();
+
+        // Option3 still has work, so the cycle stops there. The two instantaneous steps were passed with Select and
+        // Deselect and no Update between, which is why an instantaneous action completes its work in OnSelect.
+        Assert.That(_executed, Is.EqualTo(new[]
+        {
+            // @formatter:off
+            "Option1.Select", "Option1.Deselect", "Option2.Select", "Option2.Deselect", "Option3.Select", "Option3.Update",
+            // @formatter:on
+        }));
+    }
+
+    [Test]
+    public void FinishesAWhollyInstantaneousSequenceInOneCycle()
+    {
+        _option1RecordAction.SetDone(true);
+        _option2RecordAction.SetDone(true);
+        _option3RecordAction.SetDone(true);
+
+        _sequenceReasoner.Update();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_executed, Is.EqualTo(new[]
+            {
+                // @formatter:off
+                "Option1.Select", "Option1.Deselect", "Option2.Select", "Option2.Deselect", "Option3.Select", "Option3.Deselect",
+                // @formatter:on
+            }));
+
+            Assert.That(_sequenceReasoner.SelectedOption, Is.Null);
+            Assert.That(_sequenceReasoner.IsDone, Is.True);
+        });
+    }
+
+    [Test]
     public void ExecutesOptionsEvenWhenTheirConsiderationsVetoThem()
     {
         // A RuleBasedReasoner or DualUtilityReasoner would select nothing here. This one executes every option
@@ -115,7 +159,13 @@ public class SequenceReasonerSpec
         _option3Consideration.Veto();
 
         _sequenceReasoner.Update();
+
+        _option1RecordAction.SetDone(true);
+
         _sequenceReasoner.Update();
+
+        _option2RecordAction.SetDone(true);
+
         _sequenceReasoner.Update();
 
         Assert.That(_executed, Is.EqualTo(new[]
@@ -131,15 +181,12 @@ public class SequenceReasonerSpec
     [Test]
     public void SelectsNothingOnceEveryOptionHasRun()
     {
-        _sequenceReasoner.Update();
-        _sequenceReasoner.Update();
-        _sequenceReasoner.Update();
-        _sequenceReasoner.Update();
+        RunTheWholeSequence();
 
         Assert.Multiple(() =>
         {
-            // Running off the end deselects the last option and selects nothing, which is what makes IsDone report
-            // true.
+            // Running off the end deselects the last option and leaves the index past it, which is what makes IsDone
+            // report true.
             Assert.That(_executed, Is.EqualTo(new[]
             {
                 // @formatter:off
@@ -158,10 +205,7 @@ public class SequenceReasonerSpec
     [Test]
     public void DoesNotRestartAfterFinishing()
     {
-        _sequenceReasoner.Update();
-        _sequenceReasoner.Update();
-        _sequenceReasoner.Update();
-        _sequenceReasoner.Update();
+        RunTheWholeSequence();
 
         int countAfterFinishing = _executed.Count;
 
@@ -175,12 +219,11 @@ public class SequenceReasonerSpec
     [Test]
     public void StartsOverWhenEnabledAgain()
     {
-        _sequenceReasoner.Update();
-        _sequenceReasoner.Update();
-        _sequenceReasoner.Update();
-        _sequenceReasoner.Update();
+        RunTheWholeSequence();
 
         int countAfterFinishing = _executed.Count;
+
+        _option1RecordAction.SetDone(false);
 
         _sequenceReasoner.Disable();
         _sequenceReasoner.Enable();
@@ -212,7 +255,65 @@ public class SequenceReasonerSpec
                 // @formatter:on
             }));
 
-            Assert.That(_sequenceReasoner.IsDone, Is.True);
+            Assert.That(_sequenceReasoner.IsDone, Is.False,
+                "an abandoned run is not a finished one, being enabled again starts it over");
         });
+    }
+
+    [Test]
+    public void HoldsItsStepThroughATransientVeto()
+    {
+        // One cycle in which a nested scoring reasoner has nothing eligible, such as a contact list mid-rewrite, must
+        // hold the sequence at its step rather than read as that step completing. Done means ran out of work.
+        RuleBasedReasoner nested = new();
+        StubConsideration nestedGate = new(WeightValues.Neutral);
+        RecordAction nestedAction = new("Nested.Work", _executed, false);
+        StubOption nestedOption = new([nestedGate], [nestedAction]);
+        nested.AddOption(nestedOption);
+
+        SubreasonerAction fightStep = new(nested);
+        StubOption fightOption = new([new StubConsideration(WeightValues.Neutral)], [fightStep]);
+
+        RecordAction lootAction = new("Loot", _executed, false);
+        StubOption lootOption = new([new StubConsideration(WeightValues.Neutral)], [lootAction]);
+
+        SequenceReasoner sequence = new();
+        sequence.AddOption(fightOption);
+        sequence.AddOption(lootOption);
+        sequence.Enable();
+
+        sequence.Update();
+
+        nestedGate.Veto();
+        sequence.Update();
+
+        nestedGate.Set(WeightValues.Neutral);
+        sequence.Update();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_executed, Has.None.EqualTo("Loot.Select"),
+                "the cycle with nothing eligible did not advance the sequence past the fight");
+            Assert.That(_executed.Count(entry => entry == "Nested.Work.Select"), Is.EqualTo(2),
+                "the nested work resumed once something was eligible again");
+        });
+    }
+
+    /// <summary>Runs all three options to completion, marking each done in turn, leaving the sequence finished.</summary>
+    private void RunTheWholeSequence()
+    {
+        _sequenceReasoner.Update();
+
+        _option1RecordAction.SetDone(true);
+
+        _sequenceReasoner.Update();
+
+        _option2RecordAction.SetDone(true);
+
+        _sequenceReasoner.Update();
+
+        _option3RecordAction.SetDone(true);
+
+        _sequenceReasoner.Update();
     }
 }

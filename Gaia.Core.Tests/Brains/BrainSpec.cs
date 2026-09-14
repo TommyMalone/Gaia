@@ -150,8 +150,8 @@ public class BrainSpec
     public void EnablesOnlyOnce()
     {
         // A second Enable must not restart the reasoner. A SequenceReasoner makes that observable, since enabling one
-        // puts it back at its first option. The sequence here is mid-run, so a restart would run First again instead
-        // of finishing.
+        // puts it back at its first option. The sequence here is mid-run on Second, its instantaneous First passed in
+        // the first cycle, so a restart would show First selected again instead of the sequence finishing.
         RecordAction firstAction = new("First", _executed);
         RecordAction secondAction = new("Second", _executed, false);
 
@@ -176,8 +176,8 @@ public class BrainSpec
         Assert.That(_executed, Is.EqualTo(new[]
         {
             // @formatter:off
-            "First.Select", "First.Update",
-            "First.Deselect", "Second.Select", "Second.Update",
+            "First.Select", "First.Deselect", "Second.Select", "Second.Update",
+            "Second.Update",
             "Second.Deselect",
             // @formatter:on
         }));

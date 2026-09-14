@@ -30,10 +30,17 @@ namespace Gaia.Core.Actions
 
         /// <summary>
         ///     True once this action has finished executing. Some actions (such as a looping animation) are never done, but
-        ///     others (such as moving to a position) can be completed. The base reports true, so an action that does not override
-        ///     this counts as finished from the moment it is selected.
+        ///     others (such as moving to a position) can be completed. Every action answers for itself, so none is done at once
+        ///     without its author having said so.
         /// </summary>
-        public virtual bool IsDone => true;
+        /// <remarks>
+        ///     An action may be deselected without ever having been updated, since a
+        ///     <see cref="Reasoners.SequenceReasoner" /> passes a step that is done at selection, and any such steps after it, in
+        ///     a single cycle, giving each one Select and Deselect with no Update between. Whatever must happen therefore happens
+        ///     in OnSelect, and an action that answers true from the moment it is selected has no work left for a cycle to
+        ///     advance.
+        /// </remarks>
+        public abstract bool IsDone { get; }
 
         /// <summary>Loads this action's configuration from the creation data's node.</summary>
         /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>

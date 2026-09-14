@@ -99,7 +99,8 @@ public class RuleBasedReasonerSpec
         {
             Assert.That(_executed, Is.Empty);
             Assert.That(_ruleBasedReasoner.SelectedOption, Is.Null);
-            Assert.That(_ruleBasedReasoner.IsDone, Is.True);
+            Assert.That(_ruleBasedReasoner.IsDone, Is.False,
+                "nothing eligible is not completion, since a scoring reasoner never runs out of work");
         });
     }
 

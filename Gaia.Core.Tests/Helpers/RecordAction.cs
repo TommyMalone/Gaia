@@ -18,13 +18,10 @@ internal sealed class RecordAction : ActionBase
     private readonly List<string> _log;
     private bool _isDone;
 
-    private string _name;
-
     /// <summary>Creates an action for the factories to build, appending to the given log under its loaded Name.</summary>
     /// <param name="log">The shared list every lifecycle call is appended to. The spec owns it and reads it back.</param>
     internal RecordAction(List<string> log)
     {
-        _name = string.Empty;
         _log = log;
         _isDone = true;
     }
@@ -33,12 +30,11 @@ internal sealed class RecordAction : ActionBase
     /// <param name="name">The prefix each recorded entry is written with, as name.Phase.</param>
     /// <param name="log">The shared list every lifecycle call is appended to. The spec owns it and reads it back.</param>
     /// <param name="isDone">
-    ///     The initial IsDone. Defaults to true, which is what <see cref="ActionBase" /> reports. Pass false
+    ///     The initial IsDone. Defaults to true, so the option is done as soon as it is selected. Pass false
     ///     for an action that keeps its option running until SetDone is called.
     /// </param>
     internal RecordAction(string name, List<string> log, bool isDone = true)
     {
-        _name = name;
         _log = log;
         _isDone = isDone;
 
@@ -48,12 +44,10 @@ internal sealed class RecordAction : ActionBase
     /// <summary>Whatever the constructor or SetDone last set.</summary>
     public override bool IsDone => _isDone;
 
-    /// <summary>Takes the loaded Name for the log entries, and an optional Done attribute for actions that keep running.</summary>
+    /// <summary>Takes an optional Done attribute for actions that keep running.</summary>
     protected override bool OnInit(AiCreationData creationData)
     {
         SpecificationNode node = creationData.Node;
-
-        _name = Name.Text;
 
         if (node.HasAttribute(DoneAttribute))
         {
@@ -95,6 +89,6 @@ internal sealed class RecordAction : ActionBase
     /// <summary>Appends the entry for the given phase to the log, as "Name.Phase".</summary>
     private void Record(string phase)
     {
-        _log.Add($"{_name}.{phase}");
+        _log.Add($"{Name.Text}.{phase}");
     }
 }

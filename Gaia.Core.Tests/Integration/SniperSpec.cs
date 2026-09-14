@@ -130,10 +130,8 @@ public class SniperSpec
 
         AddContact("Patrol", InKillZone);
 
-        // One cycle each for set pose and raise weapon, one to start the aim pause, and a final cycle that advances
-        // the clock by AimTime so the pause completes and the sequence fires.
-        Cycle();
-        Cycle();
+        // One cycle in which Snipe is selected, its two instantaneous steps pass, and the aim pause starts, then a
+        // final cycle that advances the clock by AimTime so the pause completes and the sequence fires and finishes.
         Cycle();
         Cycle(AimTime);
 
@@ -171,7 +169,9 @@ public class SniperSpec
         _brain.Blackboard.SetBool("IsUnderFire", true);
         Cycle();
 
-        Assert.That(Selections(), Is.EqualTo(new[] { "SetPose", "Retreat" }));
+        // The interrupted shot got as far as starting its aim pause, so both instantaneous steps show before the
+        // retreat.
+        Assert.That(Selections(), Is.EqualTo(new[] { "SetPose", "RaiseWeapon", "Retreat" }));
     }
 
     [Test]
@@ -192,8 +192,6 @@ public class SniperSpec
 
         StubEntity patrol = AddContact("Patrol", InKillZone);
 
-        Cycle();
-        Cycle();
         Cycle();
         Cycle(AimTime);
 
@@ -226,12 +224,10 @@ public class SniperSpec
         AddContact("Patrol", InKillZone);
 
         Cycle();
-        Cycle();
-        Cycle();
         Cycle(AimTime);
 
-        // One cycle for the SequenceReasoner to notice Fire IsDone, and one for ShotCooldown to see Snipe IsDone.
-        Cycle();
+        // The sequence finished in the cycle it fired, so one more cycle is all ShotCooldown needs to see Snipe
+        // IsDone and veto it.
         Cycle();
 
         Assert.That(Selections(), Is.EqualTo(new[] { "SetPose", "RaiseWeapon", "Fire", "Hide" }));
@@ -273,8 +269,6 @@ public class SniperSpec
         AddContact("Patrol", InKillZone);
 
         Cycle();
-        Cycle();
-        Cycle();
         Cycle(AimTime);
 
         Assert.That(_logSink.Entries, Is.EqualTo(new[]
@@ -291,6 +285,7 @@ public class SniperSpec
             "Message Sniper selected AimStep", "Message Sniper Aim started",
             "Message Sniper deselected AimStep", "Message Sniper Aim stopped",
             "Message Sniper selected FireStep", "Message Sniper Fire started",
+            "Message Sniper deselected FireStep", "Message Sniper Fire stopped",
             // @formatter:on
         }));
     }

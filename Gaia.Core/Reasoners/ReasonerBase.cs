@@ -40,11 +40,28 @@ namespace Gaia.Core.Reasoners
         /// <summary>The option this reasoner is currently running, or null if it is running none.</summary>
         public OptionBase? SelectedOption { get; private set; }
 
+        /// <summary>True once this reasoner has run out of work. The base reports false, since a scoring reasoner never finishes.</summary>
+        /// <remarks>
+        ///     Done means ran out of work, never nothing was eligible this cycle. A scoring reasoner chooses by the weights
+        ///     its options report, which a <see cref="RuleBasedReasoner" /> and a <see cref="DualUtilityReasoner" /> do, and a
+        ///     <see cref="SequenceReasoner" /> chooses by position. Selecting nothing is a circumstance, such as every option
+        ///     vetoed for a cycle while a sensor rewrites a list, and treating it as completion would let one such cycle advance a
+        ///     parent SequenceReasoner past unfinished work. A reasoner with an end overrides this, a sequence is done off its
+        ///     last step, and <see cref="SubreasonerAction" /> reads IsSelectionDone as well, so a step holding a scoring reasoner
+        ///     ends when the option the reasoner chose has finished. A scoring reasoner's own option ends the way every option
+        ///     ends, through its considerations.
+        /// </remarks>
+        public virtual bool IsDone => false;
+
         /// <summary>
-        ///     True while SelectedOption is null, since a reasoner running nothing has nothing left to finish.
-        ///     <see cref="SubreasonerAction" /> reads this to report its own IsDone.
+        ///     True once this reasoner's selected option is done. A <see cref="SubreasonerAction" /> running the reasoner
+        ///     reports done when this is true.
         /// </summary>
-        public virtual bool IsDone => SelectedOption == null;
+        /// <remarks>
+        ///     A reasoner that runs several of its options in turn, as a <see cref="SequenceReasoner" /> does, overrides this
+        ///     so that the step ends only when the last of them is done.
+        /// </remarks>
+        internal virtual bool IsSelectionDone => SelectedOption is { IsDone: true };
 
         /// <summary>Loads this reasoner's configuration from the creation data's node.</summary>
         /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>

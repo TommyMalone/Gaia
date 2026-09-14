@@ -100,7 +100,8 @@ public class DualUtilityReasonerSpec
         {
             Assert.That(_executed, Is.Empty);
             Assert.That(_dualUtilityReasoner.SelectedOption, Is.Null);
-            Assert.That(_dualUtilityReasoner.IsDone, Is.True);
+            Assert.That(_dualUtilityReasoner.IsDone, Is.False,
+                "nothing eligible is not completion, since a scoring reasoner never runs out of work");
         });
     }
 

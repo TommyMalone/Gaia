@@ -32,8 +32,14 @@ namespace Gaia.Core.Actions
         /// <summary>The reasoner this action runs. Null means the action does nothing and IsDone is immediately true.</summary>
         public ReasonerBase? Reasoner { get; internal set; }
 
-        /// <summary>True if Reasoner is null or reports that it is done.</summary>
-        public override bool IsDone => Reasoner?.IsDone ?? true;
+        /// <summary>True once the reasoner has run out of work or the option it selected is done. Null means done at once.</summary>
+        /// <remarks>
+        ///     The step ends when what the reasoner chose has finished, and not while nothing is selected, since a cycle with
+        ///     nothing eligible is not completion. The reasoner says when what it chose has finished through IsSelectionDone. For
+        ///     a scoring reasoner that is its selected option being done, and for a <see cref="Reasoners.SequenceReasoner" /> it
+        ///     is the sequence running off its last step, since the steps follow one another rather than being chosen.
+        /// </remarks>
+        public override bool IsDone => Reasoner == null || Reasoner.IsDone || Reasoner.IsSelectionDone;
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)

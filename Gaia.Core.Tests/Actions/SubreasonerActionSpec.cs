@@ -8,9 +8,9 @@ namespace Gaia.Core.Tests.Actions;
 
 /// <summary>Covers how decisions flow through a hierarchy when options hold a <see cref="SubreasonerAction" />.</summary>
 /// <remarks>
-///     Every test but one shares the same tree, which is a root reasoner with two options, each carrying a
-///     <see cref="RecordAction" /> and a <see cref="SubreasonerAction" />, and each subreasoner holding two options of its
-///     own. The exception builds its own tree, three levels deep.
+///     The tests share one tree, except the ones that need a sequence or a third level, which build their own. The
+///     shared tree is a root reasoner with two options, each carrying a <see cref="RecordAction" /> and a
+///     <see cref="SubreasonerAction" />, and each subreasoner holds two options of its own.
 /// </remarks>
 [TestFixture]
 public class SubreasonerActionSpec
@@ -40,7 +40,7 @@ public class SubreasonerActionSpec
         RecordAction reasonerRecordAction1 = new("Reasoner.First", _executed, false);
         RecordAction reasonerRecordAction2 = new("Reasoner.Second", _executed, false);
 
-        RecordAction subreasoner1RecordAction1 = new("Subreasoner1.First", _executed, false);
+        _subreasoner1RecordAction1 = new RecordAction("Subreasoner1.First", _executed, false);
         RecordAction subreasoner1RecordAction2 = new("Subreasoner1.Second", _executed, false);
 
         RecordAction subreasoner2RecordAction1 = new("Subreasoner2.First", _executed, false);
@@ -54,7 +54,7 @@ public class SubreasonerActionSpec
         StubOption reasonerOption1 = new([_reasonerConsideration1], [reasonerRecordAction1, _subreasonerAction1]);
         StubOption reasonerOption2 = new([_reasonerConsideration2], [reasonerRecordAction2, subreasonerAction2]);
 
-        StubOption subreasoner1Option1 = new([_subreasoner1Consideration1], [subreasoner1RecordAction1]);
+        StubOption subreasoner1Option1 = new([_subreasoner1Consideration1], [_subreasoner1RecordAction1]);
         StubOption subreasoner1Option2 = new([_subreasoner1Consideration2], [subreasoner1RecordAction2]);
 
         StubOption subreasoner2Option1 = new([_subreasoner2Consideration1], [subreasoner2RecordAction1]);
@@ -79,6 +79,7 @@ public class SubreasonerActionSpec
     private RuleBasedReasoner _subreasoner2;
 
     private SubreasonerAction _subreasonerAction1;
+    private RecordAction _subreasoner1RecordAction1;
 
     private StubConsideration _reasonerConsideration1;
     private StubConsideration _reasonerConsideration2;
@@ -147,10 +148,7 @@ public class SubreasonerActionSpec
             }));
 
             Assert.That(_subreasoner1.IsEnabled, Is.False);
-            Assert.That(_subreasoner1.IsDone, Is.True);
-
             Assert.That(_subreasoner2.IsEnabled, Is.True);
-            Assert.That(_subreasoner2.IsDone, Is.False);
         });
     }
 
@@ -224,23 +222,81 @@ public class SubreasonerActionSpec
     }
 
     [Test]
-    public void ReportsDoneWheneverTheContainedReasonerHasNothingSelected()
+    public void IsNotDoneBeforeItsReasonerHasChosen()
     {
-        // Nothing has run yet, so the subreasoner has no selected option and the action containing it is finished.
-        Assert.That(_subreasonerAction1.IsDone, Is.True);
+        // Nothing has run yet, so the subreasoner has no selected option, and nothing selected is not completion.
+        Assert.That(_subreasonerAction1.IsDone, Is.False);
+    }
 
+    [Test]
+    public void ReportsDoneOnceTheOptionItsReasonerChoseIsDone()
+    {
         _reasoner.Update();
 
-        // The subreasoner picked an option, so the containing action is not finished. Without IsDone delegating to
-        // Reasoner, a SequenceReasoner would move on while the whole subtree was still running.
+        // The subreasoner picked an option whose action still has work, so the containing action is not finished.
         Assert.That(_subreasonerAction1.IsDone, Is.False);
+
+        _subreasoner1RecordAction1.SetDone(true);
+
+        Assert.That(_subreasonerAction1.IsDone, Is.True, "the step ends when what its reasoner chose has finished");
+    }
+
+    [Test]
+    public void IsNotDoneOnACycleWithNothingEligible()
+    {
+        _reasoner.Update();
 
         _subreasoner1Consideration1.Veto();
         _subreasoner1Consideration2.Veto();
 
         _reasoner.Update();
 
-        Assert.That(_subreasonerAction1.IsDone, Is.True);
+        Assert.That(_subreasonerAction1.IsDone, Is.False, "an all-vetoed cycle must not read as the subtree finishing");
+    }
+
+    [Test]
+    public void ReportsDoneWhenItsSequenceRunsOffItsEnd()
+    {
+        // A sequence is the reasoner with an end, so a subreasoner step wrapping one ends exactly when the
+        // sequence runs off its last option.
+        SequenceReasoner sequence = new();
+        RecordAction onlyStepAction = new("OnlyStep", _executed);
+        sequence.AddOption(new StubOption([new StubConsideration(WeightValues.Neutral)], [onlyStepAction]));
+
+        SubreasonerAction sequenceAction = new(sequence);
+
+        Assert.That(sequenceAction.IsDone, Is.False, "the sequence has not started, so there is work left");
+
+        sequenceAction.Select();
+        sequenceAction.Update();
+
+        Assert.That(sequenceAction.IsDone, Is.True, "the instantaneous step ran and the sequence ran off its end");
+    }
+
+    [Test]
+    public void IsNotDoneWhileItsSequenceHasStepsLeft()
+    {
+        // The parent reads IsDone before the sequence thinks, so a finished step must not end the step holding the
+        // sequence while the sequence has options left to run.
+        SequenceReasoner sequence = new();
+        RecordAction firstStepAction = new("FirstStep", _executed, false);
+        RecordAction secondStepAction = new("SecondStep", _executed, false);
+        sequence.AddOption(new StubOption([new StubConsideration(WeightValues.Neutral)], [firstStepAction]));
+        sequence.AddOption(new StubOption([new StubConsideration(WeightValues.Neutral)], [secondStepAction]));
+
+        SubreasonerAction sequenceAction = new(sequence);
+        sequenceAction.Select();
+        sequenceAction.Update();
+
+        firstStepAction.SetDone(true);
+
+        Assert.That(sequenceAction.IsDone, Is.False, "the first step finished, but the sequence has a second");
+
+        sequenceAction.Update();
+        secondStepAction.SetDone(true);
+        sequenceAction.Update();
+
+        Assert.That(sequenceAction.IsDone, Is.True, "the sequence ran off its last step");
     }
 
     [Test]
@@ -253,11 +309,12 @@ public class SubreasonerActionSpec
 
         Assert.Multiple(() =>
         {
-            // An empty-handed subtree is not a failure. The parent's option stays selected and its other actions run.
+            // A subtree that selected nothing is not a failure, and not completion either. The parent's option stays
+            // selected, its other actions run, and the subtree stays not done, waiting for something eligible.
             Assert.That(_executed, Is.EqualTo(new[] { "Reasoner.First.Select", "Reasoner.First.Update" }));
 
             Assert.That(_subreasoner1.IsEnabled, Is.True);
-            Assert.That(_subreasoner1.IsDone, Is.True);
+            Assert.That(_subreasoner1.IsDone, Is.False);
         });
     }
 
@@ -290,8 +347,6 @@ public class SubreasonerActionSpec
         // Builds its own tree rather than using the shared one, so that adding a third level does not change what
         // every other test in this fixture expects to see. Each reasoner has a single option, so vetoing the root's
         // consideration leaves nothing selected anywhere.
-        List<string> executed = new();
-
         RuleBasedReasoner rootReasoner = new();
         rootReasoner.Enable();
 
@@ -302,9 +357,9 @@ public class SubreasonerActionSpec
         StubConsideration childConsideration = new(WeightValues.Neutral);
         StubConsideration grandchildConsideration = new(WeightValues.Neutral);
 
-        RecordAction rootRecordAction = new("Root", executed, false);
-        RecordAction childRecordAction = new("Child", executed, false);
-        RecordAction grandchildRecordAction = new("Grandchild", executed, false);
+        RecordAction rootRecordAction = new("Root", _executed, false);
+        RecordAction childRecordAction = new("Child", _executed, false);
+        RecordAction grandchildRecordAction = new("Grandchild", _executed, false);
 
         SubreasonerAction childSubreasonerAction = new(childReasoner);
         SubreasonerAction grandchildSubreasonerAction = new(grandchildReasoner);
@@ -327,7 +382,7 @@ public class SubreasonerActionSpec
         {
             // Selection reaches the bottom on the first cycle, and tearing down the root disables every level below
             // it on the second.
-            Assert.That(executed, Is.EqualTo(new[]
+            Assert.That(_executed, Is.EqualTo(new[]
             {
                 // @formatter:off
                 "Root.Select", "Root.Update", "Child.Select", "Child.Update", "Grandchild.Select", "Grandchild.Update",
