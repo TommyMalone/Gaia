@@ -1,6 +1,7 @@
 ﻿using Gaia.Core.Blackboards;
 using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
+using Gaia.Core.Services.Diagnostics;
 using Gaia.Core.Services.Log;
 using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
@@ -19,6 +20,8 @@ namespace Gaia.Core.Brains
     public class Brain
     {
         private static readonly AiString ReasonerElement = "Reasoner";
+
+        private BrainMonitor? _monitor;
 
         /// <summary>Creates a brain that decides nothing until a configuration or a host supplies its reasoner.</summary>
         public Brain()
@@ -51,6 +54,22 @@ namespace Gaia.Core.Brains
 
         /// <summary>True while the brain is in control of its character.</summary>
         public bool IsEnabled { get; private set; }
+
+        /// <summary>The monitor watching this brain and every reasoner in its tree, or null when nothing is watching.</summary>
+        /// <remarks>
+        ///     Setting one attaches it, which walks the tree and gives each reasoner a <see cref="ReasonerMonitor" />, and
+        ///     the walk runs again at Enable so a tree finished after attaching is covered. Diagnostics are attached from code, by
+        ///     a host or by <see cref="Factories.GaiaLoader" /> for every brain it loads, and never from configuration.
+        /// </remarks>
+        public BrainMonitor? Monitor
+        {
+            get => _monitor;
+            set
+            {
+                _monitor = value;
+                value?.Attach(this);
+            }
+        }
 
         /// <summary>Loads this brain's configuration from the creation data's node.</summary>
         /// <remarks>
@@ -127,6 +146,7 @@ namespace Gaia.Core.Brains
                 LogSink.LogMessage(LogChannel, "brain enabled");
             }
 
+            _monitor?.Attach(this);
             RootReasoner?.Enable();
         }
 
@@ -155,6 +175,7 @@ namespace Gaia.Core.Brains
                 return;
             }
 
+            _monitor?.BeginCycle();
             RootReasoner?.Update();
         }
     }

@@ -1,24 +1,47 @@
-﻿namespace Gaia.Core.Services.Random
+﻿using System;
+using System.Threading;
+
+namespace Gaia.Core.Services.Random
 {
     /// <summary>
     ///     The default random source, backed by System.Random. Construct with a seed to reproduce a run, or without one
-    ///     to seed from the clock.
+    ///     to take a seed from the clock.
     /// </summary>
+    /// <remarks>
+    ///     The seed is kept in <see cref="Seed" /> either way, so a host that reports it can reproduce a run by
+    ///     constructing another source with the reported value.
+    /// </remarks>
     public sealed class SystemRandomSource : IRandomSource
     {
+        /// <summary>
+        ///     Separates default seeds taken at the same Environment.TickCount reading, so a burst of sources never
+        ///     correlates.
+        /// </summary>
+        private static int _defaultSeedCount;
+
         private readonly System.Random _random;
 
         /// <summary>Creates a source seeded from the clock.</summary>
-        public SystemRandomSource()
+        /// <remarks>
+        ///     The Environment.TickCount reading is combined with a count of default constructions, because a loop that makes
+        ///     several default sources inside one millisecond would otherwise hand them all the same seed and the sources would
+        ///     move in step. The count is multiplied by 0x2545F491 first, so consecutive counts differ across the whole word
+        ///     rather than only in the low bits a clock reading also varies.
+        /// </remarks>
+        public SystemRandomSource() : this(Environment.TickCount ^
+                                           (Interlocked.Increment(ref _defaultSeedCount) * 0x2545F491))
         {
-            _random = new System.Random();
         }
 
         /// <param name="seed">A seed value. The same seed produces the same sequence of values.</param>
         public SystemRandomSource(int seed)
         {
+            Seed = seed;
             _random = new System.Random(seed);
         }
+
+        /// <summary>The seed the sequence runs from, which is what reproduces it.</summary>
+        public int Seed { get; }
 
         /// <inheritdoc />
         public float NextFloat()

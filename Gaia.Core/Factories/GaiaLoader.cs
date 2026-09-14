@@ -1,7 +1,7 @@
-﻿using System;
-using Gaia.Core.Blackboards;
+﻿using Gaia.Core.Blackboards;
 using Gaia.Core.Brains;
 using Gaia.Core.Entities;
+using Gaia.Core.Services.Diagnostics;
 using Gaia.Core.Services.Log;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Services.Time;
@@ -64,15 +64,22 @@ namespace Gaia.Core.Factories
 
             if (randomSource == null)
             {
-                int seed = Environment.TickCount;
-                _randomSource = new SystemRandomSource(seed);
-                _logSink.LogMessage(GaiaChannel, $"random seed {seed}");
+                SystemRandomSource seededSource = new();
+                _randomSource = seededSource;
+                _logSink.LogMessage(GaiaChannel, $"random seed {seededSource.Seed}");
             }
             else
             {
                 _randomSource = randomSource;
             }
         }
+
+        /// <summary>
+        ///     The monitor settings every brain this loader loads is watched under, or null, the default, to attach no
+        ///     monitor. A single load may carry its own through TryLoadBrain, which is how one brain under investigation is kept
+        ///     apart from a fleet's noise.
+        /// </summary>
+        public MonitorSettings? Diagnostics { get; set; }
 
         /// <summary>Loads one brain from configuration text, parsing and loading in one call.</summary>
         /// <param name="configurationText">The configuration document's text.</param>
@@ -91,6 +98,7 @@ namespace Gaia.Core.Factories
         ///     The brain's own source, or null to derive one from the loader's master stream. Handing one
         ///     in is for scripting a single brain's rolls.
         /// </param>
+        /// <param name="diagnostics">The monitor settings this brain alone is watched under, or null for the loader's Diagnostics.</param>
         /// <returns>True when the brain loaded. False after reporting what went wrong.</returns>
         public bool TryLoadBrain(
             string configurationText,
@@ -99,7 +107,8 @@ namespace Gaia.Core.Factories
             WorldBlackboard? worldBlackboard = null,
             Actor? self = null,
             BrainBlackboard? brainBlackboard = null,
-            IRandomSource? randomSource = null)
+            IRandomSource? randomSource = null,
+            MonitorSettings? diagnostics = null)
         {
             brain = null;
 
@@ -108,7 +117,7 @@ namespace Gaia.Core.Factories
                 return false;
             }
 
-            return TryLoadBrain(root!, out brain, worldBlackboard, self, brainBlackboard, randomSource);
+            return TryLoadBrain(root!, out brain, worldBlackboard, self, brainBlackboard, randomSource, diagnostics);
         }
 
         /// <summary>Loads one brain from a parsed tree.</summary>
@@ -130,6 +139,7 @@ namespace Gaia.Core.Factories
         ///     The brain's own source, or null to derive one from the loader's master stream. Handing one
         ///     in is for scripting a single brain's rolls.
         /// </param>
+        /// <param name="diagnostics">The monitor settings this brain alone is watched under, or null for the loader's Diagnostics.</param>
         /// <returns>True when the brain loaded. False after reporting what went wrong.</returns>
         public bool TryLoadBrain(
             SpecificationNode root,
@@ -137,7 +147,8 @@ namespace Gaia.Core.Factories
             WorldBlackboard? worldBlackboard = null,
             Actor? self = null,
             BrainBlackboard? brainBlackboard = null,
-            IRandomSource? randomSource = null)
+            IRandomSource? randomSource = null,
+            MonitorSettings? diagnostics = null)
         {
             brain = null;
 
@@ -160,6 +171,13 @@ namespace Gaia.Core.Factories
             if (!loaded.Init(creationData))
             {
                 return false;
+            }
+
+            MonitorSettings? settings = diagnostics ?? Diagnostics;
+
+            if (settings != null)
+            {
+                loaded.Monitor = new BrainMonitor(settings);
             }
 
             brain = loaded;

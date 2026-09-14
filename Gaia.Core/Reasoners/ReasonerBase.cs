@@ -4,6 +4,7 @@ using Gaia.Core.Actions;
 using Gaia.Core.Brains;
 using Gaia.Core.Factories;
 using Gaia.Core.Options;
+using Gaia.Core.Services.Diagnostics;
 using Gaia.Core.Services.Log;
 using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
@@ -22,7 +23,16 @@ namespace Gaia.Core.Reasoners
         private readonly List<OptionBase> _options = new();
 
         /// <summary>The options this reasoner chooses among, in the order they were added.</summary>
-        protected IReadOnlyList<OptionBase> Options => _options;
+        /// <remarks>Internal as well as protected so a monitor in this assembly can read the list without the tree opening.</remarks>
+        protected internal IReadOnlyList<OptionBase> Options => _options;
+
+        /// <summary>The monitor recording this reasoner's decisions, or null when nothing is watching.</summary>
+        /// <remarks>
+        ///     Diagnostics are attached from code by a host, a <see cref="BrainMonitor" /> for a whole brain or this for one
+        ///     reasoner, and never from configuration, since how closely a run is watched is a property of the run rather than of
+        ///     the character. The setter is public for that reason. A reasoner with no monitor pays one null check per cycle.
+        /// </remarks>
+        public ReasonerMonitor? Monitor { get; set; }
 
         /// <summary>Where this reasoner reports the decisions it makes.</summary>
         /// <remarks>
@@ -36,6 +46,12 @@ namespace Gaia.Core.Reasoners
 
         /// <summary>True while the reasoner is allowed to decide.</summary>
         public bool IsEnabled { get; private set; }
+
+        /// <summary>
+        ///     The roll in [0, 1) that decided the current cycle, or 0 on a cycle with nothing rolled. A reasoner that rolls
+        ///     sets it from Think, and its monitor reads it.
+        /// </summary>
+        protected internal float LastDecisionRoll { get; set; }
 
         /// <summary>The option this reasoner is currently running, or null if it is running none.</summary>
         public OptionBase? SelectedOption { get; private set; }
@@ -201,9 +217,12 @@ namespace Gaia.Core.Reasoners
         {
             if (IsEnabled)
             {
+                LastDecisionRoll = 0f;
+
                 Sense();
                 EvaluateOptions();
                 Think();
+                Monitor?.OnCycle(this);
                 Act();
             }
         }

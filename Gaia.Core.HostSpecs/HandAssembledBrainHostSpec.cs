@@ -4,6 +4,7 @@ using Gaia.Core.Considerations;
 using Gaia.Core.Factories;
 using Gaia.Core.Options;
 using Gaia.Core.Reasoners;
+using Gaia.Core.Services.Diagnostics;
 using Gaia.Core.Services.Random;
 using Gaia.Core.WeightFunctions;
 
@@ -63,6 +64,26 @@ public class HandAssembledBrainHostSpec
         _brain.Update();
 
         Assert.That(_selections, Is.EqualTo(new[] { "Walk" }), "a rule-based reasoner selects the first valid option");
+    }
+
+    [Test]
+    public void WatchesTheAssembledBrainThroughAMonitorTheHostAttaches()
+    {
+        BrainMonitor monitor = new(new MonitorSettings());
+        _brain.Monitor = monitor;
+        _brain.Enable();
+
+        _brain.Update();
+
+        DecisionHistory history = monitor.ReasonerMonitors[0].History;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(history.CycleCount, Is.EqualTo(1));
+            Assert.That(history.GetCycle(0).SelectedName.Text, Is.EqualTo("Patrol"));
+            Assert.That(history.GetRecord(0, 0).OptionName.Text, Is.EqualTo("Patrol"));
+            Assert.That(history.GetRecord(0, 1).OptionName.Text, Is.EqualTo("Idle"));
+        });
     }
 
     [Test]

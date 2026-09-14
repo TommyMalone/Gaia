@@ -98,7 +98,10 @@ namespace Gaia.Core.Reasoners
                 return null;
             }
 
-            float roll = RandomSource.NextFloat() * totalWeightPostScreening;
+            float normalizedRoll = RandomSource.NextFloat();
+            LastDecisionRoll = normalizedRoll;
+
+            float roll = normalizedRoll * totalWeightPostScreening;
             OptionBase? selected = null;
 
             foreach (OptionBase option in Options)

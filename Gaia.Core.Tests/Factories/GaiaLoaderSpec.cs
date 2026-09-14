@@ -2,6 +2,7 @@
 using Gaia.Core.Brains;
 using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
+using Gaia.Core.Services.Diagnostics;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Services.Time;
 using Gaia.Core.Specifications;
@@ -51,6 +52,49 @@ public class GaiaLoaderSpec
             Assert.That(loaded, Is.True);
             Assert.That(brain!.RootReasoner, Is.InstanceOf<RuleBasedReasoner>());
             Assert.That(_logSink.Entries, Is.Empty, "a clean load reports nothing");
+        });
+    }
+
+    [Test]
+    public void WatchesEveryBrainItLoadsUnderItsDiagnostics()
+    {
+        const string snippet = """
+                               <Brain>
+                                   <Reasoner Type="RuleBased"/>
+                               </Brain>
+                               """;
+        MonitorSettings settings = new(32, 4);
+        _loader.Diagnostics = settings;
+
+        _loader.TryLoadBrain(snippet, SourceName, out Brain? first);
+        _loader.TryLoadBrain(snippet, SourceName, out Brain? second);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(first!.Monitor, Is.Not.Null);
+            Assert.That(first.Monitor!.Settings, Is.SameAs(settings));
+            Assert.That(first.Monitor.ReasonerMonitors, Has.Count.EqualTo(1), "the loaded tree is walked at attach");
+            Assert.That(second!.Monitor, Is.Not.SameAs(first.Monitor), "each brain gets a monitor of its own");
+        });
+    }
+
+    [Test]
+    public void LetsOneLoadCarryItsOwnDiagnostics()
+    {
+        const string snippet = """
+                               <Brain>
+                                   <Reasoner Type="RuleBased"/>
+                               </Brain>
+                               """;
+        MonitorSettings closeWatch = new(1024, 16);
+
+        _loader.TryLoadBrain(snippet, SourceName, out Brain? fleetBrain);
+        _loader.TryLoadBrain(snippet, SourceName, out Brain? watchedBrain, diagnostics: closeWatch);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(fleetBrain!.Monitor, Is.Null, "a loader carrying no settings attaches nothing");
+            Assert.That(watchedBrain!.Monitor!.Settings, Is.SameAs(closeWatch));
         });
     }
 

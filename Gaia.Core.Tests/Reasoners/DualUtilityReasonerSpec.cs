@@ -1,8 +1,10 @@
 ﻿using Gaia.Core.Considerations;
 using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
+using Gaia.Core.Services.Diagnostics;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Services.Time;
+using Gaia.Core.Strings;
 using Gaia.Core.Tests.Helpers;
 using Gaia.Core.WeightFunctions;
 
@@ -15,7 +17,8 @@ namespace Gaia.Core.Tests.Reasoners;
 /// </summary>
 /// <remarks>
 ///     Each option's numbers come from a <see cref="StubConsideration" /> set by hand, and the random source is
-///     fixed, so each test pins down one step rather than sampling a distribution.
+///     fixed, so each test pins down one step. The exception is SelectsInProportionToWeightOverManyCycles, which samples
+///     the weighted pick over many cycles from a seeded source.
 /// </remarks>
 [TestFixture]
 public class DualUtilityReasonerSpec
@@ -26,7 +29,7 @@ public class DualUtilityReasonerSpec
         _logSink = new RecordingLogSink();
         _executed = new List<string>();
 
-        _dualUtilityReasoner = new DualUtilityReasoner();
+        _dualUtilityReasoner = new DualUtilityReasoner { LogSink = _logSink };
         _dualUtilityReasoner.Enable();
 
         // A roll of 0 always lands on the first surviving option. A test whose answer has to change when the step it
@@ -44,11 +47,11 @@ public class DualUtilityReasonerSpec
         RecordAction firstRecordAction = new("First", _executed, false);
         RecordAction secondRecordAction = new("Second", _executed, false);
 
-        StubOption firstOption = new([_firstConsideration, neutralTuning], [firstRecordAction]);
-        StubOption secondOption = new([_secondConsideration, neutralTuning], [secondRecordAction]);
+        _firstOption = new StubOption([_firstConsideration, neutralTuning], [firstRecordAction]) { Name = "First" };
+        _secondOption = new StubOption([_secondConsideration, neutralTuning], [secondRecordAction]) { Name = "Second" };
 
-        _dualUtilityReasoner.AddOption(firstOption);
-        _dualUtilityReasoner.AddOption(secondOption);
+        _dualUtilityReasoner.AddOption(_firstOption);
+        _dualUtilityReasoner.AddOption(_secondOption);
 
         _vetoedWithALargeAddend = new WeightValues(50f, 0f, float.MinValue);
 
@@ -67,6 +70,9 @@ public class DualUtilityReasonerSpec
 
     private StubConsideration _firstConsideration;
     private StubConsideration _secondConsideration;
+
+    private StubOption _firstOption;
+    private StubOption _secondOption;
 
     private WeightValues _vetoedWithALargeAddend;
 
@@ -257,6 +263,92 @@ public class DualUtilityReasonerSpec
         firstRank.Set(WeightValues.Neutral);
 
         reasoner.Update();
+    }
+
+    [Test]
+    public void SelectsInProportionToWeightOverManyCycles()
+    {
+        // The suite's one test that samples a distribution, so it takes a seeded source where the others pin a
+        // single roll. Weights of 3 and 1 make First the selection in three cycles out of four. The seed rolls
+        // the same sequence on every run and ten thousand cycles settle the share, which is what allows a band
+        // this narrow. A selection that ignored weight would fail here. Always taking the heaviest option gives
+        // a share of 1, and choosing evenly among the survivors gives 0.5.
+        const int cycleCount = 10000;
+
+        _firstConsideration.Set(_heavyWeight);
+        _secondConsideration.Set(_lightWeight);
+
+        _dualUtilityReasoner.RandomSource = new SystemRandomSource(42);
+
+        int firstSelections = 0;
+
+        for (int cycle = 0; cycle < cycleCount; cycle++)
+        {
+            _dualUtilityReasoner.Update();
+
+            if (ReferenceEquals(_dualUtilityReasoner.SelectedOption, _firstOption))
+            {
+                firstSelections++;
+            }
+        }
+
+        double firstShare = (double)firstSelections / cycleCount;
+
+        Assert.That(firstShare, Is.InRange(0.73, 0.77));
+    }
+
+    [Test]
+    public void RecordsEachCyclesDecisionWhenAMonitorIsAttached()
+    {
+        ReasonerMonitor monitor = new(new MonitorSettings());
+        _dualUtilityReasoner.Monitor = monitor;
+        DecisionHistory history = monitor.History;
+
+        _firstConsideration.Set(_heavyWeight);
+        _secondConsideration.Set(_vetoedWithALargeAddend);
+        _dualUtilityReasoner.RandomSource = new FixedRandomSource(0.75f);
+
+        _dualUtilityReasoner.Update();
+
+        DecisionCycle cycle = history.GetCycle(0);
+        DecisionRecord first = history.GetRecord(0, 0);
+        DecisionRecord second = history.GetRecord(0, 1);
+
+        AiString firstName = "First";
+        AiString secondName = "Second";
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(history.CycleCount, Is.EqualTo(1));
+            Assert.That(cycle.SelectedName, Is.EqualTo(firstName));
+            Assert.That(cycle.RecordCount, Is.EqualTo(2));
+            Assert.That(cycle.Roll, Is.EqualTo(0.75f),
+                "the roll that decided the cycle is recorded, not the reset value");
+            Assert.That(first.OptionName, Is.EqualTo(firstName));
+            Assert.That(first.Weight, Is.EqualTo(3f));
+            Assert.That(first.PassedScreening, Is.True);
+            Assert.That(second.OptionName, Is.EqualTo(secondName));
+            Assert.That(second.Weight, Is.EqualTo(0f), "a veto zeroes the weight before screening ever looks");
+        });
+    }
+
+    [Test]
+    public void WarnsOnceWhenItHoldsMoreOptionsThanItsMonitorRecords()
+    {
+        // The fixture's two options and seven more put the reasoner one past a history's capacity of eight. A
+        // filler option needs no considerations of its own, since StubOption gives it the default tuning.
+        for (int filler = 1; filler <= 7; filler++)
+        {
+            _dualUtilityReasoner.AddOption(new StubOption([], []) { Name = $"Filler{filler}" });
+        }
+
+        _dualUtilityReasoner.Monitor = new ReasonerMonitor(new MonitorSettings());
+
+        _dualUtilityReasoner.Update();
+        _dualUtilityReasoner.Update();
+
+        Assert.That(_logSink.Entries, Has.One.Contains("the decision history records 8 of 9 options"),
+            "a second cycle with the same options does not repeat the warning");
     }
 
     [Test]

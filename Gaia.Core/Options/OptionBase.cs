@@ -67,8 +67,17 @@ namespace Gaia.Core.Options
         ///     presently the only reasoner that sets these thresholds. For the other reasoner types PassesScreening is always
         ///     true.
         /// </remarks>
-        private bool PassesScreening =>
+        internal bool PassesScreening =>
             _considerations.Rank >= ScreeningRank && _considerations.Weight >= ScreeningWeight;
+
+        /// <summary>
+        ///     The considerations' combined weight before screening, which is what a decision record reports so a screened
+        ///     option still shows what it weighed.
+        /// </summary>
+        internal float WeightBeforeScreening => _considerations.Weight;
+
+        /// <summary>The actions that run while this option is selected, in the order they were added, for the monitor's walk.</summary>
+        internal IReadOnlyList<ActionBase> Actions => _actions;
 
         /// <summary>True once every action on this option reports that it is done.</summary>
         public bool IsDone
