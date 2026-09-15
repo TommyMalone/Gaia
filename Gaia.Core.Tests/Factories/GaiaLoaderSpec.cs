@@ -3,9 +3,11 @@ using Gaia.Core.Brains;
 using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Diagnostics;
+using Gaia.Core.Services.Log;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Services.Time;
 using Gaia.Core.Specifications;
+using Gaia.Core.Strings;
 using Gaia.Core.Tests.Helpers;
 
 namespace Gaia.Core.Tests.Factories;
@@ -35,6 +37,34 @@ public class GaiaLoaderSpec
     private RecordingLogSink _logSink;
     private ManualTimeSource _timeSource;
     private GaiaLoader _loader;
+
+    [Test]
+    public void PointsTheStringTableAtItsSink()
+    {
+        // The table is process wide, so the standing sink is put back afterward. The colliding pair is the one
+        // AiStringTableSpec derives, and it stays registered for the rest of the run.
+        ILogSink standingSink = AiStringTable.LogSink;
+
+        try
+        {
+            RecordingLogSink hostSink = new();
+            _ = new GaiaLoader(new FactorySet(), _timeSource, new FixedRandomSource(0f), hostSink);
+
+            AiString first = "ba";
+            AiString collider = "a\u0082";
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(first == collider, Is.True, "the two texts share a hash");
+                Assert.That(hostSink.Entries, Has.Some.Contains("hash to the same value"),
+                    "constructing the loader pointed the table's report at the host's sink");
+            });
+        }
+        finally
+        {
+            AiStringTable.LogSink = standingSink;
+        }
+    }
 
     [Test]
     public void LoadsABrainFromConfigurationText()

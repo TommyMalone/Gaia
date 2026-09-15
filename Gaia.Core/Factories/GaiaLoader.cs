@@ -60,6 +60,12 @@ namespace Gaia.Core.Factories
             _factories = factories;
             _timeSource = timeSource;
             _logSink = logSink ?? new TraceLogSink();
+
+            // The string table is the one process-wide service, and a hash collision in it is unrecoverable corruption,
+            // so the loader points the table at the host's sink rather than leaving it on Trace, which an engine's
+            // console does not show. With several loaders the most recent one's sink carries the reports, and a host
+            // that wants finer control sets AiStringTable.LogSink itself, after constructing its loaders.
+            AiStringTable.LogSink = _logSink;
             _reader = new XmlSpecificationReader(_logSink);
 
             if (randomSource == null)
