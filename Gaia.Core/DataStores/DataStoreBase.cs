@@ -20,34 +20,42 @@ namespace Gaia.Core.DataStores
     ///         behind for the collector. Each table is also free to be sized or replaced on its own.
     ///     </para>
     ///     <para>Names are <see cref="AiString" /> values, so a lookup compares hashes and matching ignores case.</para>
+    ///     <para>
+    ///         Each table allocates on its first write rather than at construction, so a store holds tables only for the
+    ///         kinds it stores. A freshly spawned entity, such as a <see cref="Entities.Threat" /> for one bullet impact,
+    ///         costs no tables at all until something is written to it, which is what keeps high-churn entities cheap to
+    ///         create.
+    ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.4.3</seealso>
     public abstract class DataStoreBase
     {
-        private readonly Dictionary<AiString, bool> _bools = new();
-        private readonly Dictionary<AiString, EntityBase> _entities = new();
-        private readonly Dictionary<AiString, List<EntityBase>> _entityLists = new();
-        private readonly Dictionary<AiString, float> _floats = new();
-        private readonly Dictionary<AiString, int> _ints = new();
-        private readonly Dictionary<AiString, Rotation> _rotations = new();
-        private readonly Dictionary<AiString, AiString> _strings = new();
+        private Dictionary<AiString, bool>? _bools;
+        private Dictionary<AiString, EntityBase>? _entities;
+        private Dictionary<AiString, List<EntityBase>>? _entityLists;
+        private Dictionary<AiString, float>? _floats;
+        private Dictionary<AiString, int>? _ints;
+        private Dictionary<AiString, Rotation>? _rotations;
+        private Dictionary<AiString, AiString>? _strings;
 
         /// <summary>Which kind of value each name holds, pointing at the table it can be read from.</summary>
-        private readonly Dictionary<AiString, DataStoreValueType> _valueTypes = new();
+        private Dictionary<AiString, DataStoreValueType>? _valueTypes;
 
-        private readonly Dictionary<AiString, Vector3> _vector3s = new();
+        private Dictionary<AiString, Vector3>? _vector3s;
 
         /// <summary>Reports whether a value has been written under the given name.</summary>
         public bool Contains(AiString name)
         {
-            return _valueTypes.ContainsKey(name);
+            return _valueTypes != null && _valueTypes.ContainsKey(name);
         }
 
         /// <summary>Reports which kind of value a name holds.</summary>
         /// <returns>True if the name holds a value.</returns>
         public bool TryGetValueType(AiString name, out DataStoreValueType valueType)
         {
-            return _valueTypes.TryGetValue(name, out valueType);
+            valueType = default;
+
+            return _valueTypes != null && _valueTypes.TryGetValue(name, out valueType);
         }
 
         /// <summary>Writes a bool under the given name.</summary>
@@ -55,6 +63,7 @@ namespace Gaia.Core.DataStores
         {
             PrepareToSet(name, DataStoreValueType.Bool);
 
+            _bools ??= new Dictionary<AiString, bool>();
             _bools[name] = value;
         }
 
@@ -62,11 +71,12 @@ namespace Gaia.Core.DataStores
         /// <returns>True if the name holds a bool.</returns>
         public bool TryGetBool(AiString name, out bool value)
         {
-            if (_bools.TryGetValue(name, out value))
+            if (_bools != null && _bools.TryGetValue(name, out value))
             {
                 return true;
             }
 
+            value = default;
             ReportAnyTypeMismatch(name, DataStoreValueType.Bool);
 
             return false;
@@ -77,6 +87,7 @@ namespace Gaia.Core.DataStores
         {
             PrepareToSet(name, DataStoreValueType.Int);
 
+            _ints ??= new Dictionary<AiString, int>();
             _ints[name] = value;
         }
 
@@ -84,11 +95,12 @@ namespace Gaia.Core.DataStores
         /// <returns>True if the name holds an int.</returns>
         public bool TryGetInt(AiString name, out int value)
         {
-            if (_ints.TryGetValue(name, out value))
+            if (_ints != null && _ints.TryGetValue(name, out value))
             {
                 return true;
             }
 
+            value = default;
             ReportAnyTypeMismatch(name, DataStoreValueType.Int);
 
             return false;
@@ -99,6 +111,7 @@ namespace Gaia.Core.DataStores
         {
             PrepareToSet(name, DataStoreValueType.Float);
 
+            _floats ??= new Dictionary<AiString, float>();
             _floats[name] = value;
         }
 
@@ -106,11 +119,12 @@ namespace Gaia.Core.DataStores
         /// <returns>True if the name holds a float.</returns>
         public bool TryGetFloat(AiString name, out float value)
         {
-            if (_floats.TryGetValue(name, out value))
+            if (_floats != null && _floats.TryGetValue(name, out value))
             {
                 return true;
             }
 
+            value = default;
             ReportAnyTypeMismatch(name, DataStoreValueType.Float);
 
             return false;
@@ -121,6 +135,7 @@ namespace Gaia.Core.DataStores
         {
             PrepareToSet(name, DataStoreValueType.String);
 
+            _strings ??= new Dictionary<AiString, AiString>();
             _strings[name] = value;
         }
 
@@ -128,11 +143,12 @@ namespace Gaia.Core.DataStores
         /// <returns>True if the name holds a string.</returns>
         public bool TryGetString(AiString name, out AiString value)
         {
-            if (_strings.TryGetValue(name, out value))
+            if (_strings != null && _strings.TryGetValue(name, out value))
             {
                 return true;
             }
 
+            value = default;
             ReportAnyTypeMismatch(name, DataStoreValueType.String);
 
             return false;
@@ -143,6 +159,7 @@ namespace Gaia.Core.DataStores
         {
             PrepareToSet(name, DataStoreValueType.Vector3);
 
+            _vector3s ??= new Dictionary<AiString, Vector3>();
             _vector3s[name] = value;
         }
 
@@ -150,11 +167,12 @@ namespace Gaia.Core.DataStores
         /// <returns>True if the name holds a vector.</returns>
         public bool TryGetVector3(AiString name, out Vector3 value)
         {
-            if (_vector3s.TryGetValue(name, out value))
+            if (_vector3s != null && _vector3s.TryGetValue(name, out value))
             {
                 return true;
             }
 
+            value = default;
             ReportAnyTypeMismatch(name, DataStoreValueType.Vector3);
 
             return false;
@@ -165,6 +183,7 @@ namespace Gaia.Core.DataStores
         {
             PrepareToSet(name, DataStoreValueType.Rotation);
 
+            _rotations ??= new Dictionary<AiString, Rotation>();
             _rotations[name] = value;
         }
 
@@ -172,11 +191,12 @@ namespace Gaia.Core.DataStores
         /// <returns>True if the name holds a rotation.</returns>
         public bool TryGetRotation(AiString name, out Rotation value)
         {
-            if (_rotations.TryGetValue(name, out value))
+            if (_rotations != null && _rotations.TryGetValue(name, out value))
             {
                 return true;
             }
 
+            value = default;
             ReportAnyTypeMismatch(name, DataStoreValueType.Rotation);
 
             return false;
@@ -187,6 +207,7 @@ namespace Gaia.Core.DataStores
         {
             PrepareToSet(name, DataStoreValueType.Entity);
 
+            _entities ??= new Dictionary<AiString, EntityBase>();
             _entities[name] = value;
         }
 
@@ -194,11 +215,12 @@ namespace Gaia.Core.DataStores
         /// <returns>True if the name holds a single entity.</returns>
         public bool TryGetEntity(AiString name, out EntityBase? value)
         {
-            if (_entities.TryGetValue(name, out value))
+            if (_entities != null && _entities.TryGetValue(name, out value))
             {
                 return true;
             }
 
+            value = null;
             ReportAnyTypeMismatch(name, DataStoreValueType.Entity);
 
             return false;
@@ -212,6 +234,7 @@ namespace Gaia.Core.DataStores
         {
             PrepareToSet(name, DataStoreValueType.EntityList);
 
+            _entityLists ??= new Dictionary<AiString, List<EntityBase>>();
             _entityLists[name] = value;
         }
 
@@ -219,11 +242,12 @@ namespace Gaia.Core.DataStores
         /// <returns>True if the name holds a list of entities.</returns>
         public bool TryGetEntityList(AiString name, out List<EntityBase>? value)
         {
-            if (_entityLists.TryGetValue(name, out value))
+            if (_entityLists != null && _entityLists.TryGetValue(name, out value))
             {
                 return true;
             }
 
+            value = null;
             ReportAnyTypeMismatch(name, DataStoreValueType.EntityList);
 
             return false;
@@ -233,7 +257,7 @@ namespace Gaia.Core.DataStores
         /// <returns>True if the name held a value.</returns>
         public bool Remove(AiString name)
         {
-            if (!_valueTypes.TryGetValue(name, out DataStoreValueType valueType))
+            if (_valueTypes == null || !_valueTypes.TryGetValue(name, out DataStoreValueType valueType))
             {
                 return false;
             }
@@ -244,19 +268,19 @@ namespace Gaia.Core.DataStores
             return true;
         }
 
-        /// <summary>Forgets every name in the store.</summary>
+        /// <summary>Forgets every name in the store. The tables keep their capacity, so a pooled store refills without allocating.</summary>
         public void Clear()
         {
-            _valueTypes.Clear();
+            _valueTypes?.Clear();
 
-            _bools.Clear();
-            _ints.Clear();
-            _floats.Clear();
-            _strings.Clear();
-            _vector3s.Clear();
-            _rotations.Clear();
-            _entities.Clear();
-            _entityLists.Clear();
+            _bools?.Clear();
+            _ints?.Clear();
+            _floats?.Clear();
+            _strings?.Clear();
+            _vector3s?.Clear();
+            _rotations?.Clear();
+            _entities?.Clear();
+            _entityLists?.Clear();
         }
 
         /// <summary>Called when a name is read or written as a kind other than the one it already holds.</summary>
@@ -282,6 +306,8 @@ namespace Gaia.Core.DataStores
         /// </summary>
         private void PrepareToSet(AiString name, DataStoreValueType valueType)
         {
+            _valueTypes ??= new Dictionary<AiString, DataStoreValueType>();
+
             if (_valueTypes.TryGetValue(name, out DataStoreValueType storedValueType) && storedValueType != valueType)
             {
                 // The old value has to go, or the name would sit in two tables at once and _valueTypes could only
@@ -312,7 +338,7 @@ namespace Gaia.Core.DataStores
         [Conditional("DEBUG")]
         private void ReportAnyTypeMismatch(AiString name, DataStoreValueType requestedValueType)
         {
-            if (!_valueTypes.TryGetValue(name, out DataStoreValueType storedValueType))
+            if (_valueTypes == null || !_valueTypes.TryGetValue(name, out DataStoreValueType storedValueType))
             {
                 return;
             }
@@ -326,28 +352,28 @@ namespace Gaia.Core.DataStores
             switch (valueType)
             {
                 case DataStoreValueType.Bool:
-                    _bools.Remove(name);
+                    _bools?.Remove(name);
                     break;
                 case DataStoreValueType.Int:
-                    _ints.Remove(name);
+                    _ints?.Remove(name);
                     break;
                 case DataStoreValueType.Float:
-                    _floats.Remove(name);
+                    _floats?.Remove(name);
                     break;
                 case DataStoreValueType.String:
-                    _strings.Remove(name);
+                    _strings?.Remove(name);
                     break;
                 case DataStoreValueType.Vector3:
-                    _vector3s.Remove(name);
+                    _vector3s?.Remove(name);
                     break;
                 case DataStoreValueType.Rotation:
-                    _rotations.Remove(name);
+                    _rotations?.Remove(name);
                     break;
                 case DataStoreValueType.Entity:
-                    _entities.Remove(name);
+                    _entities?.Remove(name);
                     break;
                 case DataStoreValueType.EntityList:
-                    _entityLists.Remove(name);
+                    _entityLists?.Remove(name);
                     break;
             }
         }

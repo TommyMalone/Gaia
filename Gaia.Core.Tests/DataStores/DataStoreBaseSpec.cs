@@ -239,4 +239,27 @@ public class DataStoreBaseSpec
             Assert.That(_dataStore.TypeMismatches, Is.Empty);
         });
     }
+
+    [Test]
+    public void AllocatesNoTablesUntilSomethingIsWritten()
+    {
+        // The bound sits far below the cost of nine eager dictionaries and comfortably above the bare instance, so the
+        // test fails if the tables move back to construction. A high-churn entity, such as a Threat per bullet impact,
+        // is what the lazy tables exist for.
+        const int storeCount = 1000;
+        const long bytesPerStoreBound = 200;
+
+        _ = new StubDataStore();
+
+        long bytesBefore = GC.GetAllocatedBytesForCurrentThread();
+
+        for (int index = 0; index < storeCount; index++)
+        {
+            _ = new StubDataStore();
+        }
+
+        long allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - bytesBefore;
+
+        Assert.That(allocatedBytes, Is.LessThan(storeCount * bytesPerStoreBound));
+    }
 }
