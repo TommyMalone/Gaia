@@ -65,7 +65,11 @@ namespace Gaia.Core.Actions
         /// <summary>Starts the action.</summary>
         public void Select()
         {
-            LogSink.LogMessage(LogChannel, $"{Name.Text} started");
+            if (LogSink.IsEnabled(LogSeverity.Message))
+            {
+                LogSink.LogMessage(LogChannel, $"{Name.Text} started");
+            }
+
             OnSelect();
         }
 
@@ -77,7 +81,11 @@ namespace Gaia.Core.Actions
         /// <summary>Stops the action.</summary>
         public void Deselect()
         {
-            LogSink.LogMessage(LogChannel, $"{Name.Text} stopped");
+            if (LogSink.IsEnabled(LogSeverity.Message))
+            {
+                LogSink.LogMessage(LogChannel, $"{Name.Text} stopped");
+            }
+
             OnDeselect();
         }
 

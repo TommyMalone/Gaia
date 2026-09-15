@@ -24,7 +24,7 @@ namespace Gaia.Core.Reasoners
         ///     Done is the position, not the selection, so a step held by a cycle with nothing eligible leaves the sequence
         ///     not done and a parent cannot mistake that for completion.
         /// </remarks>
-        public override bool IsDone => _currentIndex >= Options.Count;
+        public override bool IsDone => _currentIndex >= OptionList.Count;
 
         /// <summary>True once the sequence has run off its last step, the same as IsDone.</summary>
         /// <remarks>
@@ -63,7 +63,7 @@ namespace Gaia.Core.Reasoners
 
                 // Running off the end leaves the index past the last option, which is what makes IsDone report
                 // true. The sequence stays finished until it is enabled again rather than looping.
-                SelectOption(_currentIndex < Options.Count ? Options[_currentIndex] : null);
+                SelectOption(_currentIndex < OptionList.Count ? OptionList[_currentIndex] : null);
             } while (SelectedOption is { IsDone: true });
         }
     }

@@ -11,7 +11,7 @@ namespace Gaia.Core.Reasoners
         {
             OptionBase? chosenOption = null;
 
-            foreach (OptionBase option in Options)
+            foreach (OptionBase option in OptionList)
             {
                 if (option.IsValid)
                 {

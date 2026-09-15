@@ -20,11 +20,17 @@ namespace Gaia.Core.Reasoners
     {
         private static readonly AiString OptionElement = "Option";
 
-        private readonly List<OptionBase> _options = new();
-
         /// <summary>The options this reasoner chooses among, in the order they were added.</summary>
-        /// <remarks>Internal as well as protected so a monitor in this assembly can read the list without the tree opening.</remarks>
-        protected internal IReadOnlyList<OptionBase> Options => _options;
+        protected IReadOnlyList<OptionBase> Options => OptionList;
+
+        /// <summary>The same options as their concrete list, for the loops that run every cycle.</summary>
+        /// <remarks>
+        ///     Iterating a List through IReadOnlyList boxes its enumerator, one small heap allocation per loop, which a
+        ///     decision cycle runs several of. Iterating the concrete list keeps the enumerator on the stack, so per-cycle code
+        ///     loops over this and everything else reads Options. It is protected so a game's own reasoner loops the same way, and
+        ///     internal in Options' place, so the monitors read the list without the tree opening.
+        /// </remarks>
+        protected internal List<OptionBase> OptionList { get; } = new();
 
         /// <summary>The monitor recording this reasoner's decisions, or null when nothing is watching.</summary>
         /// <remarks>
@@ -135,13 +141,13 @@ namespace Gaia.Core.Reasoners
         /// <param name="option">The option to add.</param>
         public void AddOption(OptionBase option)
         {
-            _options.Add(option);
+            OptionList.Add(option);
         }
 
         /// <summary>Clears the current set of options.</summary>
         public void Clear()
         {
-            _options.Clear();
+            OptionList.Clear();
         }
 
         /// <summary>Enables the reasoner. Called by <see cref="SubreasonerAction.Select" /> and <see cref="Brain.Enable" />.</summary>
@@ -152,7 +158,7 @@ namespace Gaia.Core.Reasoners
             // Loading supplies each option's default tuning consideration from Init. An option assembled in code never
             // runs Init, and by the time its reasoner is enabled the assembler has added the considerations it means
             // to, so the default is supplied here instead. An option that already has one is left alone.
-            foreach (OptionBase option in _options)
+            foreach (OptionBase option in OptionList)
             {
                 option.EnsureTuningConsideration();
             }
@@ -190,10 +196,10 @@ namespace Gaia.Core.Reasoners
                 return;
             }
 
-            Debug.Assert(option == null || _options.Contains(option),
+            Debug.Assert(option == null || OptionList.Contains(option),
                 "The option is not one of this reasoner's options.");
 
-            if (SelectedOption != null)
+            if (SelectedOption != null && LogSink.IsEnabled(LogSeverity.Message))
             {
                 LogSink.LogMessage(LogChannel, $"deselected {SelectedOption.Name.Text}");
             }
@@ -201,7 +207,7 @@ namespace Gaia.Core.Reasoners
             SelectedOption?.Deselect();
             SelectedOption = option;
 
-            if (option != null)
+            if (option != null && LogSink.IsEnabled(LogSeverity.Message))
             {
                 LogSink.LogMessage(LogChannel, $"selected {option.Name.Text}");
             }
@@ -246,7 +252,7 @@ namespace Gaia.Core.Reasoners
         /// <summary>Calls Calculate on every option in Options.</summary>
         private void EvaluateOptions()
         {
-            foreach (OptionBase option in Options)
+            foreach (OptionBase option in OptionList)
             {
                 option.Calculate();
             }

@@ -52,11 +52,16 @@ namespace Gaia.Core.Services.Diagnostics
         public string Path { get; internal set; } = string.Empty;
 
         /// <summary>Records the cycle the reasoner has just decided. Called by the reasoner after Think.</summary>
+        /// <remarks>
+        ///     Everything here iterates the concrete option list and writes into storage allocated at construction, so a
+        ///     recorded cycle allocates nothing and AllocationSpec holds it to that. The truncation warning builds its line once,
+        ///     for a sink enabled at warning severity.
+        /// </remarks>
         internal void OnCycle(ReasonerBase reasoner)
         {
             _cycleIndex++;
 
-            IReadOnlyList<OptionBase> options = reasoner.Options;
+            List<OptionBase> options = reasoner.OptionList;
 
             if (!_truncationWarningIssued && options.Count > History.OptionCapacity)
             {

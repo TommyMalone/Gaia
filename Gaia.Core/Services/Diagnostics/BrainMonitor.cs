@@ -78,7 +78,7 @@ namespace Gaia.Core.Services.Diagnostics
 
             _reasonerMonitors.Add(monitor);
 
-            foreach (OptionBase option in reasoner.Options)
+            foreach (OptionBase option in reasoner.OptionList)
             {
                 foreach (ActionBase action in option.Actions)
                 {

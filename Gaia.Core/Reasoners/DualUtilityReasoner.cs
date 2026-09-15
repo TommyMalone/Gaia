@@ -52,7 +52,7 @@ namespace Gaia.Core.Reasoners
             // 1. Eliminate the options with a weight of zero.
             // 2. Find the highest rank category, and eliminate options that don't belong to it.
             float highestRank = float.MinValue;
-            foreach (OptionBase option in Options)
+            foreach (OptionBase option in OptionList)
             {
                 if (option.IsValid && option.Rank > highestRank)
                 {
@@ -61,7 +61,7 @@ namespace Gaia.Core.Reasoners
             }
 
             float highestWeightInTopRank = 0f;
-            foreach (OptionBase option in Options)
+            foreach (OptionBase option in OptionList)
             {
                 // Any option with a Rank below ScreeningRank returns a Weight of 0 from here on, so the highest
                 // weight found in this pass is the highest weight in the top rank category.
@@ -77,7 +77,7 @@ namespace Gaia.Core.Reasoners
             float screeningWeight = highestWeightInTopRank * WeightScreeningFactor;
             float totalWeightPostScreening = 0f;
 
-            foreach (OptionBase option in Options)
+            foreach (OptionBase option in OptionList)
             {
                 option.ScreeningWeight = screeningWeight;
                 // option.Weight returns 0 if the option's Weight is below its ScreeningWeight.
@@ -104,7 +104,7 @@ namespace Gaia.Core.Reasoners
             float roll = normalizedRoll * totalWeightPostScreening;
             OptionBase? selected = null;
 
-            foreach (OptionBase option in Options)
+            foreach (OptionBase option in OptionList)
             {
                 if (option.Weight <= 0f)
                 {
