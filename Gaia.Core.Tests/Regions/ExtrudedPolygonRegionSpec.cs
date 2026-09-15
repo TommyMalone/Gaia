@@ -15,7 +15,7 @@ public class ExtrudedPolygonRegionSpec
     [SetUp]
     public void BuildRegion()
     {
-        _randomSource = new SystemRandomSource(12345);
+        _randomSource = new Xoshiro128RandomSource(12345);
 
         _extrudedPolygon = new ExtrudedPolygonRegion
         {
@@ -26,7 +26,7 @@ public class ExtrudedPolygonRegionSpec
         RegionSpecHelpers.AddLShapedFootprint(_extrudedPolygon);
     }
 
-    private SystemRandomSource _randomSource;
+    private Xoshiro128RandomSource _randomSource;
 
     private ExtrudedPolygonRegion _extrudedPolygon;
 

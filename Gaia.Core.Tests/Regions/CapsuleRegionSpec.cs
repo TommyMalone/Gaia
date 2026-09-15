@@ -11,7 +11,7 @@ public class CapsuleRegionSpec
     [SetUp]
     public void BuildRegion()
     {
-        _randomSource = new SystemRandomSource(12345);
+        _randomSource = new Xoshiro128RandomSource(12345);
 
         _capsule = new CapsuleRegion
         {
@@ -22,7 +22,7 @@ public class CapsuleRegionSpec
         };
     }
 
-    private SystemRandomSource _randomSource;
+    private Xoshiro128RandomSource _randomSource;
 
     private CapsuleRegion _capsule;
 

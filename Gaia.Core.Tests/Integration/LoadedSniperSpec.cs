@@ -65,7 +65,7 @@ public class LoadedSniperSpec
         // The cooldown roll is scripted through the brain's own source. The loader's master source only seeds
         // streams for brains that bring none, so the fixture hands its fixed rolls to the load itself.
         FixedRandomSource cooldownRolls = new(CooldownRoll);
-        GaiaLoader loader = new(factories, _timeSource, new SystemRandomSource(1), _logSink);
+        GaiaLoader loader = new(factories, _timeSource, new Xoshiro128RandomSource(1), _logSink);
 
         Brain? brain = null;
         _loaded = loader.TryParse(configurationText, "sniper.xml", out SpecificationNode? root) &&

@@ -21,7 +21,7 @@ namespace Gaia.Core.Regions
     public abstract class RegionBase : IAiComponent
     {
         /// <summary>Where the region draws the numbers that pick a random position.</summary>
-        public IRandomSource RandomSource { get; internal set; } = new SystemRandomSource();
+        public IRandomSource RandomSource { get; internal set; } = new Xoshiro128RandomSource();
 
         /// <summary>Loads this region's configuration from the creation data's node.</summary>
         /// <remarks>Every region samples through the creation data's random source, so the base takes it before OnInit.</remarks>

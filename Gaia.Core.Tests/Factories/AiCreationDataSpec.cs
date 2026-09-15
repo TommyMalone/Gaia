@@ -46,7 +46,7 @@ public class AiCreationDataSpec
             Assert.That(creationData.LogSink, Is.InstanceOf<TraceLogSink>());
             Assert.That(creationData.LogChannel, Is.EqualTo(AiString.Empty));
             Assert.That(creationData.TimeSource, Is.InstanceOf<SystemTimeSource>());
-            Assert.That(creationData.RandomSource, Is.InstanceOf<SystemRandomSource>());
+            Assert.That(creationData.RandomSource, Is.InstanceOf<Xoshiro128RandomSource>());
             Assert.That(creationData.BrainBlackboard, Is.Null);
             Assert.That(creationData.WorldBlackboard, Is.Null);
             Assert.That(creationData.Self, Is.Null);

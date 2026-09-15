@@ -17,7 +17,7 @@ public class ConvexHullRegionSpec
     [SetUp]
     public void BuildRegions()
     {
-        _randomSource = new SystemRandomSource(12345);
+        _randomSource = new Xoshiro128RandomSource(12345);
         _logSink = new RecordingLogSink();
 
         Plane leftWall = new(TowardNegativeX, 0f);
@@ -57,7 +57,7 @@ public class ConvexHullRegionSpec
     private static readonly Vector3 TowardPositiveZ = new(0f, 0f, 1f);
     private static readonly Vector3 DiagonalNormal = new(1f, 0f, 1f);
 
-    private SystemRandomSource _randomSource;
+    private Xoshiro128RandomSource _randomSource;
     private RecordingLogSink _logSink;
 
     private ConvexHullRegion _hullBox;

@@ -218,7 +218,7 @@ public class GaiaLoaderSpec
                                    <Reasoner Type="DualUtility"/>
                                </Brain>
                                """;
-        SystemRandomSource masterStream = new(7);
+        Xoshiro128RandomSource masterStream = new(7);
         GaiaLoader seededLoader = new(new FactorySet(), _timeSource, masterStream, _logSink);
 
         bool parsed = seededLoader.TryParse(snippet, SourceName, out SpecificationNode? root);

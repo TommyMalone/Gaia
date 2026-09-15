@@ -124,7 +124,7 @@ public class AllocationSpec
 
         DualUtilityReasoner reasoner = new()
         {
-            RandomSource = new SystemRandomSource(7),
+            RandomSource = new Xoshiro128RandomSource(7),
             LogSink = filteringSink,
         };
         reasoner.AddOption(firstOption);

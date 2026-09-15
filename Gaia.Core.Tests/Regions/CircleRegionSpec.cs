@@ -14,7 +14,7 @@ public class CircleRegionSpec
     [SetUp]
     public void BuildRegion()
     {
-        _randomSource = new SystemRandomSource(12345);
+        _randomSource = new Xoshiro128RandomSource(12345);
         _logSink = new RecordingLogSink();
 
         _circle = new CircleRegion
@@ -27,7 +27,7 @@ public class CircleRegionSpec
 
     private static readonly Vector3 InitialCenter = new(10f, 0f, 10f);
 
-    private SystemRandomSource _randomSource;
+    private Xoshiro128RandomSource _randomSource;
     private RecordingLogSink _logSink;
 
     private CircleRegion _circle;

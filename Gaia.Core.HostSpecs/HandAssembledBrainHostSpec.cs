@@ -117,7 +117,7 @@ public class HandAssembledBrainHostSpec
     [Test]
     public void SeedsAHandAssembledRollingReasoner()
     {
-        SystemRandomSource seededSource = new(7);
+        Xoshiro128RandomSource seededSource = new(7);
 
         DualUtilityReasoner rollingReasoner = new() { RandomSource = seededSource };
 

@@ -11,7 +11,7 @@ public class CylinderRegionSpec
     [SetUp]
     public void BuildRegion()
     {
-        _randomSource = new SystemRandomSource(12345);
+        _randomSource = new Xoshiro128RandomSource(12345);
 
         _cylinder = new CylinderRegion
         {
@@ -23,7 +23,7 @@ public class CylinderRegionSpec
         };
     }
 
-    private SystemRandomSource _randomSource;
+    private Xoshiro128RandomSource _randomSource;
 
     private CylinderRegion _cylinder;
 

@@ -18,7 +18,7 @@ public class PolygonRegionSpec
     public void BuildRegion()
     {
         _logSink = new RecordingLogSink();
-        _randomSource = new SystemRandomSource(12345);
+        _randomSource = new Xoshiro128RandomSource(12345);
 
         _polygon = new PolygonRegion { RandomSource = _randomSource };
         RegionSpecHelpers.AddLShapedFootprint(_polygon);
@@ -26,7 +26,7 @@ public class PolygonRegionSpec
 
     private RecordingLogSink _logSink;
 
-    private SystemRandomSource _randomSource;
+    private Xoshiro128RandomSource _randomSource;
 
     private PolygonRegion _polygon;
 

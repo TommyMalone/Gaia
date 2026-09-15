@@ -278,7 +278,7 @@ public class DualUtilityReasonerSpec
         _firstConsideration.Set(_heavyWeight);
         _secondConsideration.Set(_lightWeight);
 
-        _dualUtilityReasoner.RandomSource = new SystemRandomSource(42);
+        _dualUtilityReasoner.RandomSource = new Xoshiro128RandomSource(42);
 
         int firstSelections = 0;
 

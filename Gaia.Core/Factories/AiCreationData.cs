@@ -49,7 +49,7 @@ namespace Gaia.Core.Factories
         public ITimeSource TimeSource { get; internal set; } = new SystemTimeSource();
 
         /// <summary>Where a component that rolls reads its randomness, pulled by its Init.</summary>
-        public IRandomSource RandomSource { get; internal set; } = new SystemRandomSource();
+        public IRandomSource RandomSource { get; internal set; } = new Xoshiro128RandomSource();
 
         /// <summary>The blackboard of the brain being built, or null until a host supplies one.</summary>
         public BrainBlackboard? BrainBlackboard { get; internal set; }

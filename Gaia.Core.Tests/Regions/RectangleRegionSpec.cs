@@ -11,7 +11,7 @@ public class RectangleRegionSpec
     [SetUp]
     public void BuildRegion()
     {
-        _randomSource = new SystemRandomSource(12345);
+        _randomSource = new Xoshiro128RandomSource(12345);
 
         _rectangle = new RectangleRegion
         {
@@ -21,7 +21,7 @@ public class RectangleRegionSpec
         };
     }
 
-    private SystemRandomSource _randomSource;
+    private Xoshiro128RandomSource _randomSource;
 
     private RectangleRegion _rectangle;
 

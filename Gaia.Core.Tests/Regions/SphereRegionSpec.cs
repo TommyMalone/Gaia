@@ -12,7 +12,7 @@ public class SphereRegionSpec
     [SetUp]
     public void BuildRegion()
     {
-        _randomSource = new SystemRandomSource(12345);
+        _randomSource = new Xoshiro128RandomSource(12345);
 
         _sphere = new SphereRegion
         {
@@ -22,7 +22,7 @@ public class SphereRegionSpec
         };
     }
 
-    private SystemRandomSource _randomSource;
+    private Xoshiro128RandomSource _randomSource;
 
     private SphereRegion _sphere;
 

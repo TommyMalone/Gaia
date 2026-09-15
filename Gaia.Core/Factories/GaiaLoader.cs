@@ -23,12 +23,12 @@ namespace Gaia.Core.Factories
     ///     </para>
     ///     <para>
     ///         Randomness is per brain. The loader's own source is a master stream, and a brain whose load is handed no
-    ///         source of its own gets a <see cref="SystemRandomSource" /> seeded from the master's next value, so one
+    ///         source of its own gets a <see cref="Xoshiro128RandomSource" /> seeded from the master's next value, so one
     ///         character's draws never shift another's and brains can tick on parallel threads. Each such load takes one value
     ///         from the master, so the master seed reproduces a brain's stream only when the loads before it happen in the
     ///         same order. A loader given no random source rolls a master seed and reports it through the sink. A fleet is
     ///         every brain one loader built, and any fleet can be reproduced by constructing a
-    ///         <see cref="SystemRandomSource" /> with the reported seed and loading in the same order.
+    ///         <see cref="Xoshiro128RandomSource" /> with the reported seed and loading in the same order.
     ///     </para>
     /// </remarks>
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>
@@ -70,7 +70,7 @@ namespace Gaia.Core.Factories
 
             if (randomSource == null)
             {
-                SystemRandomSource seededSource = new();
+                Xoshiro128RandomSource seededSource = new();
                 _randomSource = seededSource;
                 _logSink.LogMessage(GaiaChannel, $"random seed {seededSource.Seed}");
             }
@@ -162,7 +162,7 @@ namespace Gaia.Core.Factories
             {
                 LogSink = _logSink,
                 TimeSource = _timeSource,
-                RandomSource = randomSource ?? new SystemRandomSource(_randomSource.NextInt()),
+                RandomSource = randomSource ?? new Xoshiro128RandomSource(_randomSource.NextInt()),
                 WorldBlackboard = worldBlackboard,
                 Self = self,
             };

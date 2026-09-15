@@ -11,7 +11,7 @@ public class BoxRegionSpec
     [SetUp]
     public void BuildRegion()
     {
-        _randomSource = new SystemRandomSource(12345);
+        _randomSource = new Xoshiro128RandomSource(12345);
 
         _box = new BoxRegion
         {
@@ -21,7 +21,7 @@ public class BoxRegionSpec
         };
     }
 
-    private SystemRandomSource _randomSource;
+    private Xoshiro128RandomSource _randomSource;
 
     private BoxRegion _box;
 

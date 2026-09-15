@@ -1,0 +1,224 @@
+﻿using Gaia.Core.Brains;
+using Gaia.Core.Factories;
+using Gaia.Core.Services.Diagnostics;
+using Gaia.Core.Services.Random;
+using Gaia.Core.Services.Time;
+using Gaia.Core.Specifications;
+using Gaia.Core.Tests.Helpers;
+
+namespace Gaia.Core.Tests.Integration;
+
+/// <summary>
+///     Covers the reproducibility contract end to end. The same seed, the same clock, the same configuration and the
+///     same load order produce the same recorded decisions, cycle for cycle, at every level of the tree.
+/// </summary>
+/// <remarks>
+///     <para>
+///         Every run gets a loader, a seeded source, a manual clock and monitor settings of its own, and the runs that
+///         should match are compared monitor for monitor through <see cref="BrainMonitor.ReasonerMonitors" />. Watching
+///         the whole tree rather than attaching a history to the root is what reaches the nested reasoner, whose rolls
+///         nothing else pins.
+///     </para>
+///     <para>
+///         The brain rolls every cycle, a dual utility reasoner choosing by weight between two tuned options, and the
+///         lighter of them runs a nested dual utility reasoner of its own. Both draw from the one stream the load derived
+///         for the brain, interleaved, so a change that adds, drops or reorders a draw separates the histories within a
+///         few cycles. A change to the generator itself alters every run alike, and
+///         <see cref="Services.Random.Xoshiro128RandomSourceSpec" /> catches that instead.
+///     </para>
+/// </remarks>
+[TestFixture]
+public class DeterminismSpec
+{
+    private const int Cycles = 100;
+
+    private const int SharedSeed = 99;
+
+    private static readonly Seconds CycleTime = new(1f / 60f);
+
+    private const string Snippet = """
+                                   <Brain>
+                                       <Reasoner Type="DualUtility">
+                                           <Option Type="ConsiderationAndAction" Name="Graze">
+                                               <Consideration Type="Tuning" Addend="3"/>
+                                           </Option>
+                                           <Option Type="ConsiderationAndAction" Name="Wander">
+                                               <Consideration Type="Tuning" Addend="1"/>
+                                               <Action Type="Subreasoner" Name="PickADirection">
+                                                   <Reasoner Type="DualUtility">
+                                                       <Option Type="ConsiderationAndAction" Name="Left">
+                                                           <Consideration Type="Tuning" Addend="1"/>
+                                                       </Option>
+                                                       <Option Type="ConsiderationAndAction" Name="Right">
+                                                           <Consideration Type="Tuning" Addend="1"/>
+                                                       </Option>
+                                                   </Reasoner>
+                                               </Action>
+                                           </Option>
+                                       </Reasoner>
+                                   </Brain>
+                                   """;
+
+    [Test]
+    public void RecordsTheSameDecisionsForTheSameSeedClockAndConfiguration()
+    {
+        BrainMonitor firstRun = RunOnce();
+        BrainMonitor secondRun = RunOnce();
+
+        // The nested reasoner runs only on the cycles its option is selected, so the fixture states what it covers
+        // rather than leaving a silent pass when the nested history is empty.
+        Assert.That(firstRun.ReasonerMonitors, Has.Count.EqualTo(2), "the walk reached the nested reasoner");
+        Assert.That(firstRun.ReasonerMonitors[1].Path, Is.EqualTo("Wander"));
+        Assert.That(firstRun.ReasonerMonitors[1].History.CycleCount, Is.GreaterThan(0),
+            "the nested reasoner ran, so its rolls are under test");
+
+        AssertRunsMatch(firstRun, secondRun);
+    }
+
+    [Test]
+    public void ReproducesAWholeFleetAndKeepsItsBrainsApart()
+    {
+        (BrainMonitor firstRunA, BrainMonitor firstRunB) = RunFleetOnce();
+        (BrainMonitor secondRunA, BrainMonitor secondRunB) = RunFleetOnce();
+        BrainMonitor aloneA = RunOnce();
+
+        DecisionHistory firstA = firstRunA.ReasonerMonitors[0].History;
+        DecisionHistory firstB = firstRunB.ReasonerMonitors[0].History;
+        DecisionHistory alone = aloneA.ReasonerMonitors[0].History;
+
+        bool brainsDiverge = false;
+
+        for (int age = 0; age < firstA.CycleCount && !brainsDiverge; age++)
+        {
+            brainsDiverge = !firstA.GetCycle(age).Roll.Equals(firstB.GetCycle(age).Roll);
+        }
+
+        AssertRunsMatch(firstRunA, secondRunA);
+        AssertRunsMatch(firstRunB, secondRunB);
+
+        Assert.Multiple(() =>
+        {
+            for (int age = 0; age < firstA.CycleCount; age++)
+            {
+                // Two brains drawing in turn from one shared stream would also differ from each other, so the
+                // stream being the first brain's own is what the run without a neighbor shows.
+                Assert.That(firstA.GetCycle(age).Roll, Is.EqualTo(alone.GetCycle(age).Roll),
+                    $"loading a second brain changed the first brain's rolls at age {age}");
+            }
+
+            Assert.That(brainsDiverge, Is.True, "two brains from one loader do not roll alike");
+        });
+    }
+
+    /// <summary>Asserts the two runs recorded the same decisions, reasoner for reasoner and cycle for cycle.</summary>
+    /// <remarks>
+    ///     The structural counts are asserted before the contents, so a run that built a different tree or recorded a
+    ///     different number of cycles says so rather than failing somewhere inside a comparison.
+    /// </remarks>
+    private static void AssertRunsMatch(BrainMonitor first, BrainMonitor second)
+    {
+        Assert.That(first.ReasonerMonitors, Has.Count.EqualTo(second.ReasonerMonitors.Count),
+            "the two runs built different trees");
+
+        for (int index = 0; index < first.ReasonerMonitors.Count; index++)
+        {
+            ReasonerMonitor firstMonitor = first.ReasonerMonitors[index];
+            ReasonerMonitor secondMonitor = second.ReasonerMonitors[index];
+            DecisionHistory firstHistory = firstMonitor.History;
+            DecisionHistory secondHistory = secondMonitor.History;
+            string where = firstMonitor.Path.Length == 0 ? "the root reasoner" : firstMonitor.Path;
+
+            Assert.That(firstHistory.CycleCount, Is.EqualTo(secondHistory.CycleCount),
+                $"{where} recorded a different number of cycles");
+
+            Assert.Multiple(() =>
+            {
+                for (int age = 0; age < firstHistory.CycleCount; age++)
+                {
+                    DecisionCycle firstCycle = firstHistory.GetCycle(age);
+                    DecisionCycle secondCycle = secondHistory.GetCycle(age);
+
+                    Assert.That(firstCycle.CycleIndex, Is.EqualTo(secondCycle.CycleIndex));
+                    Assert.That(firstCycle.Roll, Is.EqualTo(secondCycle.Roll), $"{where} rolls diverged at age {age}");
+                    Assert.That(firstCycle.SelectedName, Is.EqualTo(secondCycle.SelectedName),
+                        $"{where} selections diverged at age {age}");
+                    Assert.That(firstCycle.RecordCount, Is.EqualTo(secondCycle.RecordCount));
+
+                    for (int optionIndex = 0; optionIndex < firstCycle.RecordCount; optionIndex++)
+                    {
+                        DecisionRecord firstRecord = firstHistory.GetRecord(age, optionIndex);
+                        DecisionRecord secondRecord = secondHistory.GetRecord(age, optionIndex);
+
+                        Assert.That(firstRecord.OptionName, Is.EqualTo(secondRecord.OptionName));
+                        Assert.That(firstRecord.Rank, Is.EqualTo(secondRecord.Rank));
+                        Assert.That(firstRecord.Weight, Is.EqualTo(secondRecord.Weight));
+                        Assert.That(firstRecord.PassedScreening, Is.EqualTo(secondRecord.PassedScreening));
+                    }
+                }
+            });
+        }
+    }
+
+    /// <summary>
+    ///     Loads the snippet through a new loader, clock, seeded source and sink, runs the fixed cycle count, and hands
+    ///     back the brain's monitor.
+    /// </summary>
+    private static BrainMonitor RunOnce()
+    {
+        ManualTimeSource timeSource = new();
+        Xoshiro128RandomSource randomSource = new(SharedSeed);
+        RecordingLogSink logSink = new();
+
+        GaiaLoader loader = new(new FactorySet(), timeSource, randomSource, logSink)
+        {
+            Diagnostics = new MonitorSettings(),
+        };
+
+        loader.TryLoadBrain(Snippet, "determinism.xml", out Brain? brain);
+
+        brain!.Enable();
+
+        for (int cycle = 0; cycle < Cycles; cycle++)
+        {
+            timeSource.Advance(CycleTime);
+            brain.Update();
+        }
+
+        return brain.Monitor!;
+    }
+
+    /// <summary>Loads two brains from one parsed tree and one master seed, runs both, and hands back their monitors.</summary>
+    /// <remarks>
+    ///     This covers reproducing every brain one loader built, not one brain alone. The master seed and the load order
+    ///     pin each brain's derived stream, so the same brains loaded the same way record the same decisions brain for brain,
+    ///     while the derived streams keep the two brains' rolls apart.
+    /// </remarks>
+    private static (BrainMonitor, BrainMonitor) RunFleetOnce()
+    {
+        ManualTimeSource timeSource = new();
+        Xoshiro128RandomSource masterStream = new(SharedSeed);
+        RecordingLogSink logSink = new();
+
+        GaiaLoader loader = new(new FactorySet(), timeSource, masterStream, logSink)
+        {
+            Diagnostics = new MonitorSettings(),
+        };
+
+        loader.TryParse(Snippet, "determinism.xml", out SpecificationNode? root);
+
+        loader.TryLoadBrain(root!, out Brain? firstBrain);
+        loader.TryLoadBrain(root!, out Brain? secondBrain);
+
+        firstBrain!.Enable();
+        secondBrain!.Enable();
+
+        for (int cycle = 0; cycle < Cycles; cycle++)
+        {
+            timeSource.Advance(CycleTime);
+            firstBrain.Update();
+            secondBrain.Update();
+        }
+
+        return (firstBrain.Monitor!, secondBrain.Monitor!);
+    }
+}

@@ -48,7 +48,7 @@ namespace Gaia.Core.WeightFunctions
         ///     Only used by entries whose <see cref="FloatSequenceEntry.IsRandomized" /> is true, in
         ///     <see cref="FloatSequenceEntry.RollThreshold" />.
         /// </summary>
-        public IRandomSource RandomSource { get; internal set; } = new SystemRandomSource();
+        public IRandomSource RandomSource { get; internal set; } = new Xoshiro128RandomSource();
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
