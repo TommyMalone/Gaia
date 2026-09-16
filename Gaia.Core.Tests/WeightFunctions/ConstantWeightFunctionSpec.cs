@@ -73,6 +73,77 @@ public class ConstantWeightFunctionSpec
     }
 
     [Test]
+    public void ContributesNothingBeforeAnythingSetsIt()
+    {
+        // The struct's own default would be a multiplier of 0 and a rank of 0, a veto that also claims a rank
+        // above the identity, which is not what a function the host never configured should report.
+        ConstantWeightFunction built = new();
+
+        Assert.That(built.CalculateFloat(1f), Is.EqualTo(WeightValues.Neutral));
+    }
+
+    [Test]
+    public void ReadsAVetoWrittenAsAnAttribute()
+    {
+        // Every weight element reads its values through the same method, so this covers the attribute for all
+        // ten of them, and the constant is the one with nothing else in the way.
+        const string snippet = """
+                               <WeightFunction Type="Constant" Addend="5" Veto="true"/>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        ConstantWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.Weights, Is.EqualTo(new WeightValues(5f, 0f, float.MinValue)),
+                "the veto is the multiplier, and the addend beside it is kept as written");
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void KeepsItsDefaultsForAVetoWrittenFalse()
+    {
+        const string snippet = """
+                               <WeightFunction Type="Constant" Veto="false"/>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        ConstantWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.Weights, Is.EqualTo(WeightValues.Neutral));
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void RefusesAVetoWrittenBesideAMultiplier()
+    {
+        // Both say what the multiplier is. An author who wrote both has two opinions and the reader picks
+        // neither.
+        const string snippet = """
+                               <WeightFunction Type="Constant" Veto="true" Multiplier="0.5"/>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        ConstantWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the WeightFunction element mixes Veto with Multiplier",
+            }));
+        });
+    }
+
+    [Test]
     public void RefusesANegativeMultiplier()
     {
         // Two multipliers of -1 would cancel to a positive weight and turn strongly discouraged into selected, so a

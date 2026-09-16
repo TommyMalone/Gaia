@@ -352,6 +352,29 @@ public class DualUtilityReasonerSpec
     }
 
     [Test]
+    public void RefusesAScreeningFactorOutsideZeroToOne()
+    {
+        // Above 1 the threshold passes the best weight in the winning rank, so every option is screened out and
+        // the reasoner selects nothing for as long as the configuration ships, with nothing to say why.
+        const string snippet = """
+                               <Reasoner Type="DualUtility" WeightScreeningFactor="1.5"/>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        DualUtilityReasoner loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Reasoner element's WeightScreeningFactor is not between 0 and 1, " +
+                "it reads \"1.5\"",
+            }));
+        });
+    }
+
+    [Test]
     public void LoadsItsScreeningFactorAndRandomSource()
     {
         const string snippet = """

@@ -8,8 +8,15 @@ namespace Gaia.Core.Considerations
     /// <seealso>"Modular AI", Section 8.6.2.3</seealso>
     public sealed class TuningConsideration : ConsiderationBase
     {
-        /// <summary>Creates a consideration that reports Neutral until a configuration loads.</summary>
-        internal TuningConsideration() : this(WeightValues.Neutral)
+        /// <summary>What a Tuning element reads as before its own attributes are applied.</summary>
+        /// <remarks>
+        ///     The general rule is that an unspecified weight value has no effect, and the exception is this consideration,
+        ///     whose addend is 1, so that an element writing only a multiplier scales something rather than scaling nothing.
+        /// </remarks>
+        internal static readonly WeightValues Default = new(1f, 1f, float.MinValue);
+
+        /// <summary>Creates a consideration that reports the chapter's Tuning defaults until a configuration loads.</summary>
+        internal TuningConsideration() : this(Default)
         {
         }
 
@@ -33,7 +40,7 @@ namespace Gaia.Core.Considerations
                 return false;
             }
 
-            if (!WeightValues.TryRead(node, out WeightValues weights))
+            if (!WeightValues.TryRead(node, Default, out WeightValues weights))
             {
                 return false;
             }

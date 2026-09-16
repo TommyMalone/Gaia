@@ -5,7 +5,6 @@ using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Log;
 using Gaia.Core.Strings;
-using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Options
 {
@@ -137,8 +136,9 @@ namespace Gaia.Core.Options
         /// <summary>Adds a default <see cref="TuningConsideration" /> if the option holds none.</summary>
         /// <remarks>
         ///     <para>
-        ///         The default contributes an addend of 1 and a multiplier of 1. An option whose other considerations only
-        ///         multiply would otherwise sum its addends to 0, leaving a weight of 0, and could never be selected.
+        ///         The default is <see cref="TuningConsideration.Default" />, an addend of 1 and a multiplier of 1. An option
+        ///         whose other considerations only multiply would otherwise sum its addends to 0, leaving a weight of 0, and could
+        ///         never be selected.
         ///     </para>
         ///     <para>
         ///         A loaded option gets this from Init once its configuration is complete. An option assembled in code never
@@ -153,8 +153,7 @@ namespace Gaia.Core.Options
                 return;
             }
 
-            WeightValues neutralTuning = new(1f, 1f, float.MinValue);
-            AddConsideration(new TuningConsideration(neutralTuning));
+            AddConsideration(new TuningConsideration());
         }
 
         /// <summary>Warns when every consideration is a fixed tuning whose combined weight can never select the option.</summary>

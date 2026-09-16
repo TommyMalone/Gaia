@@ -309,10 +309,21 @@ namespace Gaia.Core.Specifications
                 $"Line {LineNumber}, the {Name.Text} element has no {name.Text} attribute");
         }
 
+        /// <summary>Reports two attributes on one element that say the same thing differently.</summary>
+        /// <remarks>
+        ///     Internal rather than private so that a loader can refuse a combination it cannot resolve, such as a veto and a
+        ///     multiplier.
+        /// </remarks>
+        internal void ReportConflict(AiString name, AiString other)
+        {
+            _logSink.LogError(SourceDocumentName,
+                $"Line {LineNumber}, the {Name.Text} element mixes {name.Text} with {other.Text}");
+        }
+
         /// <summary>Reports an attribute whose text cannot be read as the kind that was asked for.</summary>
         /// <remarks>
         ///     Internal rather than private so that a loader can also refuse a value that parsed but has no meaning the
-        ///     configuration could intend, a negative multiplier for one, in the same located wording.
+        ///     configuration could intend, such as a negative multiplier.
         /// </remarks>
         internal void ReportMalformed(AiString name, string text, string expected)
         {

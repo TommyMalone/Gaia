@@ -49,20 +49,32 @@ namespace Gaia.Core.WeightFunctions
         private static readonly AiString AddendAttribute = "Addend";
         private static readonly AiString MultiplierAttribute = "Multiplier";
         private static readonly AiString RankAttribute = "Rank";
+        private static readonly AiString VetoAttribute = "Veto";
 
         /// <summary>Reads the optional Addend, Multiplier and Rank attributes of an element as one set of weight values.</summary>
         /// <remarks>
-        ///     An absent attribute keeps its identity value, so an element saying nothing reads as <see cref="Neutral" /> and
-        ///     a veto is written Multiplier="0". Malformed text fails the read once the node has reported it, and so does a
-        ///     multiplier below 0, which parses but has no meaning a configuration could intend.
+        ///     An absent attribute keeps its identity value, so an element saying nothing reads as <see cref="Neutral" />. A
+        ///     veto is written Veto="true". Malformed text fails the read once the node has reported it, and so does a multiplier
+        ///     below 0, which parses but has no meaning a configuration could intend.
         /// </remarks>
+        /// <seealso>"Modular AI", Section 8.6.2.1, Listing 8.9</seealso>
         internal static bool TryRead(SpecificationNode node, out WeightValues values)
         {
-            values = Neutral;
+            return TryRead(node, Neutral, out values);
+        }
 
-            float addend = 0f;
-            float multiplier = 1f;
-            float rank = float.MinValue;
+        /// <summary>Reads the same three attributes over the given defaults, for an element whose identity is not Neutral.</summary>
+        /// <remarks>
+        ///     <see cref="Considerations.TuningConsideration" /> is the one element that has a unique default value, an
+        ///     addend of 1. Everything else reads over Neutral.
+        /// </remarks>
+        internal static bool TryRead(SpecificationNode node, WeightValues defaults, out WeightValues values)
+        {
+            values = defaults;
+
+            float addend = defaults.Addend;
+            float multiplier = defaults.Multiplier;
+            float rank = defaults.Rank;
 
             if (node.HasAttribute(AddendAttribute) && !node.ReadFloat(AddendAttribute, out addend))
             {
@@ -87,6 +99,27 @@ namespace Gaia.Core.WeightFunctions
             if (node.HasAttribute(RankAttribute) && !node.ReadFloat(RankAttribute, out rank))
             {
                 return false;
+            }
+
+            if (node.HasAttribute(VetoAttribute))
+            {
+                if (!node.ReadBool(VetoAttribute, out bool veto))
+                {
+                    return false;
+                }
+
+                if (veto)
+                {
+                    // An author who vetoes and option and provides a multiplier has two opinions about the same number.
+                    // The reader should not pick one.
+                    if (node.HasAttribute(MultiplierAttribute))
+                    {
+                        node.ReportConflict(VetoAttribute, MultiplierAttribute);
+                        return false;
+                    }
+
+                    multiplier = 0f;
+                }
             }
 
             values = new WeightValues(addend, multiplier, rank);

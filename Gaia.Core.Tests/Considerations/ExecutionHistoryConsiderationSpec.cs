@@ -399,6 +399,29 @@ public class ExecutionHistoryConsiderationSpec
     }
 
     [Test]
+    public void RefusesARetentionFactorOutsideZeroToOne()
+    {
+        // Above 1 the option keeps a rank it never held, which promotes it above every rival instead of holding
+        // it against near equals, and the tree refuses a negative multiplier and a negative window already.
+        const string snippet = """
+                               <Consideration Type="ExecutionHistory" RankRetentionFactor="-0.5"/>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        ExecutionHistoryConsideration loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Consideration element's RankRetentionFactor is not between 0 and 1, " +
+                "it reads \"-0.5\"",
+            }));
+        });
+    }
+
+    [Test]
     public void LoadsItsRoleWeightFunctionsAndRetention()
     {
         const string snippet = """

@@ -24,6 +24,13 @@ namespace Gaia.Core.Reasoners
         ///     for no screening to 1 for only the best. The best weight within the winning rank is multiplied by this factor, and
         ///     options whose weight falls below the result are screened out before the random pick.
         /// </summary>
+        /// <remarks>
+        ///     Loading refuses anything outside 0 to 1. Screening keeps an option whose weight is at or above the threshold,
+        ///     so a factor above 1 puts the threshold above the best weight in the winning rank and screens out every option
+        ///     including the best, leaving the reasoner selecting nothing for as long as the configuration ships. A negative
+        ///     factor screens against a threshold below zero, which no weight can fail, so it reads as no screening while saying
+        ///     something else.
+        /// </remarks>
         public float WeightScreeningFactor { get; internal set; }
 
         /// <inheritdoc />
@@ -37,6 +44,13 @@ namespace Gaia.Core.Reasoners
             {
                 if (!node.ReadFloat(WeightScreeningFactorAttribute, out float weightScreeningFactor))
                 {
+                    return false;
+                }
+
+                if (weightScreeningFactor < 0f || weightScreeningFactor > 1f)
+                {
+                    node.TryGetString(WeightScreeningFactorAttribute, out string factorText);
+                    node.ReportMalformed(WeightScreeningFactorAttribute, factorText, "between 0 and 1");
                     return false;
                 }
 

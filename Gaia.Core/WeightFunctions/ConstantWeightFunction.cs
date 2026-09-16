@@ -9,7 +9,12 @@ namespace Gaia.Core.WeightFunctions
     public sealed class ConstantWeightFunction : WeightFunctionBase
     {
         /// <summary>The weight values to report for every input.</summary>
-        public WeightValues Weights { get; internal set; }
+        /// <remarks>
+        ///     Neutral until something sets it, so a function built in code and left alone contributes nothing, the way an
+        ///     element saying nothing does. The default of the struct would be a multiplier of 0 and a rank of 0, which is a veto
+        ///     that also claims a rank above the identity.
+        /// </remarks>
+        public WeightValues Weights { get; internal set; } = WeightValues.Neutral;
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)

@@ -48,6 +48,24 @@ public class TuningConsiderationSpec
     }
 
     [Test]
+    public void KeepsAnAddendOfOneWhenOnlyAMultiplierIsWritten()
+    {
+        const string snippet = """
+                               <Consideration Type="Tuning" Multiplier="0.5"/>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        TuningConsideration loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.Weights, Is.EqualTo(new WeightValues(1f, 0.5f, float.MinValue)));
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
     public void RefusesElementsItDoesNotTake()
     {
         const string snippet = """

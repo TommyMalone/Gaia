@@ -61,6 +61,11 @@ namespace Gaia.Core.Considerations
         ///         to see the actions through.
         ///     </para>
         ///     <para>Only a positive rank is retained, since a portion of a negative rank would be higher than the rank itself.</para>
+        ///     <para>
+        ///         Loading refuses anything outside 0 to 1. A factor above 1 retains a rank the option never held, which
+        ///         promotes a running option above every rival rather than holding it against near equals, and a negative factor
+        ///         retains nothing while saying something else.
+        ///     </para>
         /// </remarks>
         public float RankRetentionFactor { get; internal set; }
 
@@ -94,6 +99,13 @@ namespace Gaia.Core.Considerations
             {
                 if (!node.ReadFloat(RankRetentionFactorAttribute, out float rankRetentionFactor))
                 {
+                    return false;
+                }
+
+                if (rankRetentionFactor < 0f || rankRetentionFactor > 1f)
+                {
+                    node.TryGetString(RankRetentionFactorAttribute, out string factorText);
+                    node.ReportMalformed(RankRetentionFactorAttribute, factorText, "between 0 and 1");
                     return false;
                 }
 
