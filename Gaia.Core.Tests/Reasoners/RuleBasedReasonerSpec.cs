@@ -269,7 +269,10 @@ public class RuleBasedReasonerSpec
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.True);
-            Assert.That(_logSink.Entries, Is.Empty, "loading reports nothing");
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Warning  the Patrol option's fixed values sum to a weight of 0 or less, it can never be selected",
+            }), "the vetoing tuning is the deliberate off switch shape, which accepts its one warning");
 
             loaded.Enable();
             loaded.Update();
@@ -277,6 +280,27 @@ public class RuleBasedReasonerSpec
             // The loaded tuning vetoes Patrol, so the first valid rule is Idle.
             Assert.That(loaded.SelectedOption, Is.Not.Null);
             Assert.That(loaded.SelectedOption!.Name, Is.EqualTo(idleName));
+        });
+    }
+
+    [Test]
+    public void WarnsWhenTwoLoadedOptionsShareAName()
+    {
+        const string snippet = """
+                               <Reasoner Type="RuleBased">
+                                   <Option Type="ConsiderationAndAction" Name="Idle"/>
+                                   <Option Type="ConsiderationAndAction" Name="Idle"/>
+                               </Reasoner>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        RuleBasedReasoner loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(_logSink.Entries, Has.One.Contains("two options share the name Idle"),
+                "log lines and history records identify options by name alone");
         });
     }
 }

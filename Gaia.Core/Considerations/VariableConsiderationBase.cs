@@ -1,5 +1,6 @@
 ﻿using Gaia.Core.DataStores;
 using Gaia.Core.Factories;
+using Gaia.Core.Services.Log;
 using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
 using Gaia.Core.WeightFunctions;
@@ -20,11 +21,15 @@ namespace Gaia.Core.Considerations
         private static readonly AiString MissingElement = "Missing";
         private static readonly AiString VariableAttribute = "Variable";
 
+        private bool _missingConfigured;
+
+        private bool _missingVariableReported;
+
         /// <summary>The store to read from.</summary>
         /// <remarks>
-        ///     Settable by a derived type as well as by loading, like <see cref="VariableName" /> and
-        ///     <see cref="MissingVariableWeights" />, so a game's own variable consideration built outside the assembly can point
-        ///     at a store of the game's choosing.
+        ///     Settable by a derived type as well as by loading, like <see cref="VariableName" />,
+        ///     <see cref="MissingVariableWeights" />, <see cref="LogSink" /> and <see cref="LogChannel" />, so a game's own
+        ///     variable consideration built outside the assembly can point at a store of the game's choosing.
         /// </remarks>
         public DataStoreBase? DataStore { get; protected internal set; }
 
@@ -38,6 +43,12 @@ namespace Gaia.Core.Considerations
         /// </remarks>
         public WeightValues MissingVariableWeights { get; protected internal set; } = WeightValues.Neutral;
 
+        /// <summary>Where the never-written warning goes. Loading pulls this from the creation data.</summary>
+        public ILogSink LogSink { get; protected internal set; } = new TraceLogSink();
+
+        /// <summary>What the never-written warning is filed under, usually the character the option belongs to.</summary>
+        public AiString LogChannel { get; protected internal set; } = AiString.Empty;
+
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
@@ -49,6 +60,8 @@ namespace Gaia.Core.Considerations
             }
 
             VariableName = variableName;
+            LogSink = creationData.LogSink;
+            LogChannel = creationData.LogChannel;
 
             if (!TryReadStore(node, creationData))
             {
@@ -65,6 +78,7 @@ namespace Gaia.Core.Considerations
                     }
 
                     MissingVariableWeights = missingWeights;
+                    _missingConfigured = true;
                 }
                 else if (child.Name == WeightFunctionElement)
                 {
@@ -96,10 +110,40 @@ namespace Gaia.Core.Considerations
         {
             if (DataStore == null)
             {
-                return MissingVariableWeights;
+                return GetMissingVariableWeights();
             }
 
             return CalculateWeights(weightFunction, DataStore);
+        }
+
+        /// <summary>Returns the configured missing values, warning once the first time they are served.</summary>
+        /// <remarks>
+        ///     <para>
+        ///         A typo in a variable name is unreachable by the loader, since names are runtime data, and without this
+        ///         warning it reads as a tuning problem. The warning fires once per consideration, and not at all when the
+        ///         configuration authored an explicit Missing element, since serving those values is then the designed expectation
+        ///         rather than a surprise.
+        ///     </para>
+        ///     <para>
+        ///         The wording says only what the read established. A name written as another kind also reads as unwritten
+        ///         through the typed accessor, and in builds where the store's mismatch report is compiled out, this warning is
+        ///         the only trace it leaves.
+        ///     </para>
+        /// </remarks>
+        /// <param name="warningKindPhrase">How the read asked for the value, such as "as a bool", or null for a plain report.</param>
+        protected WeightValues GetMissingVariableWeights(string? warningKindPhrase = null)
+        {
+            if (!_missingConfigured && !_missingVariableReported)
+            {
+                _missingVariableReported = true;
+
+                string asKind = warningKindPhrase == null ? string.Empty : $" {warningKindPhrase}";
+
+                LogSink.LogWarning(LogChannel,
+                    $"the {VariableName.Text} variable has never been written{asKind}, returning the default missing variable weight values");
+            }
+
+            return MissingVariableWeights;
         }
 
         /// <summary>Reads VariableName from the store and converts it, or reports MissingVariableWeights if it is not there.</summary>

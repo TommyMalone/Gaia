@@ -27,7 +27,7 @@ namespace Gaia.Core.Considerations
         {
             if (!dataStore.TryGetEntityList(VariableName, out List<EntityBase>? entities))
             {
-                return MissingVariableWeights;
+                return GetMissingVariableWeights("as an entity list");
             }
 
             return weightFunction.CalculateBool(AnyValid(entities!));

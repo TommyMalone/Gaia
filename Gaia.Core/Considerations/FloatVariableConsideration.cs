@@ -11,7 +11,7 @@ namespace Gaia.Core.Considerations
         {
             return dataStore.TryGetFloat(VariableName, out float value)
                 ? weightFunction.CalculateFloat(value)
-                : MissingVariableWeights;
+                : GetMissingVariableWeights("as a float");
         }
     }
 }

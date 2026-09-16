@@ -134,7 +134,30 @@ namespace Gaia.Core.Reasoners
                 AddOption(option!);
             }
 
+            WarnWhenTwoOptionsShareAName();
+
             return true;
+        }
+
+        /// <summary>Warns for each pair of loaded options carrying the same name.</summary>
+        /// <remarks>
+        ///     A log line and a decision record identify an option by its name alone, so two options sharing one cannot be
+        ///     told apart in either. Loading accepts it, since nothing about the decision itself is wrong.
+        /// </remarks>
+        private void WarnWhenTwoOptionsShareAName()
+        {
+            for (int first = 0; first < OptionList.Count; first++)
+            {
+                for (int second = first + 1; second < OptionList.Count; second++)
+                {
+                    if (OptionList[first].Name == OptionList[second].Name && LogSink.IsEnabled(LogSeverity.Warning))
+                    {
+                        LogSink.LogWarning(LogChannel,
+                            $"two options share the name {OptionList[first].Name.Text}, " +
+                            "their log lines and records cannot be told apart");
+                    }
+                }
+            }
         }
 
         /// <summary>Adds an option to the current set of options.</summary>

@@ -291,6 +291,69 @@ public class VariableConsiderationSpec
     }
 
     [Test]
+    public void ReadsTheBrainStoreWhenNamedExplicitly()
+    {
+        const string snippet = """
+                               <Consideration Type="BooleanVariable" Variable="UnderFire" Store="Brain">
+                                   <WeightFunction Type="Constant"/>
+                               </Consideration>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+        creationData.BrainBlackboard = _blackboard;
+
+        BooleanVariableConsideration loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.DataStore, Is.SameAs(_blackboard));
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void WarnsOnceWhenItsVariableWasNeverWritten()
+    {
+        BooleanVariableConsideration consideration = new()
+        {
+            DataStore = _blackboard,
+            VariableName = "IsUnderFire",
+            WeightFunction = _weightFunction,
+            LogSink = _logSink,
+        };
+
+        consideration.Calculate();
+        consideration.Calculate();
+
+        Assert.That(_logSink.Entries, Is.EqualTo(new[]
+        {
+            "Warning  the IsUnderFire variable has never been written as a bool, returning the default missing variable weight values",
+        }), "the second read stays quiet, one warning per consideration");
+    }
+
+    [Test]
+    public void StaysQuietWhenMissingWasConfiguredExplicitly()
+    {
+        const string snippet = """
+                               <Consideration Type="FloatVariable" Variable="Health">
+                                   <Missing Multiplier="0"/>
+                                   <WeightFunction Type="Constant" Addend="2"/>
+                               </Consideration>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+        creationData.BrainBlackboard = _blackboard;
+
+        FloatVariableConsideration loaded = new();
+
+        Assert.That(loaded.Init(creationData), Is.True);
+
+        loaded.Calculate();
+
+        Assert.That(_logSink.Entries, Is.Empty,
+            "an authored Missing element makes serving those values the designed expectation");
+    }
+
+    [Test]
     public void RefusesTheWorldStoreWhenNoneWasSupplied()
     {
         // The loader knows at load time that no world blackboard exists, so a configuration that asks for one is

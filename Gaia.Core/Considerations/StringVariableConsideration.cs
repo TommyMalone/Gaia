@@ -12,7 +12,7 @@ namespace Gaia.Core.Considerations
         {
             return dataStore.TryGetString(VariableName, out AiString value)
                 ? weightFunction.CalculateString(value)
-                : MissingVariableWeights;
+                : GetMissingVariableWeights("as a string");
         }
     }
 }

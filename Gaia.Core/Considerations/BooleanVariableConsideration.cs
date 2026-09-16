@@ -11,7 +11,7 @@ namespace Gaia.Core.Considerations
         {
             return dataStore.TryGetBool(VariableName, out bool value)
                 ? weightFunction.CalculateBool(value)
-                : MissingVariableWeights;
+                : GetMissingVariableWeights("as a bool");
         }
     }
 }

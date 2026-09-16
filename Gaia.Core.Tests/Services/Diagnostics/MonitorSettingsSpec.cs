@@ -2,7 +2,7 @@
 
 namespace Gaia.Core.Tests.Services.Diagnostics;
 
-/// <summary>Covers <see cref="MonitorSettings" />, the capacities it carries and the ones it refuses.</summary>
+/// <summary>Covers <see cref="MonitorSettings" />, the capacities and warning windows it carries and the ones it refuses.</summary>
 [TestFixture]
 public class MonitorSettingsSpec
 {
@@ -19,12 +19,48 @@ public class MonitorSettingsSpec
     }
 
     [Test]
+    public void WarnsAboutADoneOptionAndAnEmptySelectionAfterSixtyCyclesByDefault()
+    {
+        MonitorSettings settings = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(settings.DoneWarningWindow, Is.EqualTo(60));
+            Assert.That(settings.NothingSelectedWarningWindow, Is.EqualTo(60));
+        });
+    }
+
+    [Test]
+    public void HoldsTheWarningWindowsItWasMadeWith()
+    {
+        MonitorSettings settings = new(doneWarningWindow: 30, nothingSelectedWarningWindow: 0);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(settings.DoneWarningWindow, Is.EqualTo(30));
+            Assert.That(settings.NothingSelectedWarningWindow, Is.Zero, "0 turns a window off");
+        });
+    }
+
+    [Test]
     public void RefusesACapacityBelowOne()
     {
         Assert.Multiple(() =>
         {
             Assert.That(() => new MonitorSettings(0, 4), Throws.TypeOf<ArgumentOutOfRangeException>());
             Assert.That(() => new MonitorSettings(16, 0), Throws.TypeOf<ArgumentOutOfRangeException>());
+        });
+    }
+
+    [Test]
+    public void RefusesANegativeWarningWindow()
+    {
+        // 0 already means off, so a negative window is a mistake rather than a stronger off.
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => new MonitorSettings(doneWarningWindow: -1), Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(() => new MonitorSettings(nothingSelectedWarningWindow: -1),
+                Throws.TypeOf<ArgumentOutOfRangeException>());
         });
     }
 }

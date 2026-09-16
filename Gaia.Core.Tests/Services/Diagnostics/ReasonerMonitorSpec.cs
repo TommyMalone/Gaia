@@ -6,9 +6,9 @@ using Gaia.Core.WeightFunctions;
 namespace Gaia.Core.Tests.Services.Diagnostics;
 
 /// <summary>
-///     Covers <see cref="ReasonerMonitor" /> attached by hand to a bare reasoner. What a recorded cycle holds is
-///     covered where the roll is made, in <see cref="Reasoners.DualUtilityReasonerSpec" />, and the brain's cycle in
-///     <see cref="BrainMonitorSpec" />.
+///     Covers <see cref="ReasonerMonitor" /> attached by hand to a bare reasoner, the cycles it counts and the two
+///     shapes it warns about. What a recorded cycle holds is covered where the roll is made, in
+///     <see cref="Reasoners.DualUtilityReasonerSpec" />, and the brain's cycle in <see cref="BrainMonitorSpec" />.
 /// </summary>
 [TestFixture]
 public class ReasonerMonitorSpec
@@ -56,5 +56,86 @@ public class ReasonerMonitorSpec
         _reasoner.Update();
 
         Assert.That(_monitor.History.CycleCount, Is.Zero, "a disabled reasoner runs no cycle to record");
+    }
+
+    [Test]
+    public void WarnsWhenItsSelectionHasBeenDoneForAWholeWindow()
+    {
+        // The option's one action is done at Select and nothing vetoes the option afterward, which is the
+        // missing-finished-veto shape the warning exists to name.
+        RecordingLogSink logSink = new();
+        RuleBasedReasoner reasoner = new()
+        {
+            LogSink = logSink,
+            Monitor = new ReasonerMonitor(new MonitorSettings()),
+        };
+
+        StubOption holdingOption = new([new StubConsideration(WeightValues.Neutral)], [new RecordAction(_executed)])
+            { Name = "Hold" };
+
+        reasoner.AddOption(holdingOption);
+        reasoner.Enable();
+
+        for (int cycle = 0; cycle < 60; cycle++)
+        {
+            reasoner.Update();
+        }
+
+        Assert.That(logSink.Entries, Has.One.Contains("the Hold option has been done for 60 cycles"),
+            "the warning fires once when the count reaches the window");
+    }
+
+    [Test]
+    public void WarnsWhenNothingHasBeenSelectableForAWholeWindow()
+    {
+        // Every option vetoed is the standing-still shape, a character doing nothing with nothing reported.
+        RecordingLogSink logSink = new();
+        RuleBasedReasoner reasoner = new()
+        {
+            LogSink = logSink,
+            Monitor = new ReasonerMonitor(new MonitorSettings()),
+        };
+
+        StubOption blockedOption = new([new StubConsideration(WeightValues.Vetoed)], []) { Name = "Blocked" };
+
+        reasoner.AddOption(blockedOption);
+        reasoner.Enable();
+
+        for (int cycle = 0; cycle < 60; cycle++)
+        {
+            reasoner.Update();
+        }
+
+        Assert.That(logSink.Entries, Has.One.Contains("nothing has been selectable for 60 cycles"),
+            "the warning fires once when the count reaches the window");
+    }
+
+    [Test]
+    public void StaysQuietAboutSelectingNothingOnceASequenceHasRunOffItsEnd()
+    {
+        // A sequence past its last option selects nothing until its parent ends it. The nothing-selected warning
+        // is for a reasoner with work left, so the IsDone guard keeps it quiet here.
+        RecordingLogSink logSink = new();
+        SequenceReasoner sequence = new()
+        {
+            LogSink = logSink,
+            Monitor = new ReasonerMonitor(new MonitorSettings(nothingSelectedWarningWindow: 2)),
+        };
+
+        sequence.AddOption(new StubOption([new StubConsideration(WeightValues.Neutral)], [new RecordAction(_executed)])
+            { Name = "Step" });
+        sequence.Enable();
+
+        for (int cycle = 0; cycle < 5; cycle++)
+        {
+            sequence.Update();
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(sequence.IsDone, Is.True, "the sequence ran off its end");
+            Assert.That(logSink.Entries, Has.None.Contains("nothing has been selectable"),
+                "a sequence that ran out of work is finished, not standing still");
+        });
     }
 }

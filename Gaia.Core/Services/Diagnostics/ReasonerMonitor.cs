@@ -18,6 +18,12 @@ namespace Gaia.Core.Services.Diagnostics
     ///         per cycle after it has chosen, and pays one null check per cycle when it has no monitor.
     ///     </para>
     ///     <para>
+    ///         The monitor also names two shapes the cycle cannot refuse and loading cannot see, an option left done for a
+    ///         whole window with nothing ending it and a reasoner that has selected nothing for one. Both windows are
+    ///         <see cref="MonitorSettings" />, so a run is watched as closely as its host asks and a run with no monitor is
+    ///         not watched at all.
+    ///     </para>
+    ///     <para>
     ///         A cycle is stamped with the brain's cycle when a brain monitor made this one, so the histories of every
     ///         reasoner in a brain line up, and with this monitor's own count otherwise. A cycle holds the first
     ///         OptionCapacity options and drops the rest, and the monitor warns the first time that happens, so a partial
@@ -27,6 +33,9 @@ namespace Gaia.Core.Services.Diagnostics
     public class ReasonerMonitor
     {
         private long _cycleIndex;
+        private int _cyclesNothingSelected;
+        private int _cyclesSelectedAndDone;
+        private OptionBase? _doneOption;
         private bool _truncationWarningIssued;
 
         /// <summary>Creates a monitor recording under the given settings.</summary>
@@ -69,11 +78,9 @@ namespace Gaia.Core.Services.Diagnostics
 
                 if (reasoner.LogSink.IsEnabled(LogSeverity.Warning))
                 {
-                    string where = Path.Length == 0 ? string.Empty : Path + ", ";
-
                     reasoner.LogSink.LogWarning(reasoner.LogChannel,
-                        $"{where}the decision history records {History.OptionCapacity} of {options.Count} options, " +
-                        "the rest go unrecorded");
+                        Located($"the decision history records {History.OptionCapacity} of {options.Count} options, " +
+                                "the rest go unrecorded"));
                 }
             }
 
@@ -86,6 +93,73 @@ namespace Gaia.Core.Services.Diagnostics
             }
 
             History.EndCycle(reasoner.LastDecisionRoll, reasoner.SelectedOption?.Name ?? AiString.Empty);
+
+            WarnAboutDoneOption(reasoner);
+            WarnAboutNothingSelected(reasoner);
+        }
+
+        /// <summary>Warns when the selected option has been done for a whole window with nothing ending it.</summary>
+        /// <remarks>
+        ///     The count belongs to one selection, so selecting a different option starts it over, and the warning fires once
+        ///     each time the count reaches the window rather than once per cycle past it.
+        /// </remarks>
+        private void WarnAboutDoneOption(ReasonerBase reasoner)
+        {
+            OptionBase? selected = reasoner.SelectedOption;
+
+            if (Settings.DoneWarningWindow <= 0 || selected == null || !selected.IsDone)
+            {
+                _doneOption = null;
+                _cyclesSelectedAndDone = 0;
+                return;
+            }
+
+            if (!ReferenceEquals(selected, _doneOption))
+            {
+                _doneOption = selected;
+                _cyclesSelectedAndDone = 0;
+            }
+
+            _cyclesSelectedAndDone++;
+
+            if (_cyclesSelectedAndDone == Settings.DoneWarningWindow && reasoner.LogSink.IsEnabled(LogSeverity.Warning))
+            {
+                reasoner.LogSink.LogWarning(reasoner.LogChannel,
+                    Located($"the {selected.Name.Text} option has been done for {Settings.DoneWarningWindow} cycles " +
+                            "with nothing ending it, a finished veto may be missing"));
+            }
+        }
+
+        /// <summary>Warns when a reasoner with work left has had options and no selection for a whole window.</summary>
+        /// <remarks>
+        ///     A reasoner that ran out of work, a finished sequence, selects nothing by design until its parent ends it, so
+        ///     nothing selected is only worth a warning while there is work left. The count runs over the cycles the reasoner
+        ///     actually ran, so for a nested reasoner one window spans the activations of its option.
+        /// </remarks>
+        private void WarnAboutNothingSelected(ReasonerBase reasoner)
+        {
+            if (Settings.NothingSelectedWarningWindow <= 0 || reasoner.SelectedOption != null ||
+                reasoner.OptionList.Count == 0 || reasoner.IsDone)
+            {
+                _cyclesNothingSelected = 0;
+                return;
+            }
+
+            _cyclesNothingSelected++;
+
+            if (_cyclesNothingSelected == Settings.NothingSelectedWarningWindow &&
+                reasoner.LogSink.IsEnabled(LogSeverity.Warning))
+            {
+                reasoner.LogSink.LogWarning(reasoner.LogChannel,
+                    Located($"nothing has been selectable for {Settings.NothingSelectedWarningWindow} cycles, " +
+                            "every option is vetoed or scores nothing"));
+            }
+        }
+
+        /// <summary>Prefixes a report with this monitor's path, so a report from a nested reasoner says where it came from.</summary>
+        private string Located(string message)
+        {
+            return Path.Length == 0 ? message : Path + ", " + message;
         }
     }
 }

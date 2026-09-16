@@ -128,4 +128,28 @@ public class ConsiderationAndActionOptionSpec
             }));
         });
     }
+
+    [Test]
+    public void WarnsWhenItsFixedValuesCanNeverSelectIt()
+    {
+        // A permanent veto written in tuning is sometimes a deliberate off switch, so it loads, and it is named
+        // once so a designer who meant the option to run finds out at load rather than from a still character.
+        const string snippet = """
+                               <Option Type="ConsiderationAndAction" Name="Disabled">
+                                   <Consideration Type="Tuning" Multiplier="0"/>
+                               </Option>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        ConsiderationAndActionOption loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Warning  the Disabled option's fixed values sum to a weight of 0 or less, it can never be selected",
+            }));
+        });
+    }
 }

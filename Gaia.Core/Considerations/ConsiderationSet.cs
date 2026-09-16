@@ -35,6 +35,14 @@ namespace Gaia.Core.Considerations
         /// <summary>True if this set already contains a <see cref="TuningConsideration" />.</summary>
         internal bool HasTuning { get; private set; }
 
+        /// <summary>The considerations in the set, in the order they were added.</summary>
+        /// <remarks>
+        ///     Internal, and opened for the load-time lint on <see cref="OptionBase" /> that judges whether an option's fixed
+        ///     values can ever select it. Nothing on the cycle path reads it, so the enumerator an IReadOnlyList boxes is paid
+        ///     once per option at load rather than every cycle.
+        /// </remarks>
+        internal IReadOnlyList<ConsiderationBase> Considerations => _considerations;
+
         /// <summary>Loads one consideration into the set for each Consideration child the node holds.</summary>
         /// <returns>True when every child loaded. False after reporting what went wrong.</returns>
         internal bool Init(AiCreationData creationData)

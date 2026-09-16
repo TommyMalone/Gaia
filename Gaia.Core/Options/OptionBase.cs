@@ -3,6 +3,7 @@ using Gaia.Core.Actions;
 using Gaia.Core.Considerations;
 using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
+using Gaia.Core.Services.Log;
 using Gaia.Core.Strings;
 using Gaia.Core.WeightFunctions;
 
@@ -113,6 +114,7 @@ namespace Gaia.Core.Options
             }
 
             EnsureTuningConsideration();
+            WarnWhenFixedValuesCannotSelect(creationData);
             return true;
         }
 
@@ -153,6 +155,35 @@ namespace Gaia.Core.Options
 
             WeightValues neutralTuning = new(1f, 1f, float.MinValue);
             AddConsideration(new TuningConsideration(neutralTuning));
+        }
+
+        /// <summary>Warns when every consideration is a fixed tuning whose combined weight can never select the option.</summary>
+        /// <remarks>
+        ///     Only fixed values can be judged at load, one dynamic consideration and the answer depends on the world. A
+        ///     fixed weight of 0 or less fails <see cref="IsValid" /> every cycle, so the option is configuration that can never
+        ///     run, which is sometimes a deliberate off switch and accepts the one warning.
+        /// </remarks>
+        private void WarnWhenFixedValuesCannotSelect(AiCreationData creationData)
+        {
+            float addendSum = 0f;
+            float multiplierProduct = 1f;
+
+            foreach (ConsiderationBase consideration in _considerations.Considerations)
+            {
+                if (consideration is not TuningConsideration tuning)
+                {
+                    return;
+                }
+
+                addendSum += tuning.Weights.Addend;
+                multiplierProduct *= tuning.Weights.Multiplier;
+            }
+
+            if (addendSum * multiplierProduct <= 0f)
+            {
+                creationData.LogSink.LogWarning(creationData.LogChannel,
+                    $"the {Name.Text} option's fixed values sum to a weight of 0 or less, it can never be selected");
+            }
         }
 
         /// <summary>Recalculates what the considerations add up to.</summary>

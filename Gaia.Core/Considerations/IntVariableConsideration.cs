@@ -11,7 +11,7 @@ namespace Gaia.Core.Considerations
         {
             return dataStore.TryGetInt(VariableName, out int value)
                 ? weightFunction.CalculateInt(value)
-                : MissingVariableWeights;
+                : GetMissingVariableWeights("as an int");
         }
     }
 }

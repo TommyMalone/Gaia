@@ -28,8 +28,10 @@ namespace Gaia.Core.Tests.Integration;
 ///         window.
 ///     </para>
 ///     <para>
-///         A warm-up runs first so tiered compilation and any lazy framework work happen outside the measured window.
-///         The measurement is thread-local allocated bytes across a thousand cycles.
+///         A warm-up runs first so tiered compilation and any lazy framework work happen outside the measured window. It
+///         also outlasts <see cref="MonitorSettings.DoneWarningWindow" />, since the steady-state case's selected option
+///         holds no actions and so is done from its first cycle, and the monitor builds that warning once for the
+///         reasoner's default sink. The measurement is thread-local allocated bytes across a thousand cycles.
 ///     </para>
 ///     <para>
 ///         The transition case exists because a DualUtilityReasoner rolls every cycle, so a change of selection is
