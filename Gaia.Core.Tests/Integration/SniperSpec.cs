@@ -419,7 +419,8 @@ public class SniperSpec
         // A roll of 0.5 puts every cooldown at 90 seconds, which keeps the spec's timings exact.
         FixedRandomSource halfwayRoll = new(0.5f);
         FloatSequenceWeightFunction cooldown = new(WeightValues.Neutral) { RandomSource = halfwayRoll };
-        FloatSequenceEntry stillCoolingDown = new(CooldownMinTime.Value, CooldownMaxTime.Value, WeightValues.Vetoed);
+        FloatSequenceEntry stillCoolingDown =
+            new((float)CooldownMinTime.Value, (float)CooldownMaxTime.Value, WeightValues.Vetoed);
         cooldown.AddEntry(stillCoolingDown);
 
         return new ExecutionHistoryConsideration

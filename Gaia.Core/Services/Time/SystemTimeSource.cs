@@ -19,7 +19,7 @@ namespace Gaia.Core.Services.Time
         /// </summary>
         public void Tick()
         {
-            Seconds elapsedTime = new((float)_stopwatch.Elapsed.TotalSeconds);
+            Seconds elapsedTime = new(_stopwatch.Elapsed.TotalSeconds);
 
             DeltaTime = elapsedTime - CurrentTime;
             CurrentTime = elapsedTime;

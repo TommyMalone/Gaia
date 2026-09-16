@@ -330,7 +330,7 @@ public class GuardSpec
     {
         WeightValues rankFive = new(0f, 1f, 5f);
         FloatSequenceWeightFunction recentOnly = new(WeightValues.Neutral);
-        FloatSequenceEntry recent = new(StaysRecentTime.Value, rankFive);
+        FloatSequenceEntry recent = new((float)StaysRecentTime.Value, rankFive);
         recentOnly.AddEntry(recent);
 
         return new FloatVariableConsideration
@@ -380,7 +380,7 @@ public class GuardSpec
         if (heardTime.HasValue)
         {
             Seconds timeSince = _timeSource.CurrentTime - heardTime.Value;
-            _brain.Blackboard.SetFloat(secondsSinceVariable, timeSince.Value);
+            _brain.Blackboard.SetFloat(secondsSinceVariable, (float)timeSince.Value);
         }
     }
 }

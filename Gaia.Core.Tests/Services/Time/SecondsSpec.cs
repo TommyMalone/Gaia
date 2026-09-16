@@ -7,7 +7,7 @@ namespace Gaia.Core.Tests.Services.Time;
 public class SecondsSpec
 {
     [Test]
-    public void ReadsBackTheFloatItWasMadeFrom()
+    public void ReadsBackTheNumberItWasMadeFrom()
     {
         Seconds time = new(2.5f);
 
@@ -108,5 +108,26 @@ public class SecondsSpec
     public void StartsFromNoTimeAtAll()
     {
         Assert.That(Seconds.Zero.Value, Is.EqualTo(0f));
+    }
+
+    [Test]
+    public void KeepsAdvancingWhereAFloatWouldStop()
+    {
+        // Near 145 hours of session, 2^19 seconds, a tick's delta falls below half a float unit of precision, so
+        // a float-backed clock rounds the addition away and stands still. The double keeps counting.
+        Seconds longSession = new(524288.0);
+        Seconds frameTime = new(1.0 / 60.0);
+
+        float floatSession = (float)longSession.Value;
+        float floatAdvanced = floatSession + (float)frameTime.Value;
+
+        Seconds advanced = longSession + frameTime;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(floatAdvanced, Is.EqualTo(floatSession),
+                "a float clock has stopped here, which is the horizon this moves");
+            Assert.That(advanced.Value, Is.GreaterThan(longSession.Value));
+        });
     }
 }

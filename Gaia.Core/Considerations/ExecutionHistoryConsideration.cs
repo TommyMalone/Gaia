@@ -227,7 +227,9 @@ namespace Gaia.Core.Considerations
         /// </summary>
         private static WeightValues Convert(WeightFunctionBase? weightFunction, Seconds elapsedTime)
         {
-            return weightFunction?.CalculateFloat(elapsedTime.Value) ?? WeightValues.Neutral;
+            // Weight functions convert floats. Elapsed times on the scales considerations measure, seconds to
+            // minutes, sit far inside float precision, so the narrowing loses nothing a curve could see.
+            return weightFunction?.CalculateFloat((float)elapsedTime.Value) ?? WeightValues.Neutral;
         }
 
         /// <summary>Builds one of the four role weight functions from its role-named element.</summary>
