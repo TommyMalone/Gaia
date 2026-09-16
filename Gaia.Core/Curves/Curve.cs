@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Gaia.Core.Curves
 {
@@ -15,6 +16,10 @@ namespace Gaia.Core.Curves
     ///         Inputs below the first keyframe report the first keyframe's value, and inputs above the last report the last,
     ///         so a curve never extrapolates past what it was given.
     ///     </para>
+    ///     <para>
+    ///         A curve holds one keyframe per input. Two values at one input have no interpolation between them, so a second
+    ///         keyframe at an input another already holds is refused rather than resolved.
+    ///     </para>
     /// </remarks>
     /// <seealso>Cubic Hermite splines, described at https://en.wikibooks.org/wiki/Cg_Programming/Unity/Hermite_Curves</seealso>
     public sealed class Curve
@@ -25,6 +30,7 @@ namespace Gaia.Core.Curves
         public IReadOnlyList<CurveKeyframe> Keyframes => _keyframes;
 
         /// <summary>Adds a keyframe, keeping the keyframes ordered by Input.</summary>
+        /// <exception cref="ArgumentException">A keyframe already holds the given <see cref="CurveKeyframe.Input" />.</exception>
         internal void AddKeyframe(CurveKeyframe keyframe)
         {
             int index = 0;
@@ -32,6 +38,15 @@ namespace Gaia.Core.Curves
             while (index < _keyframes.Count && _keyframes[index].Input < keyframe.Input)
             {
                 index++;
+            }
+
+            // The walk stops where a keyframe of this input would sit, so the one place a twin can be is here.
+            if (index < _keyframes.Count && _keyframes[index].Input == keyframe.Input)
+            {
+                throw new ArgumentException(
+                    $"A curve already holds a keyframe at input {keyframe.Input}. " +
+                    "A curve holds one keyframe per input.",
+                    nameof(keyframe));
             }
 
             _keyframes.Insert(index, keyframe);
@@ -83,12 +98,11 @@ namespace Gaia.Core.Curves
             return EvaluateSegment(segment, input);
         }
 
-        /// <summary>The slope of the straight line between two keyframes, or 0 for keyframes at the same input.</summary>
+        /// <summary>The slope of the straight line between two keyframes.</summary>
         private float LinearSlopeBetween(int firstIndex, int secondIndex)
         {
-            float inputSpan = _keyframes[secondIndex].Input - _keyframes[firstIndex].Input;
-
-            return inputSpan == 0f ? 0f : (_keyframes[secondIndex].Value - _keyframes[firstIndex].Value) / inputSpan;
+            return (_keyframes[secondIndex].Value - _keyframes[firstIndex].Value) /
+                   (_keyframes[secondIndex].Input - _keyframes[firstIndex].Input);
         }
 
         /// <summary>
@@ -101,12 +115,6 @@ namespace Gaia.Core.Curves
             CurveKeyframe end = _keyframes[segment + 1];
 
             float inputSpan = end.Input - start.Input;
-
-            if (inputSpan == 0f)
-            {
-                return end.Value;
-            }
-
             float position = (input - start.Input) / inputSpan;
             float positionSquared = position * position;
             float positionCubed = positionSquared * position;

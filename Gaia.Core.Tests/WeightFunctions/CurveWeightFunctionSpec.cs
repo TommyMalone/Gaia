@@ -212,6 +212,32 @@ public class CurveWeightFunctionSpec
     }
 
     [Test]
+    public void RefusesACurveThatRepeatsAnInput()
+    {
+        const string snippet = """
+                               <WeightFunction Type="Curve">
+                                   <AddendCurve>
+                                       <Keyframe Input="0" Value="0"/>
+                                       <Keyframe Input="5" Value="2"/>
+                                       <Keyframe Input="5" Value="4"/>
+                                   </AddendCurve>
+                               </WeightFunction>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        CurveWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 5, the Keyframe element repeats the input 5 of the Keyframe on line 4",
+            }));
+        });
+    }
+
+    [Test]
     public void RefusesACurveElementWithNoKeyframes()
     {
         const string snippet = """

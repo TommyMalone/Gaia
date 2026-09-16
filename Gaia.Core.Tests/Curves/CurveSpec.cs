@@ -40,6 +40,23 @@ public class CurveSpec
     }
 
     [Test]
+    public void RefusesASecondKeyframeAtAnInputItAlreadyHolds()
+    {
+        // Without the refusal the twin stops the walk at its own index and is inserted before it, so the curve
+        // reports the second value where the configuration wrote the first.
+        CurveKeyframe held = new(5f, 3f);
+        CurveKeyframe twin = new(5f, 8f);
+
+        _curve.AddKeyframe(held);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => _curve.AddKeyframe(twin), Throws.ArgumentException);
+            Assert.That(_curve.Keyframes, Has.Count.EqualTo(1));
+        });
+    }
+
+    [Test]
     public void ReportsZeroWithNoKeyframes()
     {
         Assert.That(_curve.Evaluate(5f), Is.EqualTo(0f));

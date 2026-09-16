@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Curves;
+﻿using System.Collections.Generic;
+using Gaia.Core.Curves;
 using Gaia.Core.Factories;
 using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
@@ -132,15 +133,16 @@ namespace Gaia.Core.WeightFunctions
         /// <summary>Loads one curve from a curve element's Keyframe children.</summary>
         /// <remarks>
         ///     A keyframe's tangents default to 0, which flattens the curve at the keyframe. A curve element carrying
-        ///     Linear="true" replaces every tangent with the slope of its neighboring segment once its keyframes are loaded, so
-        ///     explicit tangents and Linear do not combine. A curve with no keyframes evaluates to 0 for every input, which would
-        ///     silently veto through a multiplier, so an empty curve element is refused instead.
+        ///     Linear="true" replaces every tangent with the slope of its neighboring segment once its keyframes are loaded,
+        ///     so explicit tangents and Linear do not combine. A curve with no keyframes evaluates to 0 for every input, which
+        ///     would silently veto through a multiplier, so an empty curve element is refused instead.
         /// </remarks>
         private static bool TryLoadCurve(SpecificationNode curveNode, AiCreationData creationData, out Curve? curve)
         {
             curve = null;
 
             Curve loaded = new();
+            Dictionary<float, int> linesByInput = new();
 
             foreach (SpecificationNode child in curveNode.Children)
             {
@@ -170,6 +172,16 @@ namespace Gaia.Core.WeightFunctions
                 {
                     return false;
                 }
+
+                if (linesByInput.TryGetValue(input, out int firstLine))
+                {
+                    creationData.ReportError(
+                        $"Line {child.LineNumber}, the {child.Name.Text} element repeats the input {input} of the " +
+                        $"{child.Name.Text} on line {firstLine}");
+                    return false;
+                }
+
+                linesByInput[input] = child.LineNumber;
 
                 loaded.AddKeyframe(new CurveKeyframe(input, value, inTangent, outTangent));
             }
