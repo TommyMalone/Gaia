@@ -109,7 +109,7 @@ namespace Gaia.Core.Spatial
 
         public override string ToString()
         {
-            return $"({X}, {Y}, {Z})";
+            return FormattableString.Invariant($"({X}, {Y}, {Z})");
         }
     }
 }

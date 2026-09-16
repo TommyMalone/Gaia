@@ -133,9 +133,9 @@ namespace Gaia.Core.WeightFunctions
         /// <summary>Loads one curve from a curve element's Keyframe children.</summary>
         /// <remarks>
         ///     A keyframe's tangents default to 0, which flattens the curve at the keyframe. A curve element carrying
-        ///     Linear="true" replaces every tangent with the slope of its neighboring segment once its keyframes are loaded,
-        ///     so explicit tangents and Linear do not combine. A curve with no keyframes evaluates to 0 for every input, which
-        ///     would silently veto through a multiplier, so an empty curve element is refused instead.
+        ///     Linear="true" replaces every tangent with the slope of its neighboring segment once its keyframes are loaded, so
+        ///     explicit tangents and Linear do not combine. A curve with no keyframes evaluates to 0 for every input, which would
+        ///     silently veto through a multiplier, so an empty curve element is refused instead.
         /// </remarks>
         private static bool TryLoadCurve(SpecificationNode curveNode, AiCreationData creationData, out Curve? curve)
         {

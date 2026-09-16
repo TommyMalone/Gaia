@@ -88,7 +88,7 @@ namespace Gaia.Core.Services.Time
 
         public override string ToString()
         {
-            return $"{Value}s";
+            return FormattableString.Invariant($"{Value}s");
         }
     }
 }

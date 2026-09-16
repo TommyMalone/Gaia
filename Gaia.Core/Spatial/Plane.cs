@@ -86,7 +86,7 @@ namespace Gaia.Core.Spatial
 
         public override string ToString()
         {
-            return $"Normal {Normal}, Distance {Distance}";
+            return FormattableString.Invariant($"Normal {Normal}, Distance {Distance}");
         }
     }
 }

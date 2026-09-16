@@ -153,7 +153,7 @@ namespace Gaia.Core.WeightFunctions
 
         public override string ToString()
         {
-            return $"Addend {Addend}, Multiplier {Multiplier}, Rank {Rank}";
+            return FormattableString.Invariant($"Addend {Addend}, Multiplier {Multiplier}, Rank {Rank}");
         }
     }
 }

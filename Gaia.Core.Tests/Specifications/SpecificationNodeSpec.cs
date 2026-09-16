@@ -30,7 +30,8 @@ public class SpecificationNodeSpec
 
     private const string Snippet = """
                                    <Region Type="Circle" Name="KillZone" Center="(0, 0, 150)" Radius="40" Ratio="1.5" Attempts="10"
-                                           IgnoreHeight="true" Speed="fast" Armed="yes" Offset="(1, 2)" Fraction="1,5"/>
+                                           IgnoreHeight="true" Speed="fast" Armed="yes" Offset="(1, 2)" Fraction="1,5"
+                                           Corner="(0.5, -2.25)"/>
                                    """;
 
     private RecordingLogSink _logSink;
@@ -53,6 +54,8 @@ public class SpecificationNodeSpec
             Assert.That(ignoreHeight, Is.True);
             Assert.That(_node.ReadVector3("Center", out Vector3 center), Is.True);
             Assert.That(center, Is.EqualTo(killZoneCenter));
+            Assert.That(_node.ReadVector2("Corner", out Vector2 corner), Is.True);
+            Assert.That(corner, Is.EqualTo(new Vector2(0.5f, -2.25f)));
             Assert.That(_logSink.Entries, Is.Empty, "well formed reads report nothing");
         });
     }
@@ -78,18 +81,21 @@ public class SpecificationNodeSpec
         bool hasSpeed = _node.TryGetFloat("Speed", out _);
         bool wasArmedRead = _node.ReadBool("Armed", out _);
         bool hasOffset = _node.TryGetVector3("Offset", out _);
+        bool wasCenterReadFlat = _node.ReadVector2("Center", out _);
 
         Assert.Multiple(() =>
         {
             Assert.That(hasSpeed, Is.False);
             Assert.That(wasArmedRead, Is.False);
             Assert.That(hasOffset, Is.False);
+            Assert.That(wasCenterReadFlat, Is.False, "three components is not a point in a plane");
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 // @formatter:off
                 "Error guard.xml Line 1, the Region element's Speed is not a number, it reads \"fast\"",
                 "Error guard.xml Line 1, the Region element's Armed is not true or false, it reads \"yes\"",
                 "Error guard.xml Line 1, the Region element's Offset is not a tuple like (0, 1.5, 300), it reads \"(1, 2)\"",
+                "Error guard.xml Line 1, the Region element's Center is not a tuple like (0, 1.5), it reads \"(0, 0, 150)\"",
                 // @formatter:on
             }));
         });
@@ -100,11 +106,13 @@ public class SpecificationNodeSpec
     {
         bool hasHeight = _node.TryGetFloat("Height", out _);
         bool hasVisible = _node.TryGetBool("Visible", out _);
+        bool hasOrigin = _node.TryGetVector2("Origin", out _);
 
         Assert.Multiple(() =>
         {
             Assert.That(hasHeight, Is.False);
             Assert.That(hasVisible, Is.False);
+            Assert.That(hasOrigin, Is.False);
             Assert.That(_logSink.Entries, Is.Empty);
         });
     }

@@ -45,8 +45,7 @@ namespace Gaia.Core.Curves
             {
                 throw new ArgumentException(
                     $"A curve already holds a keyframe at input {keyframe.Input}. " +
-                    "A curve holds one keyframe per input.",
-                    nameof(keyframe));
+                    "A curve holds one keyframe per input.", nameof(keyframe));
             }
 
             _keyframes.Insert(index, keyframe);

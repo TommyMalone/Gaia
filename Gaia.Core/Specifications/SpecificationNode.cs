@@ -215,6 +215,27 @@ namespace Gaia.Core.Specifications
             return false;
         }
 
+        /// <summary>Reads an optional point-in-a-plane attribute. Absence is silent, malformed text is reported.</summary>
+        public bool TryGetVector2(AiString name, out Vector2 value)
+        {
+            value = default;
+            return _attributes.TryGetValue(name, out string? text) && TryParseVector2(name, text, out value);
+        }
+
+        /// <summary>Reads a required point-in-a-plane attribute. Absence and malformed text are both reported.</summary>
+        public bool ReadVector2(AiString name, out Vector2 value)
+        {
+            value = default;
+
+            if (!_attributes.TryGetValue(name, out string? text))
+            {
+                ReportMissing(name);
+                return false;
+            }
+
+            return TryParseVector2(name, text, out value);
+        }
+
         /// <summary>Reads an optional position attribute. Absence is silent, malformed text is reported.</summary>
         public bool TryGetVector3(AiString name, out Vector3 value)
         {
@@ -275,6 +296,29 @@ namespace Gaia.Core.Specifications
             }
 
             ReportMalformed(name, text, "a whole number");
+            return false;
+        }
+
+        /// <summary>Parses the two-component tuple form, "(0, 1.5)", in invariant culture.</summary>
+        private bool TryParseVector2(AiString name, string text, out Vector2 value)
+        {
+            string trimmed = text.Trim();
+
+            if (trimmed.Length >= 2 && trimmed[0] == '(' && trimmed[trimmed.Length - 1] == ')')
+            {
+                string[] parts = trimmed.Substring(1, trimmed.Length - 2).Split(',');
+
+                if (parts.Length == 2 &&
+                    float.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float x) &&
+                    float.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float y))
+                {
+                    value = new Vector2(x, y);
+                    return true;
+                }
+            }
+
+            ReportMalformed(name, text, "a tuple like (0, 1.5)");
+            value = default;
             return false;
         }
 
