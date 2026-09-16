@@ -1,4 +1,5 @@
-﻿using Gaia.Core.DataStores;
+﻿using Gaia.Core.Blackboards;
+using Gaia.Core.DataStores;
 using Gaia.Core.Entities;
 using Gaia.Core.Spatial;
 using Gaia.Core.Strings;
@@ -15,10 +16,21 @@ public class DataStoreBaseSpec
     {
         _dataStore = new StubDataStore();
         _guard = new StubEntity("Guard");
+
+        // The tests about mismatch reports read them off a store wired to the fixture's sink.
+        _logSink = new RecordingLogSink();
+        _warningStore = new BrainBlackboard
+        {
+            LogSink = _logSink,
+            LogChannel = "Guard",
+        };
     }
 
     private StubDataStore _dataStore;
     private StubEntity _guard;
+
+    private RecordingLogSink _logSink;
+    private BrainBlackboard _warningStore;
 
     [Test]
     public void ReportsABoolItWasGiven()
@@ -261,5 +273,33 @@ public class DataStoreBaseSpec
         long allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - bytesBefore;
 
         Assert.That(allocatedBytes, Is.LessThan(storeCount * bytesPerStoreBound));
+    }
+
+    [Test]
+    public void WarnsExactlyOnceWhenANameIsAskedForAsAnotherKind()
+    {
+        _warningStore.SetInt("Ammo", 3);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_warningStore.TryGetFloat("Ammo", out _), Is.False);
+            Assert.That(_warningStore.TryGetFloat("Ammo", out _), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Warning Guard the Ammo name was written as Int and used as Float",
+            }), "the report survives every build and each name warns once");
+        });
+    }
+
+    [Test]
+    public void WarnsWhenAWriteChangesANamesKind()
+    {
+        _warningStore.SetInt("Ammo", 3);
+        _warningStore.SetFloat("Ammo", 0.5f);
+
+        Assert.That(_logSink.Entries, Is.EqualTo(new[]
+        {
+            "Warning Guard the Ammo name was written as Int and used as Float",
+        }));
     }
 }

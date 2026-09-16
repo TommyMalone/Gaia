@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
+using System.Threading;
 using Gaia.Core.Entities;
+using Gaia.Core.Services.Log;
 using Gaia.Core.Spatial;
 using Gaia.Core.Strings;
 
@@ -21,6 +22,12 @@ namespace Gaia.Core.DataStores
     ///     </para>
     ///     <para>Names are <see cref="AiString" /> values, so a lookup compares hashes and matching ignores case.</para>
     ///     <para>
+    ///         The threading contract is reads from any thread, writes synchronized by the host. A brain's own blackboard is
+    ///         written and read on that brain's thread, and a shared store such as the world blackboard takes its writes at
+    ///         the host's sync points while brains only read it mid-cycle. The mismatch throttle below is the one mutation a
+    ///         read can cause, and it locks itself so concurrent readers stay safe.
+    ///     </para>
+    ///     <para>
     ///         Each table allocates on its first write rather than at construction, so a store holds tables only for the
     ///         kinds it stores. A freshly spawned entity, such as a <see cref="Entities.Threat" /> for one bullet impact,
     ///         costs no tables at all until something is written to it, which is what keeps high-churn entities cheap to
@@ -30,11 +37,22 @@ namespace Gaia.Core.DataStores
     /// <seealso>"Modular AI", Section 8.4.3</seealso>
     public abstract class DataStoreBase
     {
+        /// <summary>
+        ///     The sink a store reports through until a host or a loader wires one. Shared, where every other default sink in
+        ///     the library is per instance, because a store is the one a game allocates per entity and this sink holds no state
+        ///     worth an allocation each time.
+        /// </summary>
+        private static readonly TraceLogSink DefaultLogSink = new();
+
         private Dictionary<AiString, bool>? _bools;
         private Dictionary<AiString, EntityBase>? _entities;
         private Dictionary<AiString, List<EntityBase>>? _entityLists;
         private Dictionary<AiString, float>? _floats;
         private Dictionary<AiString, int>? _ints;
+
+        /// <summary>The names whose kind mismatch has already been reported, so each warns once.</summary>
+        private HashSet<AiString>? _mismatchWarnedNames;
+
         private Dictionary<AiString, Rotation>? _rotations;
         private Dictionary<AiString, AiString>? _strings;
 
@@ -42,6 +60,17 @@ namespace Gaia.Core.DataStores
         private Dictionary<AiString, DataStoreValueType>? _valueTypes;
 
         private Dictionary<AiString, Vector3>? _vector3s;
+
+        /// <summary>Where kind mismatches are reported.</summary>
+        /// <remarks>
+        ///     Public rather than internal set because stores are made by hosts as often as by loading, the world blackboard
+        ///     and every entity among them. A loaded brain stamps its own blackboard's sink and channel, and a host wires the
+        ///     stores it makes itself.
+        /// </remarks>
+        public ILogSink LogSink { get; set; } = DefaultLogSink;
+
+        /// <summary>What mismatch reports are filed under, usually the owning character.</summary>
+        public AiString LogChannel { get; set; } = AiString.Empty;
 
         /// <summary>Reports whether a value has been written under the given name.</summary>
         public bool Contains(AiString name)
@@ -272,6 +301,7 @@ namespace Gaia.Core.DataStores
         public void Clear()
         {
             _valueTypes?.Clear();
+            _mismatchWarnedNames?.Clear();
 
             _bools?.Clear();
             _ints?.Clear();
@@ -286,18 +316,33 @@ namespace Gaia.Core.DataStores
         /// <summary>Called when a name is read or written as a kind other than the one it already holds.</summary>
         /// <remarks>
         ///     A data store is in effect global memory, so two unrelated sets of components can end up using the same name. A
-        ///     mismatched kind is the most detectable form of that collision. The default reports it through Debug.Assert, which
-        ///     compiles out of a release build, and the calls that reach here are compiled out along with it. The Conditional
-        ///     attribute cannot go on OnTypeMismatch, because a conditional method may not be overridden, so it sits on
-        ///     ReportTypeMismatch and ReportAnyTypeMismatch instead.
+        ///     mismatched kind is the most detectable form of that collision.
         /// </remarks>
         protected virtual void OnTypeMismatch(
             AiString name,
             DataStoreValueType storedValueType,
             DataStoreValueType requestedValueType)
         {
-            Debug.Assert(false,
-                $"The data store name {name} holds a {storedValueType} rather than a {requestedValueType}.");
+            // Reads may run concurrently under the store's threading contract, and a failed read lands here, so
+            // the throttle set is installed with a compare-exchange and mutated under its own lock.
+            if (_mismatchWarnedNames == null)
+            {
+                Interlocked.CompareExchange(ref _mismatchWarnedNames, new HashSet<AiString>(), null);
+            }
+
+            lock (_mismatchWarnedNames!)
+            {
+                if (!_mismatchWarnedNames.Add(name))
+                {
+                    return;
+                }
+            }
+
+            if (LogSink.IsEnabled(LogSeverity.Warning))
+            {
+                LogSink.LogWarning(LogChannel,
+                    $"the {name.Text} name was written as {storedValueType} and used as {requestedValueType}");
+            }
         }
 
         /// <summary>
@@ -311,31 +356,19 @@ namespace Gaia.Core.DataStores
             if (_valueTypes.TryGetValue(name, out DataStoreValueType storedValueType) && storedValueType != valueType)
             {
                 // The old value has to go, or the name would sit in two tables at once and _valueTypes could only
-                // point at one of them. That eviction happens in every build, unlike the report of it.
-                ReportTypeMismatch(name, storedValueType, valueType);
+                // point at one of them.
+                OnTypeMismatch(name, storedValueType, valueType);
                 RemoveValue(name, storedValueType);
             }
 
             _valueTypes[name] = valueType;
         }
 
-        /// <summary>Reports a mismatch already known to have happened.</summary>
-        /// <remarks>Conditional, so that neither the call nor its arguments survive a release build.</remarks>
-        [Conditional("DEBUG")]
-        private void ReportTypeMismatch(
-            AiString name,
-            DataStoreValueType storedValueType,
-            DataStoreValueType requestedValueType)
-        {
-            OnTypeMismatch(name, storedValueType, requestedValueType);
-        }
-
         /// <summary>Reports a mismatch if the failed read was one, rather than a name that was never written.</summary>
         /// <remarks>
-        ///     Conditional, so that a release build spends nothing on the extra lookup this needs. A name that was never
-        ///     written is an ordinary miss rather than a collision.
+        ///     The extra lookup this needs runs only on reads that already failed, which a correctly configured brain does
+        ///     not walk in a steady state. A name that was never written is an ordinary miss rather than a collision.
         /// </remarks>
-        [Conditional("DEBUG")]
         private void ReportAnyTypeMismatch(AiString name, DataStoreValueType requestedValueType)
         {
             if (_valueTypes == null || !_valueTypes.TryGetValue(name, out DataStoreValueType storedValueType))

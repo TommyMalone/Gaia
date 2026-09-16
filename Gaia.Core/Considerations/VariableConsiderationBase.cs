@@ -126,8 +126,8 @@ namespace Gaia.Core.Considerations
         ///     </para>
         ///     <para>
         ///         The wording says only what the read established. A name written as another kind also reads as unwritten
-        ///         through the typed accessor, and in builds where the store's mismatch report is compiled out, this warning is
-        ///         the only trace it leaves.
+        ///         through the typed accessor, and this warning stands beside the store's own mismatch report, so the read is
+        ///         named from both sides.
         ///     </para>
         /// </remarks>
         /// <param name="warningKindPhrase">How the read asked for the value, such as "as a bool", or null for a plain report.</param>

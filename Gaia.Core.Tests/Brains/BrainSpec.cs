@@ -29,6 +29,9 @@ public class BrainSpec
         _reasoner.AddOption(option);
 
         _brain = new Brain { RootReasoner = _reasoner };
+
+        // The actor a loading test hands the creation data as Self, so the loaded brain takes its name.
+        _guard = new Actor { Name = "Guard" };
     }
 
     private RecordingLogSink _logSink;
@@ -37,6 +40,8 @@ public class BrainSpec
 
     private RuleBasedReasoner _reasoner;
     private Brain _brain;
+
+    private Actor _guard;
 
     [Test]
     public void StartsDisabled()
@@ -223,8 +228,7 @@ public class BrainSpec
                                """;
         AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
-        Actor guard = new() { Name = "Guard" };
-        creationData.Self = guard;
+        creationData.Self = _guard;
 
         AiString guardChannel = "Guard";
         Brain loaded = new();
@@ -315,6 +319,29 @@ public class BrainSpec
             {
                 "Error guard.xml Line 3, the Brain element takes only one Reasoner element",
             }), "silently keeping one of two reasoners would ship half the author's tree");
+        });
+    }
+
+    [Test]
+    public void StampsItsBlackboardWithItsSinkAndChannel()
+    {
+        const string snippet = """
+                               <Brain>
+                                   <Reasoner Type="RuleBased"/>
+                               </Brain>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        creationData.Self = _guard;
+
+        Brain loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.Blackboard.LogSink, Is.SameAs(_logSink),
+                "a mismatch on the character's own store reports where the brain reports");
+            Assert.That(loaded.Blackboard.LogChannel.Text, Is.EqualTo("Guard"));
         });
     }
 }

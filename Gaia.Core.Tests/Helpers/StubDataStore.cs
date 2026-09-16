@@ -3,7 +3,7 @@ using Gaia.Core.Strings;
 
 namespace Gaia.Core.Tests.Helpers;
 
-/// <summary>A concrete data store that records type mismatches rather than asserting on them.</summary>
+/// <summary>A concrete data store that records type mismatches for the spec to read.</summary>
 internal sealed class StubDataStore : DataStoreBase
 {
     private readonly List<string> _typeMismatches = new();
@@ -11,7 +11,7 @@ internal sealed class StubDataStore : DataStoreBase
     /// <summary>Every mismatch reported so far, as "Name stored requested".</summary>
     internal IReadOnlyList<string> TypeMismatches => _typeMismatches;
 
-    /// <summary>Records the mismatch as "Name stored requested" rather than asserting.</summary>
+    /// <summary>Records the mismatch as "Name stored requested".</summary>
     protected override void OnTypeMismatch(
         AiString name,
         DataStoreValueType storedValueType,

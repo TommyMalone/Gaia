@@ -92,6 +92,11 @@ namespace Gaia.Core.Brains
             LogSink = creationData.LogSink;
             LogChannel = creationData.Self?.Name ?? creationData.LogChannel;
 
+            // The blackboard reports through the brain's sink under the brain's channel, so a kind mismatch on a
+            // character's own store is filed under that character. A kept blackboard is restamped for its new brain.
+            Blackboard.LogSink = LogSink;
+            Blackboard.LogChannel = LogChannel;
+
             foreach (SpecificationNode child in node.Children)
             {
                 if (child.Name != ReasonerElement)
