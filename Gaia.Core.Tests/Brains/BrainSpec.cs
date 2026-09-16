@@ -344,4 +344,101 @@ public class BrainSpec
             Assert.That(loaded.Blackboard.LogChannel.Text, Is.EqualTo("Guard"));
         });
     }
+
+    [Test]
+    public void LetsAFaultOutByDefault()
+    {
+        Brain brain = BuildThrowingBrain(false);
+
+        brain.Enable();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => brain.Update(), Throws.TypeOf<InvalidOperationException>(),
+                "under Rethrow the exception comes out of Update with its stack intact");
+            Assert.That(brain.IsEnabled, Is.True, "the library did not stop the brain, the host decides");
+            Assert.That(brain.Fault, Is.Null);
+            Assert.That(_logSink.Entries, Has.None.StartsWith("Error"));
+        });
+    }
+
+    [Test]
+    public void ContainsAFaultWhenAskedTo()
+    {
+        Brain brain = BuildThrowingBrain(false);
+        brain.FaultPolicy = FaultPolicy.Contain;
+
+        brain.Enable();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => brain.Update(), Throws.Nothing);
+            Assert.That(brain.Fault, Is.TypeOf<InvalidOperationException>());
+            Assert.That(brain.IsEnabled, Is.False, "a contained fault stops the brain");
+            Assert.That(brain.RootReasoner!.IsEnabled, Is.False, "and tears the tree down beneath it");
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Message Sentry brain enabled",
+                "Error Sentry a component threw and the brain is stopped, InvalidOperationException: the action failed",
+                "Message Sentry brain disabled",
+            }));
+        });
+    }
+
+    [Test]
+    public void ReportsAFaultThatThrowsAgainWhileStopping()
+    {
+        // Disable deselects the action that just threw, and the same bug usually throws again there. That second
+        // throw is the recorded limit of the host-side contract, and the one the library guards.
+        Brain brain = BuildThrowingBrain(true);
+        brain.FaultPolicy = FaultPolicy.Contain;
+
+        brain.Enable();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => brain.Update(), Throws.Nothing);
+            Assert.That(brain.IsEnabled, Is.False);
+            Assert.That(brain.Fault!.Message, Is.EqualTo("the action failed"), "the fault kept is the first");
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Message Sentry brain enabled",
+                "Error Sentry a component threw and the brain is stopped, InvalidOperationException: the action failed",
+                "Message Sentry brain disabled",
+                "Error Sentry the brain threw again while stopping, InvalidOperationException: the action failed again",
+            }));
+        });
+    }
+
+    [Test]
+    public void StaysStoppedWhenEnabledAfterAFault()
+    {
+        Brain brain = BuildThrowingBrain(false);
+        brain.FaultPolicy = FaultPolicy.Contain;
+
+        brain.Enable();
+        brain.Update();
+
+        brain.Enable();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(brain.IsEnabled, Is.False, "a faulted brain is replaced, not restarted");
+            Assert.That(_logSink.Entries[^1],
+                Is.EqualTo("Warning Sentry brain faulted and stays stopped until it is replaced"));
+        });
+    }
+
+    /// <summary>A brain over one always-valid option whose action throws every cycle, wired to the fixture's sink.</summary>
+    private Brain BuildThrowingBrain(bool throwsOnDeselect)
+    {
+        RuleBasedReasoner reasoner = new();
+        reasoner.AddOption(new StubOption([], [new ThrowingAction(throwsOnDeselect)]));
+
+        return new Brain(reasoner)
+        {
+            LogSink = _logSink,
+            LogChannel = "Sentry",
+        };
+    }
 }

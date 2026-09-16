@@ -129,6 +129,27 @@ public class GaiaLoaderSpec
     }
 
     [Test]
+    public void StampsItsFaultPolicyOnEveryBrainItLoads()
+    {
+        const string snippet = """
+                               <Brain>
+                                   <Reasoner Type="RuleBased"/>
+                               </Brain>
+                               """;
+
+        _loader.TryLoadBrain(snippet, SourceName, out Brain? rethrowing);
+
+        _loader.FaultPolicy = FaultPolicy.Contain;
+        _loader.TryLoadBrain(snippet, SourceName, out Brain? containing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(rethrowing!.FaultPolicy, Is.EqualTo(FaultPolicy.Rethrow), "the default lets a fault out");
+            Assert.That(containing!.FaultPolicy, Is.EqualTo(FaultPolicy.Contain));
+        });
+    }
+
+    [Test]
     public void YieldsNoBrainFromAMalformedDocument()
     {
         bool loaded = _loader.TryLoadBrain("<Brain>", SourceName, out Brain? brain);

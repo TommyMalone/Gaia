@@ -87,6 +87,13 @@ namespace Gaia.Core.Factories
         /// </summary>
         public MonitorSettings? Diagnostics { get; set; }
 
+        /// <summary>
+        ///     What every brain this loader loads does with an exception a component throws, Rethrow by default. One setting
+        ///     for the loader rather than for each load, since which way faults surface is a stance a whole process takes,
+        ///     development or shipped, and not a property of one character.
+        /// </summary>
+        public FaultPolicy FaultPolicy { get; set; } = FaultPolicy.Rethrow;
+
         /// <summary>Loads one brain from configuration text, parsing and loading in one call.</summary>
         /// <param name="configurationText">The configuration document's text.</param>
         /// <param name="sourceDocumentName">The name loading errors are filed under, usually the file's name.</param>
@@ -178,6 +185,8 @@ namespace Gaia.Core.Factories
             {
                 return false;
             }
+
+            loaded.FaultPolicy = FaultPolicy;
 
             MonitorSettings? settings = diagnostics ?? Diagnostics;
 

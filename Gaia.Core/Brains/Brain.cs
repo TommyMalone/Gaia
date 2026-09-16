@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Blackboards;
+﻿using System;
+using Gaia.Core.Blackboards;
 using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Diagnostics;
@@ -54,6 +55,24 @@ namespace Gaia.Core.Brains
 
         /// <summary>True while the brain is in control of its character.</summary>
         public bool IsEnabled { get; private set; }
+
+        /// <summary>What this brain does with an exception a component throws during a cycle. Rethrow by default.</summary>
+        /// <remarks>
+        ///     Public set because a host assembles brains in code as often as it loads them, and
+        ///     <see cref="Factories.GaiaLoader" /> stamps its own policy on every brain it loads. Which way a fault surfaces is a
+        ///     stance a whole process takes, development or shipped, rather than a property of one character.
+        /// </remarks>
+        public FaultPolicy FaultPolicy { get; set; } = FaultPolicy.Rethrow;
+
+        /// <summary>
+        ///     The exception that stopped this brain under <see cref="Brains.FaultPolicy.Contain" />, or null while it is
+        ///     deciding.
+        /// </summary>
+        /// <remarks>
+        ///     Set once and never cleared, so a host that keeps running can count its faulted brains and read why each one
+        ///     stopped, and a faulted brain refuses Enable. A character that has faulted is replaced, not restarted.
+        /// </remarks>
+        public Exception? Fault { get; private set; }
 
         /// <summary>The monitor watching this brain and every reasoner in its tree, or null when nothing is watching.</summary>
         /// <remarks>
@@ -140,6 +159,12 @@ namespace Gaia.Core.Brains
                 return;
             }
 
+            if (Fault != null)
+            {
+                LogSink.LogWarning(LogChannel, "brain faulted and stays stopped until it is replaced");
+                return;
+            }
+
             IsEnabled = true;
 
             if (RootReasoner == null)
@@ -173,6 +198,11 @@ namespace Gaia.Core.Brains
         }
 
         /// <summary>Runs one decision cycle, if IsEnabled.</summary>
+        /// <remarks>
+        ///     A cycle is one run of the decision hierarchy, the root reasoner's Update and everything it reaches, and it is
+        ///     the AI's unit of time. A tick is one iteration of the host's own loop, and a host runs a brain's cycles as often as
+        ///     it chooses, once per tick or less.
+        /// </remarks>
         public void Update()
         {
             if (!IsEnabled)
@@ -180,8 +210,48 @@ namespace Gaia.Core.Brains
                 return;
             }
 
+            if (FaultPolicy == FaultPolicy.Rethrow)
+            {
+                RunCycle();
+                return;
+            }
+
+            try
+            {
+                RunCycle();
+            }
+            catch (Exception exception)
+            {
+                Contain(exception);
+            }
+        }
+
+        /// <summary>Advances the monitor's cycle and runs the root reasoner, which is one cycle.</summary>
+        private void RunCycle()
+        {
             _monitor?.BeginCycle();
             RootReasoner?.Update();
+        }
+
+        /// <summary>Keeps the fault, reports it, and stops the brain, guarding the stop against the same fault again.</summary>
+        private void Contain(Exception exception)
+        {
+            Fault = exception;
+            LogSink.LogError(LogChannel,
+                $"a component threw and the brain is stopped, {exception.GetType().Name}: {exception.Message}");
+
+            try
+            {
+                Disable();
+            }
+            catch (Exception second)
+            {
+                // Disable deselects whatever was running, and an action that threw in Update usually throws again in
+                // Deselect for the same reason. IsEnabled was cleared before Disable reached the tree, so the brain is
+                // stopped either way, and the tree is left as it fell.
+                LogSink.LogError(LogChannel,
+                    $"the brain threw again while stopping, {second.GetType().Name}: {second.Message}");
+            }
         }
     }
 }
