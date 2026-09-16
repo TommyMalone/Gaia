@@ -10,14 +10,10 @@
         /// <inheritdoc />
         public Seconds CurrentTime { get; private set; }
 
-        /// <inheritdoc />
-        public Seconds DeltaTime { get; private set; }
-
         /// <summary>Move the clock forward. Call once per cycle, before anything reads the time.</summary>
         /// <param name="delta">The time elapsed since the previous cycle.</param>
         public void Advance(Seconds delta)
         {
-            DeltaTime = delta;
             CurrentTime += delta;
         }
     }

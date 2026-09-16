@@ -10,9 +10,11 @@
     public interface ITimeSource
     {
         /// <summary>The time elapsed since the source started.</summary>
+        /// <remarks>
+        ///     The one clock reading components take. Components store the absolute time at their events and compare later,
+        ///     which is what lets a brain run its cycles less often than the host ticks without anything drifting. A per-cycle
+        ///     delta would be the host tick's step, not any one brain's.
+        /// </remarks>
         Seconds CurrentTime { get; }
-
-        /// <summary>The time elapsed between the previous cycle and this one.</summary>
-        Seconds DeltaTime { get; }
     }
 }

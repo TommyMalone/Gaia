@@ -10,19 +10,13 @@ namespace Gaia.Core.Services.Time
         /// <inheritdoc />
         public Seconds CurrentTime { get; private set; }
 
-        /// <inheritdoc />
-        public Seconds DeltaTime { get; private set; }
-
         /// <summary>
         ///     Sample the elapsed time. Call once per cycle, before anything reads the clock, so that everything deciding on
         ///     the same cycle agrees about what time it is.
         /// </summary>
         public void Tick()
         {
-            Seconds elapsedTime = new(_stopwatch.Elapsed.TotalSeconds);
-
-            DeltaTime = elapsedTime - CurrentTime;
-            CurrentTime = elapsedTime;
+            CurrentTime = new Seconds(_stopwatch.Elapsed.TotalSeconds);
         }
     }
 }
