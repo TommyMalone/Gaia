@@ -251,8 +251,21 @@ namespace Gaia.Core.Considerations
             AiCreationData creationData,
             out WeightFunctionBase? weightFunction)
         {
-            return creationData.Factories.WeightFunctions.TryCreate(creationData.ForChild(roleNode),
-                out weightFunction);
+            if (!creationData.Factories.WeightFunctions.TryCreate(creationData.ForChild(roleNode), out weightFunction))
+            {
+                return false;
+            }
+
+            if (!weightFunction!.ConvertsFloat)
+            {
+                creationData.ReportError(
+                    $"Line {roleNode.LineNumber}, the {roleNode.Name.Text} element's type {roleNode.Type.Text} " +
+                    "does not convert a float");
+                weightFunction = null;
+                return false;
+            }
+
+            return true;
         }
     }
 }

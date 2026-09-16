@@ -7,11 +7,20 @@ namespace Gaia.Core.Considerations
     public sealed class FloatVariableConsideration : VariableConsiderationBase
     {
         /// <inheritdoc />
+        protected override string QueryPhrase => "a float";
+
+        /// <inheritdoc />
+        protected override bool CanConvert(WeightFunctionBase weightFunction)
+        {
+            return weightFunction.ConvertsFloat;
+        }
+
+        /// <inheritdoc />
         protected override WeightValues CalculateWeights(WeightFunctionBase weightFunction, DataStoreBase dataStore)
         {
             return dataStore.TryGetFloat(VariableName, out float value)
                 ? weightFunction.CalculateFloat(value)
-                : GetMissingVariableWeights("as a float");
+                : GetMissingVariableWeights();
         }
     }
 }

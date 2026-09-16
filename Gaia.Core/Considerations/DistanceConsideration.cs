@@ -38,6 +38,9 @@ namespace Gaia.Core.Considerations
         public WeightValues MissingTargetWeights { get; internal set; } = WeightValues.Neutral;
 
         /// <inheritdoc />
+        protected override string QueryPhrase => "a float";
+
+        /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
             SpecificationNode node = creationData.Node;
@@ -111,6 +114,12 @@ namespace Gaia.Core.Considerations
             }
 
             return true;
+        }
+
+        /// <inheritdoc />
+        protected override bool CanConvert(WeightFunctionBase weightFunction)
+        {
+            return weightFunction.ConvertsFloat;
         }
 
         /// <inheritdoc />

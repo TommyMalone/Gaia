@@ -45,6 +45,9 @@ namespace Gaia.Core.WeightFunctions
         public float Rank { get; internal set; } = float.MinValue;
 
         /// <inheritdoc />
+        public override bool ConvertsFloat => true;
+
+        /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
             SpecificationNode node = creationData.Node;

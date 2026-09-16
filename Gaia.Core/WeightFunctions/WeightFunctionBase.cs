@@ -16,6 +16,23 @@ namespace Gaia.Core.WeightFunctions
     /// <seealso>"Modular AI", Section 8.5.2, Listing 8.2</seealso>
     public abstract class WeightFunctionBase : IAiComponent
     {
+        /// <summary>True when CalculateBool converts rather than throws.</summary>
+        /// <remarks>
+        ///     The conversion flags are how loading refuses a function wired to a consideration it cannot serve, turning a
+        ///     decision-path exception into a load error naming the file and line. A derived function overrides the flags for
+        ///     exactly the conversions it overrides, and a game's own considerations may consult them the same way.
+        /// </remarks>
+        public virtual bool ConvertsBool => false;
+
+        /// <summary>True when CalculateInt converts, following ConvertsFloat the way CalculateInt forwards.</summary>
+        public virtual bool ConvertsInt => ConvertsFloat;
+
+        /// <summary>True when CalculateFloat converts rather than throws.</summary>
+        public virtual bool ConvertsFloat => false;
+
+        /// <summary>True when CalculateString converts rather than throws.</summary>
+        public virtual bool ConvertsString => false;
+
         /// <summary>Loads this function's configuration from the creation data's node.</summary>
         /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         public bool Init(AiCreationData creationData)

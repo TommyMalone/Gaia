@@ -449,4 +449,27 @@ public class ExecutionHistoryConsiderationSpec
             Assert.That(_logSink.Entries, Is.Empty);
         });
     }
+
+    [Test]
+    public void RefusesARoleFunctionThatCannotConvertAnElapsedTime()
+    {
+        // Every role converts the elapsed seconds it is given, and a Boolean function converts no float at all.
+        const string snippet = """
+                               <Consideration Type="ExecutionHistory">
+                                   <Finished Type="Boolean"/>
+                               </Consideration>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        ExecutionHistoryConsideration loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 2, the Finished element's type Boolean does not convert a float",
+            }));
+        });
+    }
 }

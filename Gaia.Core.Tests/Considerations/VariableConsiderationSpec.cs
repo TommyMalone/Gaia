@@ -354,6 +354,31 @@ public class VariableConsiderationSpec
     }
 
     [Test]
+    public void RefusesAWeightFunctionThatCannotConvertItsValue()
+    {
+        // A Boolean function converts a bool and nothing else, so handing it the float this consideration reads
+        // would throw on the decision path. Loading refuses the pairing instead.
+        const string snippet = """
+                               <Consideration Type="FloatVariable" Variable="Health">
+                                   <WeightFunction Type="Boolean"/>
+                               </Consideration>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+        creationData.BrainBlackboard = _blackboard;
+
+        FloatVariableConsideration loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 2, the WeightFunction element's type Boolean does not convert a float",
+            }));
+        });
+    }
+
+    [Test]
     public void RefusesTheWorldStoreWhenNoneWasSupplied()
     {
         // The loader knows at load time that no world blackboard exists, so a configuration that asks for one is

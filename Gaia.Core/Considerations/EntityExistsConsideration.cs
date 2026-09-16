@@ -23,11 +23,20 @@ namespace Gaia.Core.Considerations
     public sealed class EntityExistsConsideration : VariableConsiderationBase
     {
         /// <inheritdoc />
+        protected override string QueryPhrase => "a bool";
+
+        /// <inheritdoc />
+        protected override bool CanConvert(WeightFunctionBase weightFunction)
+        {
+            return weightFunction.ConvertsBool;
+        }
+
+        /// <inheritdoc />
         protected override WeightValues CalculateWeights(WeightFunctionBase weightFunction, DataStoreBase dataStore)
         {
             if (!dataStore.TryGetEntityList(VariableName, out List<EntityBase>? entities))
             {
-                return GetMissingVariableWeights("as an entity list");
+                return GetMissingVariableWeights("an entity list");
             }
 
             return weightFunction.CalculateBool(AnyValid(entities!));

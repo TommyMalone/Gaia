@@ -7,11 +7,20 @@ namespace Gaia.Core.Considerations
     public sealed class BooleanVariableConsideration : VariableConsiderationBase
     {
         /// <inheritdoc />
+        protected override string QueryPhrase => "a bool";
+
+        /// <inheritdoc />
+        protected override bool CanConvert(WeightFunctionBase weightFunction)
+        {
+            return weightFunction.ConvertsBool;
+        }
+
+        /// <inheritdoc />
         protected override WeightValues CalculateWeights(WeightFunctionBase weightFunction, DataStoreBase dataStore)
         {
             return dataStore.TryGetBool(VariableName, out bool value)
                 ? weightFunction.CalculateBool(value)
-                : GetMissingVariableWeights("as a bool");
+                : GetMissingVariableWeights();
         }
     }
 }

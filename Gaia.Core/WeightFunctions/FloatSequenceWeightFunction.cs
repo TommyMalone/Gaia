@@ -51,6 +51,9 @@ namespace Gaia.Core.WeightFunctions
         public IRandomSource RandomSource { get; internal set; } = new Xoshiro128RandomSource();
 
         /// <inheritdoc />
+        public override bool ConvertsFloat => true;
+
+        /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
             SpecificationNode node = creationData.Node;

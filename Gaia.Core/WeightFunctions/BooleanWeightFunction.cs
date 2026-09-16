@@ -30,6 +30,9 @@ namespace Gaia.Core.WeightFunctions
         public WeightValues FalseWeights { get; internal set; }
 
         /// <inheritdoc />
+        public override bool ConvertsBool => true;
+
+        /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
             SpecificationNode node = creationData.Node;

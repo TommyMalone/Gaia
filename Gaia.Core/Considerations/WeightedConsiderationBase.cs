@@ -29,7 +29,18 @@ namespace Gaia.Core.Considerations
         /// </remarks>
         public WeightFunctionBase? WeightFunction { get; protected internal set; }
 
+        /// <summary>The kind of value this consideration hands its weight function, such as "a float".</summary>
+        /// <remarks>
+        ///     A noun phrase carrying its own article, allowing a variable nothing has written to be reported as "never been
+        ///     written as a float".
+        /// </remarks>
+        protected abstract string QueryPhrase { get; }
+
         /// <summary>Builds a WeightFunction child element into <see cref="WeightFunction" />.</summary>
+        /// <remarks>
+        ///     The function's kind is checked here, at load, because a function that cannot convert what the consideration
+        ///     measures would otherwise load clean and throw on the decision path the first time the option is evaluated.
+        /// </remarks>
         protected internal bool TryLoadWeightFunction(SpecificationNode child, AiCreationData creationData)
         {
             if (!creationData.Factories.WeightFunctions.TryCreate(creationData.ForChild(child),
@@ -38,9 +49,20 @@ namespace Gaia.Core.Considerations
                 return false;
             }
 
+            if (!CanConvert(weightFunction!))
+            {
+                creationData.ReportError(
+                    $"Line {child.LineNumber}, the WeightFunction element's type {child.Type.Text} " +
+                    $"does not convert {QueryPhrase}");
+                return false;
+            }
+
             WeightFunction = weightFunction;
             return true;
         }
+
+        /// <summary>True when the given function converts the kind of value this consideration hands it.</summary>
+        protected abstract bool CanConvert(WeightFunctionBase weightFunction);
 
         /// <inheritdoc />
         public override void Calculate()

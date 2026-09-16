@@ -21,10 +21,19 @@ internal sealed class StubWeightedConsideration : WeightedConsiderationBase
     internal int CalculateWeightsCount { get; private set; }
 
     /// <inheritdoc />
+    protected override string QueryPhrase => "a float";
+
+    /// <inheritdoc />
     protected override bool OnInit(AiCreationData creationData)
     {
         // Configurations cannot presently be loaded successfully.
         return false;
+    }
+
+    /// <inheritdoc />
+    protected override bool CanConvert(WeightFunctionBase weightFunction)
+    {
+        return weightFunction.ConvertsFloat;
     }
 
     /// <summary>Hands QueryResult to the weight function as a float, counting the call.</summary>

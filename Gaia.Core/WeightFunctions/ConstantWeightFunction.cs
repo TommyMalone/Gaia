@@ -17,6 +17,15 @@ namespace Gaia.Core.WeightFunctions
         public WeightValues Weights { get; internal set; } = WeightValues.Neutral;
 
         /// <inheritdoc />
+        public override bool ConvertsBool => true;
+
+        /// <inheritdoc />
+        public override bool ConvertsFloat => true;
+
+        /// <inheritdoc />
+        public override bool ConvertsString => true;
+
+        /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
             SpecificationNode node = creationData.Node;

@@ -36,6 +36,9 @@ namespace Gaia.Core.WeightFunctions
         /// <summary>The weight values to report for an input matching no entry.</summary>
         public WeightValues DefaultWeights { get; internal set; }
 
+        /// <inheritdoc />
+        public override bool ConvertsString => true;
+
         /// <summary>Adds an entry, replacing any entry already configured for the same string.</summary>
         internal void AddEntry(AiString value, WeightValues weights)
         {

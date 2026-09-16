@@ -125,22 +125,25 @@ namespace Gaia.Core.Considerations
         ///         rather than a surprise.
         ///     </para>
         ///     <para>
-        ///         The wording says only what the read established. A name written as another kind also reads as unwritten
+        ///         The wording names the kind the read asked for, which is the consideration's own query phrase unless the read
+        ///         differs, as it does where an entity list answers a bool. A name written as another kind also reads as unwritten
         ///         through the typed accessor, and this warning stands beside the store's own mismatch report, so the read is
         ///         named from both sides.
         ///     </para>
         /// </remarks>
-        /// <param name="warningKindPhrase">How the read asked for the value, such as "as a bool", or null for a plain report.</param>
-        protected WeightValues GetMissingVariableWeights(string? warningKindPhrase = null)
+        /// <param name="readKind">
+        ///     What the read asked the store for, when that differs from <see cref="QueryPhrase" />, such as an
+        ///     entity list read to answer a bool. Null names the query phrase.
+        /// </param>
+        protected WeightValues GetMissingVariableWeights(string? readKind = null)
         {
             if (!_missingConfigured && !_missingVariableReported)
             {
                 _missingVariableReported = true;
 
-                string asKind = warningKindPhrase == null ? string.Empty : $" {warningKindPhrase}";
-
                 LogSink.LogWarning(LogChannel,
-                    $"the {VariableName.Text} variable has never been written{asKind}, returning the default missing variable weight values");
+                    $"the {VariableName.Text} variable has never been written as {readKind ?? QueryPhrase}, " +
+                    "returning the default missing variable weight values");
             }
 
             return MissingVariableWeights;

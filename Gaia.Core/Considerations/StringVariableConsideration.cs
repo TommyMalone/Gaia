@@ -8,11 +8,20 @@ namespace Gaia.Core.Considerations
     public sealed class StringVariableConsideration : VariableConsiderationBase
     {
         /// <inheritdoc />
+        protected override string QueryPhrase => "a string";
+
+        /// <inheritdoc />
+        protected override bool CanConvert(WeightFunctionBase weightFunction)
+        {
+            return weightFunction.ConvertsString;
+        }
+
+        /// <inheritdoc />
         protected override WeightValues CalculateWeights(WeightFunctionBase weightFunction, DataStoreBase dataStore)
         {
             return dataStore.TryGetString(VariableName, out AiString value)
                 ? weightFunction.CalculateString(value)
-                : GetMissingVariableWeights("as a string");
+                : GetMissingVariableWeights();
         }
     }
 }

@@ -73,10 +73,19 @@ public class GameDefinedConsiderationHostSpec
         /// <summary>The distance the game measured, in meters.</summary>
         public float Distance { get; set; }
 
+        /// <inheritdoc />
+        protected override string QueryPhrase => "a float";
+
         /// <summary>Reports failure, since this consideration is assembled rather than loaded.</summary>
         protected override bool OnInit(AiCreationData creationData)
         {
             return false;
+        }
+
+        /// <inheritdoc />
+        protected override bool CanConvert(WeightFunctionBase weightFunction)
+        {
+            return weightFunction.ConvertsFloat;
         }
 
         /// <summary>Hands the distance to the function as a float.</summary>
@@ -95,6 +104,9 @@ public class GameDefinedConsiderationHostSpec
         {
             _range = range;
         }
+
+        /// <inheritdoc />
+        public override bool ConvertsFloat => true;
 
         /// <summary>Reports failure, since this function is assembled rather than loaded.</summary>
         protected override bool OnInit(AiCreationData creationData)
