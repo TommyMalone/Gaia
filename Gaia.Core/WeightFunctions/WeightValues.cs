@@ -54,8 +54,8 @@ namespace Gaia.Core.WeightFunctions
         /// <summary>Reads the optional Addend, Multiplier and Rank attributes of an element as one set of weight values.</summary>
         /// <remarks>
         ///     An absent attribute keeps its identity value, so an element saying nothing reads as <see cref="Neutral" />. A
-        ///     veto is written Veto="true". Malformed text fails the read once the node has reported it, and so does a multiplier
-        ///     below 0, which parses but has no meaning a configuration could intend.
+        ///     veto is written Veto="true", in any casing. Malformed text fails the read once the node has reported it, and so
+        ///     does a multiplier below 0, which parses but has no meaning a configuration could intend.
         /// </remarks>
         /// <seealso>"Modular AI", Section 8.6.2.1, Listing 8.9</seealso>
         internal static bool TryRead(SpecificationNode node, out WeightValues values)

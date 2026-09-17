@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using Gaia.Core.Services.Log;
 using Gaia.Core.Spatial;
@@ -284,22 +285,26 @@ namespace Gaia.Core.Specifications
             return TryParseRotation(name, text, out value);
         }
 
-        /// <summary>Parses exactly "true" or "false", reporting anything else as malformed.</summary>
+        /// <summary>Parses "true" or "false" in any casing, reporting anything else as malformed.</summary>
         private bool TryParseBool(AiString name, string text, out bool value)
         {
-            switch (text)
+            // Names match case-insensitively everywhere, and a value stricter than its own attribute name is a
+            // mismatch an author copying the chapter's Veto="True" would meet.
+            if (string.Equals(text, "true", StringComparison.OrdinalIgnoreCase))
             {
-                case "true":
-                    value = true;
-                    return true;
-                case "false":
-                    value = false;
-                    return true;
-                default:
-                    ReportMalformed(name, text, "true or false");
-                    value = default;
-                    return false;
+                value = true;
+                return true;
             }
+
+            if (string.Equals(text, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                value = false;
+                return true;
+            }
+
+            ReportMalformed(name, text, "true or false");
+            value = default;
+            return false;
         }
 
         /// <summary>Parses a number in invariant culture, so a decimal mark is always a point.</summary>

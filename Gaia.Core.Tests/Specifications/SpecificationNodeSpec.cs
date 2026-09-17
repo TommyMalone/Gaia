@@ -65,14 +65,23 @@ public class SpecificationNodeSpec
     [Test]
     public void ReportsARequiredAttributeThatIsMissing()
     {
-        bool wasRead = _node.ReadFloat("Height", out _);
+        bool wasHeightRead = _node.ReadFloat("Height", out _);
+        bool wasShelteredRead = _node.ReadBool("Sheltered", out _);
+        bool wasLabelRead = _node.ReadString("Label", out _);
+        bool wasWaypointRead = _node.ReadVector3("Waypoint", out _);
 
         Assert.Multiple(() =>
         {
-            Assert.That(wasRead, Is.False);
+            Assert.That(wasHeightRead, Is.False);
+            Assert.That(wasShelteredRead, Is.False);
+            Assert.That(wasLabelRead, Is.False);
+            Assert.That(wasWaypointRead, Is.False);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 1, the Region element has no Height attribute",
+                "Error guard.xml Line 1, the Region element has no Sheltered attribute",
+                "Error guard.xml Line 1, the Region element has no Label attribute",
+                "Error guard.xml Line 1, the Region element has no Waypoint attribute",
             }));
         });
     }
@@ -85,6 +94,7 @@ public class SpecificationNodeSpec
         bool hasOffset = _node.TryGetVector3("Offset", out _);
         bool wasCenterReadFlat = _node.ReadVector2("Center", out _);
         bool hasOffsetAsRotation = _node.TryGetRotation("Offset", out _);
+        bool hasFractionCount = _node.TryGetInt("Fraction", out _);
 
         Assert.Multiple(() =>
         {
@@ -93,6 +103,7 @@ public class SpecificationNodeSpec
             Assert.That(hasOffset, Is.False);
             Assert.That(wasCenterReadFlat, Is.False, "three components is not a point in a plane");
             Assert.That(hasOffsetAsRotation, Is.False);
+            Assert.That(hasFractionCount, Is.False);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 // @formatter:off
@@ -101,6 +112,7 @@ public class SpecificationNodeSpec
                 "Error guard.xml Line 1, the Region element's Offset is not a tuple like (0, 1.5, 300), it reads \"(1, 2)\"",
                 "Error guard.xml Line 1, the Region element's Center is not a tuple like (0, 1.5), it reads \"(0, 0, 150)\"",
                 "Error guard.xml Line 1, the Region element's Offset is not pitch, yaw and roll in degrees like (0, 45, 0), it reads \"(1, 2)\"",
+                "Error guard.xml Line 1, the Region element's Fraction is not a whole number, it reads \"1,5\"",
                 // @formatter:on
             }));
         });
@@ -112,12 +124,14 @@ public class SpecificationNodeSpec
         bool hasHeight = _node.TryGetFloat("Height", out _);
         bool hasVisible = _node.TryGetBool("Visible", out _);
         bool hasOrigin = _node.TryGetVector2("Origin", out _);
+        bool hasLabel = _node.TryGetString("Label", out _);
 
         Assert.Multiple(() =>
         {
             Assert.That(hasHeight, Is.False);
             Assert.That(hasVisible, Is.False);
             Assert.That(hasOrigin, Is.False);
+            Assert.That(hasLabel, Is.False);
             Assert.That(_logSink.Entries, Is.Empty);
         });
     }
@@ -149,6 +163,25 @@ public class SpecificationNodeSpec
             Assert.That(_node.HasAttribute("Radius"), Is.True);
             Assert.That(_node.HasAttribute("Missing"), Is.False);
             Assert.That(_logSink.Entries, Is.Empty, "presence checks report nothing");
+        });
+    }
+
+    [Test]
+    public void ReadsABoolInAnyCasing()
+    {
+        XmlSpecificationReader reader = new(_logSink);
+
+        reader.TryRead("""
+                       <Region Marked="True" Guarded="FALSE"/>
+                       """, SourceName, out SpecificationNode? root);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(root!.ReadBool("Marked", out bool marked), Is.True);
+            Assert.That(marked, Is.True);
+            Assert.That(root.ReadBool("Guarded", out bool guarded), Is.True);
+            Assert.That(guarded, Is.False);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 }

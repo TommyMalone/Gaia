@@ -210,6 +210,145 @@ public class FactorySetSpec
         });
     }
 
+    [Test]
+    public void RefusesJunkChildrenInEveryWeightFunction()
+    {
+        AssertJunkChildrenRefused("WeightFunction",
+            new[] { ("Constant", ""), ("Boolean", ""), ("String", ""), ("FloatSequence", ""), ("Curve", "") },
+            creationData => creationData.Factories.WeightFunctions.TryCreate(creationData, out _));
+    }
+
+    [Test]
+    public void RefusesJunkChildrenInEveryConsideration()
+    {
+        const string variable = " Variable=\"Anything\"";
+
+        AssertJunkChildrenRefused("Consideration", new[]
+        {
+            ("Tuning", ""), ("BooleanVariable", variable), ("FloatVariable", variable), ("IntVariable", variable),
+            ("StringVariable", variable), ("EntityExists", variable), ("ExecutionHistory", ""),
+            ("ConsiderationSet", ""), ("Distance", ""),
+        }, creationData => creationData.Factories.Considerations.TryCreate(creationData, out _));
+    }
+
+    [Test]
+    public void RefusesJunkChildrenInEveryTarget()
+    {
+        AssertJunkChildrenRefused("Target", new[] { ("Position", ""), ("Self", ""), ("ByName", "") },
+            creationData => creationData.Factories.Targets.TryCreate(creationData, out _));
+    }
+
+    [Test]
+    public void RefusesJunkChildrenInEveryRegion()
+    {
+        AssertJunkChildrenRefused("Region", new[]
+        {
+            ("Box", ""), ("Capsule", ""), ("Circle", ""), ("ConvexHull", ""), ("Cylinder", ""),
+            ("ExtrudedPolygon", " HalfHeight=\"1.5\""), ("Polygon", ""), ("Rectangle", ""), ("Sphere", ""),
+        }, creationData => creationData.Factories.Regions.TryCreate(creationData, out _));
+    }
+
+    [Test]
+    public void RefusesJunkChildrenInEveryActionOptionAndReasoner()
+    {
+        AssertJunkChildrenRefused("Action",
+            new[] { ("Pause", " Name=\"Wait\""), ("Subreasoner", " Name=\"Delegate\"") },
+            creationData => creationData.Factories.Actions.TryCreate(creationData, out _));
+
+        AssertJunkChildrenRefused("Option", new[] { ("ConsiderationAndAction", " Name=\"Idle\"") },
+            creationData => creationData.Factories.Options.TryCreate(creationData, out _));
+
+        AssertJunkChildrenRefused("Reasoner", new[] { ("RuleBased", ""), ("DualUtility", ""), ("Sequence", "") },
+            creationData => creationData.Factories.Reasoners.TryCreate(creationData, out _));
+    }
+
+    [Test]
+    public void RefusesAMissingRequiredAttributeInEveryRegion()
+    {
+        // Origin is optional on every shape, so a bare round shape names Radius, and the two with a height name
+        // HalfHeight once given one.
+        AssertMissingAttributeRefused("Region", new[]
+        {
+            ("Box", "", "Min"), ("Capsule", "", "Radius"), ("Capsule", " Radius=\"2\"", "HalfHeight"),
+            ("Circle", "", "Radius"), ("Cylinder", "", "Radius"), ("Cylinder", " Radius=\"5\"", "HalfHeight"),
+            ("ExtrudedPolygon", "", "HalfHeight"), ("Rectangle", "", "Min"), ("Sphere", "", "Radius"),
+        }, creationData => creationData.Factories.Regions.TryCreate(creationData, out _));
+    }
+
+    [Test]
+    public void RefusesAMissingRequiredAttributeInTargetsActionsAndTheOption()
+    {
+        AssertMissingAttributeRefused("Target",
+            new[] { ("Position", "", "Position"), ("ByName", " List=\"Contacts\"", "Entity") },
+            creationData => creationData.Factories.Targets.TryCreate(creationData, out _));
+
+        AssertMissingAttributeRefused("Action",
+            new[] { ("Pause", "", "Name"), ("Pause", " Name=\"Wait\"", "Duration") },
+            creationData => creationData.Factories.Actions.TryCreate(creationData, out _));
+
+        AssertMissingAttributeRefused("Option", new[] { ("ConsiderationAndAction", "", "Name") },
+            creationData => creationData.Factories.Options.TryCreate(creationData, out _));
+    }
+
+    /// <summary>
+    ///     Asserts that each catalog entry refuses a Junk child with an error naming the file and line, and builds no
+    ///     component.
+    /// </summary>
+    /// <remarks>
+    ///     Every loader sweeps its children and refuses an element it does not read, so a misspelled child can never
+    ///     vanish silently. The factory's failed-to-initialize line follows each component's own report.
+    /// </remarks>
+    private static void AssertJunkChildrenRefused(
+        string elementName,
+        (string typeName, string extraAttributes)[] catalog,
+        Func<AiCreationData, bool> create)
+    {
+        Assert.Multiple(() =>
+        {
+            foreach ((string typeName, string extraAttributes) in catalog)
+            {
+                string snippet = $"""
+                                  <{elementName} Type="{typeName}"{extraAttributes}>
+                                      <Junk/>
+                                  </{elementName}>
+                                  """;
+                RecordingLogSink logSink = new();
+                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+                Assert.That(create(creationData), Is.False, typeName);
+                Assert.That(logSink.Entries, Is.EqualTo(new[]
+                {
+                    $"Error guard.xml Line 2, the {elementName} element does not take Junk elements",
+                    $"Error guard.xml Line 1, the {elementName} element's type {typeName} failed to initialize",
+                }), typeName);
+            }
+        });
+    }
+
+    /// <summary>Asserts that each catalog entry reports the first required attribute its snippet leaves out.</summary>
+    private static void AssertMissingAttributeRefused(
+        string elementName,
+        (string typeName, string extraAttributes, string missingAttribute)[] catalog,
+        Func<AiCreationData, bool> create)
+    {
+        Assert.Multiple(() =>
+        {
+            foreach ((string typeName, string extraAttributes, string missingAttribute) in catalog)
+            {
+                string snippet = $"""<{elementName} Type="{typeName}"{extraAttributes}/>""";
+                RecordingLogSink logSink = new();
+                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+                Assert.That(create(creationData), Is.False, typeName);
+                Assert.That(logSink.Entries, Is.EqualTo(new[]
+                    {
+                        $"Error guard.xml Line 1, the {elementName} element has no {missingAttribute} attribute",
+                        $"Error guard.xml Line 1, the {elementName} element's type {typeName} failed to initialize",
+                    }), $"{typeName} {missingAttribute}");
+            }
+        });
+    }
+
     /// <summary>Builds the smallest loadable snippet for a Subreasoner action.</summary>
     private static string SubreasonerSnippet()
     {
