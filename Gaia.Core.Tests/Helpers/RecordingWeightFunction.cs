@@ -37,7 +37,7 @@ internal sealed class RecordingWeightFunction : WeightFunctionBase
     /// <inheritdoc />
     protected override bool OnInit(AiCreationData creationData)
     {
-        // Configurations cannot presently be loaded successfully.
+        // Built in code with its values set by hand, so a load is a spec mistake and is reported as one.
         return false;
     }
 

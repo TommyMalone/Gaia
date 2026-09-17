@@ -93,9 +93,8 @@ namespace Gaia.Core.Curves
 
             if (_keyframes.Count == 1)
             {
-                throw new InvalidOperationException(
-                    $"A curve keeps its last keyframe, the one at input {input}. " +
-                    "An empty curve reports 0 for every input.");
+                throw new InvalidOperationException($"A curve keeps its last keyframe, the one at input {input}. " +
+                                                    "An empty curve reports 0 for every input.");
             }
 
             _keyframes.RemoveAt(index);

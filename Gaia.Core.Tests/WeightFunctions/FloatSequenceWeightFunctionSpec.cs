@@ -23,7 +23,8 @@ public class FloatSequenceWeightFunctionSpec
         _weightFunction.AddEntry(tooCloseEntry);
         _weightFunction.AddEntry(inRangeEntry);
 
-        // Rolls its threshold between 50 and 150 when selected. Not on the sequence above, for the tests about rolling.
+        // Rolls its threshold between 50 and 150 as it joins a function, and again on selection. Not on the
+        // sequence above, for the tests about rolling.
         _randomizedEntry = new FloatSequenceEntry(50f, 150f, _inRangeWeights);
     }
 
@@ -87,20 +88,50 @@ public class FloatSequenceWeightFunctionSpec
     }
 
     [Test]
-    public void RollsAFreshThresholdWhenGivenARangeAndTheOptionIsSelected()
+    public void RollsARandomizedEntryAsItIsAdded()
+    {
+        FloatSequenceWeightFunction weightFunction = new(WeightValues.Vetoed);
+        weightFunction.RandomSource = new FixedRandomSource(0.9f);
+
+        // Threshold is ThresholdMin, 50, until the entry joins a function, so 100 falls past it.
+        Assert.That(_randomizedEntry.Threshold, Is.EqualTo(50f));
+
+        weightFunction.AddEntry(_randomizedEntry);
+
+        // A roll of 0.9 puts the threshold at 140, without waiting for a selection.
+        Assert.That(_randomizedEntry.Threshold, Is.EqualTo(140f));
+        Assert.That(weightFunction.CalculateFloat(100f), Is.EqualTo(_inRangeWeights));
+    }
+
+    [Test]
+    public void RollsARandomizedEntryAgainWhenTheOptionIsSelected()
     {
         FloatSequenceWeightFunction weightFunction = new(WeightValues.Vetoed);
         weightFunction.RandomSource = new FixedRandomSource(0.9f);
 
         weightFunction.AddEntry(_randomizedEntry);
 
-        // Threshold sits at ThresholdMin until Select rolls it, so 100 falls past the entry.
-        Assert.That(weightFunction.CalculateFloat(100f), Is.EqualTo(WeightValues.Vetoed));
-
+        // The second source answers the selection's roll, so a threshold that moves shows the reroll happened.
+        weightFunction.RandomSource = new FixedRandomSource(0.1f);
         weightFunction.Select();
 
-        // A roll of 0.9 puts the threshold at 140, so the same input now falls inside the entry.
-        Assert.That(weightFunction.CalculateFloat(100f), Is.EqualTo(_inRangeWeights));
+        Assert.That(_randomizedEntry.Threshold, Is.EqualTo(60f));
+    }
+
+    [Test]
+    public void HoldsTheFirstRollOfAnEntryThatDoesNotRerollOnSelect()
+    {
+        FloatSequenceWeightFunction weightFunction = new(WeightValues.Vetoed);
+        weightFunction.RandomSource = new FixedRandomSource(0.9f);
+
+        _randomizedEntry.RerollOnSelect = false;
+        weightFunction.AddEntry(_randomizedEntry);
+
+        weightFunction.RandomSource = new FixedRandomSource(0.1f);
+        weightFunction.Select();
+
+        // The entry rolled once as it was added and keeps that value for the life of the function.
+        Assert.That(_randomizedEntry.Threshold, Is.EqualTo(140f));
     }
 
     [Test]
@@ -191,7 +222,7 @@ public class FloatSequenceWeightFunctionSpec
     }
 
     [Test]
-    public void RollsALoadedEntryWhenItsOptionIsSelected()
+    public void RollsALoadedEntryAsItLoads()
     {
         const string snippet = """
                                <WeightFunction Type="FloatSequence">
@@ -205,13 +236,59 @@ public class FloatSequenceWeightFunctionSpec
 
         Assert.Multiple(() =>
         {
+            // A roll of 0.5 lands the threshold at 15, between the loaded 10 and 20, before any selection.
             Assert.That(loaded.Init(creationData), Is.True);
-
-            loaded.Select();
-
-            // A roll of 0.5 lands the threshold at 15, between the loaded 10 and 20.
             Assert.That(loaded.CalculateFloat(14f), Is.EqualTo(WeightValues.Vetoed));
             Assert.That(loaded.CalculateFloat(16f), Is.EqualTo(WeightValues.Neutral));
+        });
+    }
+
+    [Test]
+    public void RefusesRerollOnSelectOnAFixedThreshold()
+    {
+        const string snippet = """
+                               <WeightFunction Type="FloatSequence">
+                                   <Entry Threshold="50" RerollOnSelect="false" Multiplier="0"/>
+                               </WeightFunction>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        FloatSequenceWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 2, the Entry element sets RerollOnSelect on a fixed threshold",
+            }), "a fixed entry has nothing to reroll");
+        });
+    }
+
+    [Test]
+    public void LoadsAnEntryThatHoldsItsFirstRoll()
+    {
+        const string snippet = """
+                               <WeightFunction Type="FloatSequence">
+                                   <Entry ThresholdMin="10" ThresholdMax="20" RerollOnSelect="false" Multiplier="0"/>
+                               </WeightFunction>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+        creationData.RandomSource = new FixedRandomSource(0.5f);
+
+        FloatSequenceWeightFunction loaded = new();
+
+        Assert.That(loaded.Init(creationData), Is.True);
+
+        // Loading rolled the threshold to 15. A selection under a source that would roll 19 leaves it there.
+        loaded.RandomSource = new FixedRandomSource(0.9f);
+        loaded.Select();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.CalculateFloat(14f), Is.EqualTo(WeightValues.Vetoed));
+            Assert.That(loaded.CalculateFloat(16f), Is.EqualTo(WeightValues.Neutral), "the entry held 15");
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 

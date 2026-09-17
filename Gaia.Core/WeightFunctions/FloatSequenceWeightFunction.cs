@@ -24,6 +24,7 @@ namespace Gaia.Core.WeightFunctions
     {
         private static readonly AiString DefaultElement = "Default";
         private static readonly AiString EntryElement = "Entry";
+        private static readonly AiString RerollOnSelectAttribute = "RerollOnSelect";
         private static readonly AiString ThresholdAttribute = "Threshold";
         private static readonly AiString ThresholdMaxAttribute = "ThresholdMax";
         private static readonly AiString ThresholdMinAttribute = "ThresholdMin";
@@ -91,10 +92,17 @@ namespace Gaia.Core.WeightFunctions
 
         /// <summary>Adds an entry. Entries must be added in ascending order of <see cref="FloatSequenceEntry.Threshold" />.</summary>
         /// <remarks>
-        ///     An entry that rolls its threshold has to stay in order whatever it rolls, so what is compared is the new
-        ///     entry's <see cref="FloatSequenceEntry.ThresholdMin" /> against the previous entry's
-        ///     <see cref="FloatSequenceEntry.ThresholdMax" />. Two ranges that overlap would swap places on some rolls and not
-        ///     others, and a configuration that does that is never what was meant.
+        ///     <para>
+        ///         An entry that rolls its threshold has to stay in order whatever it rolls, so what is compared is the new
+        ///         entry's <see cref="FloatSequenceEntry.ThresholdMin" /> against the previous entry's
+        ///         <see cref="FloatSequenceEntry.ThresholdMax" />. Two ranges that overlap would swap places on some rolls and not
+        ///         others, and a configuration that does that is never what was meant.
+        ///     </para>
+        ///     <para>
+        ///         A randomized entry takes its first roll here, after the order check, so an entry the check refuses draws
+        ///         nothing from <see cref="RandomSource" />. Every entry reaches a function through this method, loaded or built
+        ///         in code, so the roll happens once wherever the entry came from.
+        ///     </para>
         /// </remarks>
         /// <exception cref="ArgumentException">
         ///     The entry's <see cref="FloatSequenceEntry.ThresholdMin" /> is below the
@@ -116,6 +124,7 @@ namespace Gaia.Core.WeightFunctions
             }
 
             _entries.Add(entry);
+            entry.RollThreshold(RandomSource);
         }
 
         /// <inheritdoc />
@@ -133,14 +142,17 @@ namespace Gaia.Core.WeightFunctions
         }
 
         /// <summary>
-        ///     Calls <see cref="FloatSequenceEntry.RollThreshold" /> on every entry, which rolls a fresh threshold for any
-        ///     entry that is randomized. Entries with a fixed threshold are the common case and are left alone.
+        ///     Rolls a fresh threshold for every randomized entry whose <see cref="FloatSequenceEntry.RerollOnSelect" />
+        ///     holds. Entries with a fixed threshold are the common case and are left alone.
         /// </summary>
         protected override void OnSelect()
         {
             foreach (FloatSequenceEntry entry in _entries)
             {
-                entry.RollThreshold(RandomSource);
+                if (entry.RerollOnSelect)
+                {
+                    entry.RollThreshold(RandomSource);
+                }
             }
         }
 
@@ -206,7 +218,28 @@ namespace Gaia.Core.WeightFunctions
                 return false;
             }
 
-            AddEntry(new FloatSequenceEntry(thresholdMin, thresholdMax, weights));
+            bool rerollOnSelect = true;
+
+            if (entryNode.HasAttribute(RerollOnSelectAttribute))
+            {
+                if (thresholdMax <= thresholdMin)
+                {
+                    creationData.ReportError(
+                        $"Line {entryNode.LineNumber}, the {entryNode.Name.Text} element sets RerollOnSelect " +
+                        "on a fixed threshold");
+                    return false;
+                }
+
+                if (!entryNode.ReadBool(RerollOnSelectAttribute, out rerollOnSelect))
+                {
+                    return false;
+                }
+            }
+
+            AddEntry(new FloatSequenceEntry(thresholdMin, thresholdMax, weights)
+            {
+                RerollOnSelect = rerollOnSelect,
+            });
             return true;
         }
     }

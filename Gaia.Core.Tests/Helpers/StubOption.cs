@@ -12,7 +12,7 @@ namespace Gaia.Core.Tests.Helpers;
 /// <remarks>
 ///     The option is assembled rather than loaded, so it calls EnsureTuningConsideration itself instead of running an
 ///     Init that has no configuration to read. The OnInit override exists because <see cref="OptionBase" /> requires one
-///     of every concrete option, and reports the only thing an option with nothing to load can report.
+///     of every concrete option, and it refuses, the way the other hand-built helpers do.
 /// </remarks>
 internal sealed class StubOption : OptionBase
 {
@@ -34,9 +34,10 @@ internal sealed class StubOption : OptionBase
         EnsureTuningConsideration();
     }
 
-    /// <summary>Reports success, since an option assembled in code has nothing to load.</summary>
+    /// <inheritdoc />
     protected override bool OnInit(AiCreationData creationData)
     {
-        return true;
+        // Built in code with its values set by hand, so a load is a spec mistake and is reported as one.
+        return false;
     }
 }

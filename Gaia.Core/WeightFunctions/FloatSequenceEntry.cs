@@ -14,7 +14,9 @@ namespace Gaia.Core.WeightFunctions
     ///     </para>
     ///     <para>
     ///         Most entries hold a fixed threshold. An entry given a ThresholdMin below its ThresholdMax rolls Threshold
-    ///         from between them in RollThreshold each time the containing option is selected.
+    ///         from between them as it is added to a function, and again each time the containing option is selected while
+    ///         RerollOnSelect holds. Threshold is ThresholdMin until the entry is added, which is the value of an entry no
+    ///         function holds yet.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.2</seealso>
@@ -27,7 +29,7 @@ namespace Gaia.Core.WeightFunctions
         {
         }
 
-        /// <summary>Creates an entry whose threshold is rolled between a range each time its option is selected.</summary>
+        /// <summary>Creates an entry whose threshold is rolled from between a range.</summary>
         /// <param name="thresholdMin">The lowest threshold this entry can roll.</param>
         /// <param name="thresholdMax">The highest threshold this entry can roll.</param>
         /// <param name="weights">The values to report for an input this entry covers.</param>
@@ -60,7 +62,16 @@ namespace Gaia.Core.WeightFunctions
         /// <summary>The threshold currently in effect.</summary>
         public float Threshold { get; private set; }
 
-        /// <summary>True if RollThreshold rolls a new Threshold when its option is selected.</summary>
+        /// <summary>Whether a randomized entry rolls again each time its option is selected, rather than once.</summary>
+        /// <remarks>
+        ///     True unless a configuration turns it off, so an entry that rolls keeps the chapter's behavior of a fresh value
+        ///     per selection. An entry that holds its first roll is one whose value is meant to vary between characters rather
+        ///     than between runs of the same character. A fixed entry has nothing to reroll, so the flag has no effect on one and
+        ///     a configuration that sets it there is refused.
+        /// </remarks>
+        public bool RerollOnSelect { get; internal set; } = true;
+
+        /// <summary>True if this entry rolls its Threshold rather than holding the value it was given.</summary>
         public bool IsRandomized => ThresholdMax > ThresholdMin;
 
         /// <summary>Rolls a new Threshold between ThresholdMin and ThresholdMax. Does nothing unless IsRandomized.</summary>
