@@ -116,8 +116,7 @@ namespace Gaia.Core.Specifications
                 else if (child is XText childText && childText.Value.Trim().Length > 0)
                 {
                     LogSink.LogWarning(sourceDocumentName,
-                        $"Line {LineOf(childText)}, the {element.Name.LocalName} element holds stray text " +
-                        $"\"{childText.Value.Trim()}\"");
+                        $"Line {LineOf(childText)}, the {element.Name.LocalName} element holds stray text \"{childText.Value.Trim()}\"");
                 }
             }
 

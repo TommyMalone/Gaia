@@ -264,8 +264,7 @@ namespace Gaia.Core.Considerations
             if (!weightFunction!.ConvertsFloat)
             {
                 creationData.ReportError(
-                    $"Line {roleNode.LineNumber}, the {roleNode.Name.Text} element's type {roleNode.Type.Text} " +
-                    "does not convert a float");
+                    $"Line {roleNode.LineNumber}, the {roleNode.Name.Text} element's type {roleNode.Type.Text} does not convert a float");
                 weightFunction = null;
                 return false;
             }

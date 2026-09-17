@@ -332,8 +332,7 @@ public class FloatSequenceWeightFunctionSpec
             Assert.That(loaded.Init(creationData), Is.False);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
-                "Error guard.xml Line 3, the Entry element is out of order, it starts at 50 and the entry before " +
-                "it reaches 300",
+                "Error guard.xml Line 3, the Entry element is out of order, it starts at 50 and the entry before it reaches 300",
             }));
         });
     }

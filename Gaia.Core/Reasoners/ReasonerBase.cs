@@ -153,8 +153,7 @@ namespace Gaia.Core.Reasoners
                     if (OptionList[first].Name == OptionList[second].Name && LogSink.IsEnabled(LogSeverity.Warning))
                     {
                         LogSink.LogWarning(LogChannel,
-                            $"two options share the name {OptionList[first].Name.Text}, " +
-                            "their log lines and records cannot be told apart");
+                            $"two options share the name {OptionList[first].Name.Text}, their log lines and records cannot be told apart");
                     }
                 }
             }

@@ -39,8 +39,8 @@ namespace Gaia.Core.WeightFunctions
             if (thresholdMax < thresholdMin)
             {
                 throw new ArgumentException(
-                    $"A float sequence entry cannot roll between {thresholdMin} and {thresholdMax}, since the " +
-                    "maximum is below the minimum.", nameof(thresholdMax));
+                    $"A float sequence entry cannot roll between {thresholdMin} and {thresholdMax}, since the maximum is below the minimum.",
+                    nameof(thresholdMax));
             }
 
             ThresholdMin = thresholdMin;

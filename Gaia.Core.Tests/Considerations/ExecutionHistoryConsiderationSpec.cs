@@ -415,8 +415,7 @@ public class ExecutionHistoryConsiderationSpec
             Assert.That(loaded.Init(creationData), Is.False);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
-                "Error guard.xml Line 1, the Consideration element's RankRetentionFactor is not between 0 and 1, " +
-                "it reads \"-0.5\"",
+                "Error guard.xml Line 1, the Consideration element's RankRetentionFactor is not between 0 and 1, it reads \"-0.5\"",
             }));
         });
     }

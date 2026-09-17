@@ -94,8 +94,7 @@ namespace Gaia.Core.Regions
             if (_planes.Count < MinPlaneCount)
             {
                 creationData.ReportError(
-                    $"Line {node.LineNumber}, the {node.Name.Text} element has fewer than {MinPlaneCount} Plane " +
-                    "elements, too few to close a volume");
+                    $"Line {node.LineNumber}, the {node.Name.Text} element has fewer than {MinPlaneCount} Plane elements, too few to close a volume");
                 return false;
             }
 

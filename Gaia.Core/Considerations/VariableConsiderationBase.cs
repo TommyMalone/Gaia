@@ -142,8 +142,7 @@ namespace Gaia.Core.Considerations
                 _missingVariableReported = true;
 
                 LogSink.LogWarning(LogChannel,
-                    $"the {VariableName.Text} variable has never been written as {readKind ?? QueryPhrase}, " +
-                    "returning the default missing variable weight values");
+                    $"the {VariableName.Text} variable has never been written as {readKind ?? QueryPhrase}, returning the default missing variable weight values");
             }
 
             return MissingVariableWeights;

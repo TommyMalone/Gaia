@@ -117,8 +117,7 @@ namespace Gaia.Core.WeightFunctions
                 if (entry.ThresholdMin < previousEntry.ThresholdMax)
                 {
                     throw new ArgumentException(
-                        $"A float sequence entry starting at {entry.ThresholdMin} cannot follow one reaching " +
-                        $"{previousEntry.ThresholdMax}. Entries must be added in ascending order and must not overlap.",
+                        $"A float sequence entry starting at {entry.ThresholdMin} cannot follow one reaching {previousEntry.ThresholdMax}. Entries must be added in ascending order and must not overlap.",
                         nameof(entry));
                 }
             }
@@ -173,8 +172,7 @@ namespace Gaia.Core.WeightFunctions
             if (hasRange && entryNode.HasAttribute(ThresholdAttribute))
             {
                 creationData.ReportError(
-                    $"Line {entryNode.LineNumber}, the {entryNode.Name.Text} element mixes Threshold with ThresholdMin " +
-                    "and ThresholdMax");
+                    $"Line {entryNode.LineNumber}, the {entryNode.Name.Text} element mixes Threshold with ThresholdMin and ThresholdMax");
                 return false;
             }
 
@@ -189,8 +187,7 @@ namespace Gaia.Core.WeightFunctions
                 if (thresholdMax < thresholdMin)
                 {
                     creationData.ReportError(
-                        $"Line {entryNode.LineNumber}, the {entryNode.Name.Text} element's ThresholdMax {thresholdMax} " +
-                        $"is below its ThresholdMin {thresholdMin}");
+                        $"Line {entryNode.LineNumber}, the {entryNode.Name.Text} element's ThresholdMax {thresholdMax} is below its ThresholdMin {thresholdMin}");
                     return false;
                 }
             }
@@ -208,8 +205,7 @@ namespace Gaia.Core.WeightFunctions
             if (_entries.Count > 0 && thresholdMin < _entries[_entries.Count - 1].ThresholdMax)
             {
                 creationData.ReportError(
-                    $"Line {entryNode.LineNumber}, the {entryNode.Name.Text} element is out of order, it starts at " +
-                    $"{thresholdMin} and the entry before it reaches {_entries[_entries.Count - 1].ThresholdMax}");
+                    $"Line {entryNode.LineNumber}, the {entryNode.Name.Text} element is out of order, it starts at {thresholdMin} and the entry before it reaches {_entries[_entries.Count - 1].ThresholdMax}");
                 return false;
             }
 
@@ -225,8 +221,7 @@ namespace Gaia.Core.WeightFunctions
                 if (thresholdMax <= thresholdMin)
                 {
                     creationData.ReportError(
-                        $"Line {entryNode.LineNumber}, the {entryNode.Name.Text} element sets RerollOnSelect " +
-                        "on a fixed threshold");
+                        $"Line {entryNode.LineNumber}, the {entryNode.Name.Text} element sets RerollOnSelect on a fixed threshold");
                     return false;
                 }
 

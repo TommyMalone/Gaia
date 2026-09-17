@@ -52,8 +52,7 @@ namespace Gaia.Core.Considerations
             if (!CanConvert(weightFunction!))
             {
                 creationData.ReportError(
-                    $"Line {child.LineNumber}, the WeightFunction element's type {child.Type.Text} " +
-                    $"does not convert {QueryPhrase}");
+                    $"Line {child.LineNumber}, the WeightFunction element's type {child.Type.Text} does not convert {QueryPhrase}");
                 return false;
             }
 

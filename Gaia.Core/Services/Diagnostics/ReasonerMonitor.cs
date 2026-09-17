@@ -79,8 +79,8 @@ namespace Gaia.Core.Services.Diagnostics
                 if (reasoner.LogSink.IsEnabled(LogSeverity.Warning))
                 {
                     reasoner.LogSink.LogWarning(reasoner.LogChannel,
-                        Located($"the decision history records {History.OptionCapacity} of {options.Count} options, " +
-                                "the rest go unrecorded"));
+                        Located(
+                            $"the decision history records {History.OptionCapacity} of {options.Count} options, the rest go unrecorded"));
                 }
             }
 
@@ -125,8 +125,8 @@ namespace Gaia.Core.Services.Diagnostics
             if (_cyclesSelectedAndDone == Settings.DoneWarningWindow && reasoner.LogSink.IsEnabled(LogSeverity.Warning))
             {
                 reasoner.LogSink.LogWarning(reasoner.LogChannel,
-                    Located($"the {selected.Name.Text} option has been done for {Settings.DoneWarningWindow} cycles " +
-                            "with nothing ending it, a finished veto may be missing"));
+                    Located(
+                        $"the {selected.Name.Text} option has been done for {Settings.DoneWarningWindow} cycles with nothing ending it, a finished veto may be missing"));
             }
         }
 
@@ -151,8 +151,8 @@ namespace Gaia.Core.Services.Diagnostics
                 reasoner.LogSink.IsEnabled(LogSeverity.Warning))
             {
                 reasoner.LogSink.LogWarning(reasoner.LogChannel,
-                    Located($"nothing has been selectable for {Settings.NothingSelectedWarningWindow} cycles, " +
-                            "every option is vetoed or scores nothing"));
+                    Located(
+                        $"nothing has been selectable for {Settings.NothingSelectedWarningWindow} cycles, every option is vetoed or scores nothing"));
             }
         }
 

@@ -368,8 +368,7 @@ public class DualUtilityReasonerSpec
             Assert.That(loaded.Init(creationData), Is.False);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
-                "Error guard.xml Line 1, the Reasoner element's WeightScreeningFactor is not between 0 and 1, " +
-                "it reads \"1.5\"",
+                "Error guard.xml Line 1, the Reasoner element's WeightScreeningFactor is not between 0 and 1, it reads \"1.5\"",
             }));
         });
     }

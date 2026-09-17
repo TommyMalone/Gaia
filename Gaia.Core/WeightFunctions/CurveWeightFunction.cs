@@ -128,8 +128,7 @@ namespace Gaia.Core.WeightFunctions
                 if (keyframe.Value < 0f)
                 {
                     creationData.ReportWarning(
-                        $"Line {curveNode.LineNumber}, the {curveNode.Name.Text} element dips below 0 and will be " +
-                        "clamped to 0");
+                        $"Line {curveNode.LineNumber}, the {curveNode.Name.Text} element dips below 0 and will be clamped to 0");
                     return;
                 }
             }
@@ -154,8 +153,7 @@ namespace Gaia.Core.WeightFunctions
                 if (child.Name != KeyframeElement)
                 {
                     creationData.ReportError(
-                        $"Line {child.LineNumber}, the {curveNode.Name.Text} element does not take " +
-                        $"{child.Name.Text} elements");
+                        $"Line {child.LineNumber}, the {curveNode.Name.Text} element does not take {child.Name.Text} elements");
                     return false;
                 }
 
@@ -181,8 +179,7 @@ namespace Gaia.Core.WeightFunctions
                 if (linesByInput.TryGetValue(input, out int firstLine))
                 {
                     creationData.ReportError(
-                        $"Line {child.LineNumber}, the {child.Name.Text} element repeats the input {input} of the " +
-                        $"{child.Name.Text} on line {firstLine}");
+                        $"Line {child.LineNumber}, the {child.Name.Text} element repeats the input {input} of the {child.Name.Text} on line {firstLine}");
                     return false;
                 }
 
