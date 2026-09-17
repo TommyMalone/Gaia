@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using Gaia.Core.Strings;
 
 namespace Gaia.Core.Services.Random
 {
@@ -159,7 +160,23 @@ namespace Gaia.Core.Services.Random
             return result;
         }
 
-        /// <summary>One step of the splitmix64 sequence, used only to spread the seed across the state words.</summary>
+        /// <summary>Derives a stream seed from a master seed and a name, the same pair always giving the same seed.</summary>
+        /// <remarks>
+        ///     One splitmix64 step over the master seed combined with the name's hash. <see cref="Factories.GaiaLoader" />
+        ///     seeds a named actor's brain this way, so the brain keeps its stream when a content edit shifts the load order. Like
+        ///     the generator, the mix and each name's AiString.Hash must stay unchanged for a reported seed to reproduce a run.
+        /// </remarks>
+        internal static int DeriveSeed(int masterSeed, AiString name)
+        {
+            ulong state = (uint)masterSeed ^ name.Hash;
+
+            return unchecked((int)SplitMix64(ref state));
+        }
+
+        /// <summary>
+        ///     One step of the splitmix64 sequence, used to spread the seed across the state words and, in DeriveSeed, to mix
+        ///     a master seed with a name.
+        /// </summary>
         private static ulong SplitMix64(ref ulong state)
         {
             ulong mixed = state += 0x9E3779B97F4A7C15;

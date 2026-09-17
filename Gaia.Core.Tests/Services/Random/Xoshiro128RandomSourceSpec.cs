@@ -1,4 +1,5 @@
 ﻿using Gaia.Core.Services.Random;
+using Gaia.Core.Strings;
 
 namespace Gaia.Core.Tests.Services.Random;
 
@@ -83,6 +84,22 @@ public class Xoshiro128RandomSourceSpec
 
             Assert.That(value, Is.InRange(-5, 4));
         }
+    }
+
+    [Test]
+    public void DerivesAStreamSeedFromAMasterAndAName()
+    {
+        AiString asterName = "Aster";
+
+        int derived = Xoshiro128RandomSource.DeriveSeed(7, asterName);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Xoshiro128RandomSource.DeriveSeed(7, asterName), Is.EqualTo(derived),
+                "the same master and name always meet at the same seed");
+            Assert.That(Xoshiro128RandomSource.DeriveSeed(8, asterName), Is.Not.EqualTo(derived));
+            Assert.That(Xoshiro128RandomSource.DeriveSeed(7, new AiString("Briar")), Is.Not.EqualTo(derived));
+        });
     }
 
     [Test]

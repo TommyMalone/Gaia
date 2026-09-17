@@ -18,17 +18,19 @@ namespace Gaia.Core.Factories
     ///     <para>
     ///         The loader is constructed once with the game's factory set and services and then loads any number of brains.
     ///         They may come from as many documents as the game has, and one document may be loaded over and over, so five
-    ///         hundred wolves from one wolf.xml are five hundred independent brains, each with its own blackboard and its own
-    ///         random source.
+    ///         hundred wolves from one wolf.xml are five hundred independent brains, each with its own blackboard.
     ///     </para>
     ///     <para>
     ///         Randomness is per brain. The loader's own source is a master stream, and a brain whose load is handed no
-    ///         source of its own gets a <see cref="Xoshiro128RandomSource" /> seeded from the master's next value, so one
-    ///         character's draws never shift another's and brains can tick on parallel threads. Each such load takes one value
-    ///         from the master, so the master seed reproduces a brain's stream only when the loads before it happen in the
-    ///         same order. A loader given no random source rolls a master seed and reports it through the sink. A fleet is
-    ///         every brain one loader built, and any fleet can be reproduced by constructing a
-    ///         <see cref="Xoshiro128RandomSource" /> with the reported seed and loading in the same order.
+    ///         source of its own gets a <see cref="Xoshiro128RandomSource" /> seeded from the master, so one character's draws
+    ///         never shift another's and brains can tick on parallel threads. When the master is a Xoshiro128RandomSource, a
+    ///         brain loaded for a named actor derives its seed from the master seed and the name, which keeps its stream when
+    ///         a content edit shifts the load order. Two actors with the same name therefore get identical streams. Any other
+    ///         brain given no source takes the master's next value, so the master seed reproduces its stream only when the
+    ///         loads before it happen in the same order. A loader given no random source rolls a master seed and reports it
+    ///         through the sink. A fleet is every brain one loader built, and any fleet can be reproduced by constructing a
+    ///         <see cref="Xoshiro128RandomSource" /> with the reported seed and repeating the same loads, in the same order
+    ///         for the brains that take the master's next value.
     ///     </para>
     /// </remarks>
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>
@@ -38,6 +40,10 @@ namespace Gaia.Core.Factories
 
         private readonly FactorySet _factories;
         private readonly ILogSink _logSink;
+
+        /// <summary>The master's seed when it is knowable, which is what a named brain's stream derives from.</summary>
+        private readonly int? _masterSeed;
+
         private readonly IRandomSource _randomSource;
         private readonly XmlSpecificationReader _reader;
         private readonly ITimeSource _timeSource;
@@ -72,11 +78,17 @@ namespace Gaia.Core.Factories
             {
                 Xoshiro128RandomSource seededSource = new();
                 _randomSource = seededSource;
+                _masterSeed = seededSource.Seed;
                 _logSink.LogMessage(GaiaChannel, $"random seed {seededSource.Seed}");
             }
             else
             {
                 _randomSource = randomSource;
+
+                if (randomSource is Xoshiro128RandomSource seedKnown)
+                {
+                    _masterSeed = seedKnown.Seed;
+                }
             }
         }
 
@@ -169,7 +181,7 @@ namespace Gaia.Core.Factories
             {
                 LogSink = _logSink,
                 TimeSource = _timeSource,
-                RandomSource = randomSource ?? new Xoshiro128RandomSource(_randomSource.NextInt()),
+                RandomSource = randomSource ?? DeriveBrainSource(self),
                 WorldBlackboard = worldBlackboard,
                 Self = self,
             };
@@ -211,6 +223,17 @@ namespace Gaia.Core.Factories
         public bool TryParse(string configurationText, string sourceDocumentName, out SpecificationNode? root)
         {
             return _reader.TryRead(configurationText, sourceDocumentName, out root);
+        }
+
+        /// <summary>The random source a brain gets when its load is given none.</summary>
+        private IRandomSource DeriveBrainSource(Actor? self)
+        {
+            if (self != null && !self.Name.IsEmpty && _masterSeed.HasValue)
+            {
+                return new Xoshiro128RandomSource(Xoshiro128RandomSource.DeriveSeed(_masterSeed.Value, self.Name));
+            }
+
+            return new Xoshiro128RandomSource(_randomSource.NextInt());
         }
     }
 }

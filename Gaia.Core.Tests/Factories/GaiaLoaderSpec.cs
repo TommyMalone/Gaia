@@ -1,5 +1,6 @@
 ﻿using Gaia.Core.Blackboards;
 using Gaia.Core.Brains;
+using Gaia.Core.Entities;
 using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Diagnostics;
@@ -286,6 +287,58 @@ public class GaiaLoaderSpec
     }
 
     [Test]
+    public void GivesANamedBrainTheSameStreamInAnyLoadOrder()
+    {
+        // Two loaders on one master seed load the same pair of characters, Aster first for one and last for the
+        // other, so where Aster sits in line is the only thing that differs between its two brains. One parsed tree
+        // serves both loaders, since loading reads a tree and only the reader ever writes to one.
+        const int masterSeed = 7;
+        const string snippet = """
+                               <Brain>
+                                   <Reasoner Type="DualUtility"/>
+                               </Brain>
+                               """;
+        Actor aster = new() { Name = "Aster" };
+        Actor briar = new() { Name = "Briar" };
+
+        GaiaLoader loaderWithAsterFirst =
+            new(new FactorySet(), _timeSource, new Xoshiro128RandomSource(masterSeed), _logSink);
+        GaiaLoader loaderWithAsterLast =
+            new(new FactorySet(), _timeSource, new Xoshiro128RandomSource(masterSeed), _logSink);
+
+        loaderWithAsterFirst.TryParse(snippet, SourceName, out SpecificationNode? root);
+
+        loaderWithAsterFirst.TryLoadBrain(root!, out Brain? asterLoadedFirst, self: aster);
+        loaderWithAsterFirst.TryLoadBrain(root!, out Brain? _, self: briar);
+
+        loaderWithAsterLast.TryLoadBrain(root!, out Brain? _, self: briar);
+        loaderWithAsterLast.TryLoadBrain(root!, out Brain? asterLoadedLast, self: aster);
+
+        Assert.That(SeedOf(asterLoadedFirst!), Is.EqualTo(SeedOf(asterLoadedLast!)),
+            "a named brain's stream comes from the master seed and its name, not its place in line");
+    }
+
+    [Test]
+    public void GivesUnnamedActorsBrainsStreamsOfTheirOwn()
+    {
+        // An actor that was never named carries the empty name, and deriving from it would hand every such brain
+        // one stream, so an unnamed brain costs the master a draw instead, the way a brain with no actor does.
+        const string snippet = """
+                               <Brain>
+                                   <Reasoner Type="DualUtility"/>
+                               </Brain>
+                               """;
+        GaiaLoader loader = new(new FactorySet(), _timeSource, new Xoshiro128RandomSource(7), _logSink);
+
+        loader.TryParse(snippet, SourceName, out SpecificationNode? root);
+        loader.TryLoadBrain(root!, out Brain? firstBrain, self: new Actor());
+        loader.TryLoadBrain(root!, out Brain? secondBrain, self: new Actor());
+
+        Assert.That(SeedOf(firstBrain!), Is.Not.EqualTo(SeedOf(secondBrain!)),
+            "two unnamed brains get streams of their own rather than the one the empty name would derive");
+    }
+
+    [Test]
     public void ReportsTheSeedItRolledWhenGivenNoRandomSource()
     {
         RecordingLogSink seedSink = new();
@@ -298,5 +351,12 @@ public class GaiaLoaderSpec
             Assert.That(seedSink.Entries[0], Does.StartWith("Message Gaia random seed "),
                 "the reported seed is what reproduces the run");
         });
+    }
+
+    /// <summary>The seed of the stream a loaded brain was given.</summary>
+    /// <remarks>A brain holds no source of its own, so what a spec can read is the one its load handed down to the reasoner.</remarks>
+    private static int SeedOf(Brain brain)
+    {
+        return ((Xoshiro128RandomSource)((DualUtilityReasoner)brain.RootReasoner!).RandomSource).Seed;
     }
 }

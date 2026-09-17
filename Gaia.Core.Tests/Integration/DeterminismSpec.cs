@@ -189,9 +189,10 @@ public class DeterminismSpec
 
     /// <summary>Loads two brains from one parsed tree and one master seed, runs both, and hands back their monitors.</summary>
     /// <remarks>
-    ///     This covers reproducing every brain one loader built, not one brain alone. The master seed and the load order
-    ///     pin each brain's derived stream, so the same brains loaded the same way record the same decisions brain for brain,
-    ///     while the derived streams keep the two brains' rolls apart.
+    ///     Neither brain is loaded for an actor, so neither takes a name-derived seed. Each is seeded from the master's
+    ///     next value instead, which makes its stream a function of the master seed and its place in the load order. Loading
+    ///     the pair again in that order reproduces both brains, and the second load leaves the first brain's rolls untouched,
+    ///     because each brain drew a seed of its own rather than both drawing from the master.
     /// </remarks>
     private static (BrainMonitor, BrainMonitor) RunFleetOnce()
     {
