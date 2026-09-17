@@ -103,7 +103,7 @@ namespace Gaia.Core.Regions
         }
 
         /// <summary>Adds another plane to the boundary.</summary>
-        internal void AddPlane(Plane plane)
+        public void AddPlane(Plane plane)
         {
             _planes.Add(plane);
             _boundsAreCurrent = false;

@@ -5,7 +5,7 @@ using Gaia.Core.Strings;
 
 namespace Gaia.Core.Targets
 {
-    /// <summary>A fixed position written into the configuration.</summary>
+    /// <summary>A fixed position, written into the configuration or set by the host.</summary>
     /// <remarks>
     ///     <see cref="TargetBase.HasEntity" /> is always false and <see cref="TargetBase.IsValid" /> is always true.
     ///     Section 8.5.5 leaves it to the author not to use one where an entity is needed, and HasEntity is how a component
@@ -17,7 +17,7 @@ namespace Gaia.Core.Targets
         private static readonly AiString PositionAttribute = "Position";
 
         /// <summary>Where this target is.</summary>
-        public Vector3 Position { get; internal set; }
+        public Vector3 Position { get; set; }
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)

@@ -20,13 +20,13 @@ namespace Gaia.Core.Regions
         private float _radiusSquared;
 
         /// <summary>The target whose position replaces Origin while one is configured, or null to use Origin.</summary>
-        public TargetBase? OriginTarget { get; internal set; }
+        public TargetBase? OriginTarget { get; set; }
 
         /// <summary>How far the region reaches from its origin.</summary>
         public float Radius
         {
             get => _radius;
-            internal set
+            set
             {
                 _radius = value;
 

@@ -18,10 +18,10 @@ namespace Gaia.Core.Regions
         private static readonly AiString MinAttribute = "Min";
 
         /// <summary>The corner with the smallest X and Y, measured from Origin.</summary>
-        public Vector2 Min { get; internal set; }
+        public Vector2 Min { get; set; }
 
         /// <summary>The corner with the largest X and Y, measured from Origin.</summary>
-        public Vector2 Max { get; internal set; }
+        public Vector2 Max { get; set; }
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)

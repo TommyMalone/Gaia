@@ -21,6 +21,11 @@ namespace Gaia.Core.Considerations
         private static readonly AiString MissingElement = "Missing";
         private static readonly AiString ToElement = "To";
 
+        /// <summary>Creates a consideration that a configuration fills.</summary>
+        internal DistanceConsideration()
+        {
+        }
+
         /// <summary>One end of the distance.</summary>
         public TargetBase? FromTarget { get; internal set; }
 

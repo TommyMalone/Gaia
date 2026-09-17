@@ -42,6 +42,11 @@ namespace Gaia.Core.Considerations
         /// <summary>The time the option was most recently selected.</summary>
         private Seconds _selectedTime;
 
+        /// <summary>Creates a consideration that a configuration fills.</summary>
+        internal ExecutionHistoryConsideration()
+        {
+        }
+
         /// <summary>Where the consideration reads the current time from.</summary>
         public ITimeSource TimeSource { get; internal set; } = new SystemTimeSource();
 

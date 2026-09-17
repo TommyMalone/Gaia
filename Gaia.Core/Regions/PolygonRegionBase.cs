@@ -80,7 +80,7 @@ namespace Gaia.Core.Regions
         }
 
         /// <summary>Adds the next corner around the edge, widening the bounds to hold it.</summary>
-        internal void AddCorner(Vector2 corner)
+        public void AddCorner(Vector2 corner)
         {
             if (_corners.Count == 0)
             {

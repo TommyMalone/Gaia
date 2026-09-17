@@ -20,6 +20,11 @@ namespace Gaia.Core.Considerations
         /// <summary>The option the set belongs to, once AttachTo has said which that is.</summary>
         private OptionBase? _option;
 
+        /// <summary>Creates an empty set for its option and loading to fill.</summary>
+        internal ConsiderationSet()
+        {
+        }
+
         /// <summary>The sum of the considerations' addends, as of the last Calculate.</summary>
         public float Addend { get; private set; }
 

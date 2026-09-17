@@ -30,16 +30,16 @@ namespace Gaia.Core.Regions
         private float _radiusSquared;
 
         /// <summary>Where the middle of the swept segment is. The world's origin until it is set.</summary>
-        public Vector3 Origin { get; internal set; }
+        public Vector3 Origin { get; set; }
 
         /// <summary>How far the swept segment reaches above and below Origin.</summary>
-        public float HalfHeight { get; internal set; }
+        public float HalfHeight { get; set; }
 
         /// <summary>How far the region reaches from the segment.</summary>
         public float Radius
         {
             get => _radius;
-            internal set
+            set
             {
                 _radius = value;
 

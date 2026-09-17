@@ -36,6 +36,11 @@ namespace Gaia.Core.WeightFunctions
         private static readonly AiString RankAttribute = "Rank";
         private static readonly AiString ValueAttribute = "Value";
 
+        /// <summary>Creates a function that a configuration fills.</summary>
+        internal CurveWeightFunction()
+        {
+        }
+
         /// <summary>The curve mapping the input to an addend, or null to contribute no addend.</summary>
         public Curve? AddendCurve { get; internal set; }
 

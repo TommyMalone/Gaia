@@ -7,6 +7,11 @@ namespace Gaia.Core.Considerations
     /// <summary>Reads a string out of a data store.</summary>
     public sealed class StringVariableConsideration : VariableConsiderationBase
     {
+        /// <summary>Creates a consideration that a configuration fills.</summary>
+        internal StringVariableConsideration()
+        {
+        }
+
         /// <inheritdoc />
         protected override string QueryPhrase => "a string";
 

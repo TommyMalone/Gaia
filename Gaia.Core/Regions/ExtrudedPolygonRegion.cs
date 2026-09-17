@@ -20,7 +20,7 @@ namespace Gaia.Core.Regions
         private static readonly AiString HalfHeightAttribute = "HalfHeight";
 
         /// <summary>How far the region reaches either side of its plane.</summary>
-        public float HalfHeight { get; internal set; }
+        public float HalfHeight { get; set; }
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)

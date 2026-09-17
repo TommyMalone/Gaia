@@ -57,6 +57,89 @@ public class CurveSpec
     }
 
     [Test]
+    public void ReplacesTheKeyframeAtAnInput()
+    {
+        CurveKeyframe only = new(5f, 3f);
+        CurveKeyframe replacement = new(5f, 8f, 1f, 1f);
+
+        _curve.AddKeyframe(only);
+
+        bool replaced = _curve.SetKeyframe(replacement);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(replaced, Is.True);
+            Assert.That(_curve.Keyframes, Has.Count.EqualTo(1));
+            Assert.That(_curve.Keyframes[0].Value, Is.EqualTo(8f));
+            Assert.That(_curve.Keyframes[0].OutTangent, Is.EqualTo(1f));
+        });
+    }
+
+    [Test]
+    public void SetsNothingAtAnInputNoKeyframeHolds()
+    {
+        CurveKeyframe only = new(5f, 3f);
+        CurveKeyframe outOfBounds = new(6f, 8f);
+
+        _curve.AddKeyframe(only);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_curve.SetKeyframe(outOfBounds), Is.False);
+            Assert.That(_curve.Keyframes, Has.Count.EqualTo(1));
+            Assert.That(_curve.Keyframes[0].Value, Is.EqualTo(3f));
+        });
+    }
+
+    [Test]
+    public void RemovesTheKeyframeAtAnInput()
+    {
+        CurveKeyframe first = new(0f, 0f);
+        CurveKeyframe peak = new(5f, 10f);
+        CurveKeyframe last = new(10f, 0f);
+
+        _curve.AddKeyframe(first);
+        _curve.AddKeyframe(peak);
+        _curve.AddKeyframe(last);
+
+        bool removed = _curve.RemoveKeyframe(5f);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(removed, Is.True);
+            Assert.That(_curve.Keyframes, Has.Count.EqualTo(2));
+            Assert.That(_curve.Keyframes[1].Input, Is.EqualTo(10f));
+        });
+    }
+
+    [Test]
+    public void ReportsFalseForAnInputNoKeyframeHolds()
+    {
+        CurveKeyframe only = new(5f, 3f);
+        _curve.AddKeyframe(only);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_curve.RemoveKeyframe(6f), Is.False);
+            Assert.That(_curve.Keyframes, Has.Count.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void KeepsItsLastKeyframe()
+    {
+        // An empty curve reports 0 for every input, which loading refuses, so the code door refuses it too.
+        CurveKeyframe only = new(5f, 3f);
+        _curve.AddKeyframe(only);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => _curve.RemoveKeyframe(5f), Throws.InvalidOperationException);
+            Assert.That(_curve.Keyframes, Has.Count.EqualTo(1));
+        });
+    }
+
+    [Test]
     public void ReportsZeroWithNoKeyframes()
     {
         Assert.That(_curve.Evaluate(5f), Is.EqualTo(0f));

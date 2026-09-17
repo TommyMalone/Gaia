@@ -20,6 +20,10 @@ namespace Gaia.Core.Curves
     ///         A curve holds one keyframe per input. Two values at one input have no interpolation between them, so a second
     ///         keyframe at an input another already holds is refused rather than resolved.
     ///     </para>
+    ///     <para>
+    ///         Curves are built in code as well as loaded, so a host or a tool builds one through AddKeyframe, SetKeyframe,
+    ///         RemoveKeyframe and SetLinearTangents without a configuration.
+    ///     </para>
     /// </remarks>
     /// <seealso>Cubic Hermite splines, described at https://en.wikibooks.org/wiki/Cg_Programming/Unity/Hermite_Curves</seealso>
     public sealed class Curve
@@ -31,14 +35,9 @@ namespace Gaia.Core.Curves
 
         /// <summary>Adds a keyframe, keeping the keyframes ordered by Input.</summary>
         /// <exception cref="ArgumentException">A keyframe already holds the given <see cref="CurveKeyframe.Input" />.</exception>
-        internal void AddKeyframe(CurveKeyframe keyframe)
+        public void AddKeyframe(CurveKeyframe keyframe)
         {
-            int index = 0;
-
-            while (index < _keyframes.Count && _keyframes[index].Input < keyframe.Input)
-            {
-                index++;
-            }
+            int index = IndexAtOrAfter(keyframe.Input);
 
             // The walk stops where a keyframe of this input would sit, so the one place a twin can be is here.
             if (index < _keyframes.Count && _keyframes[index].Input == keyframe.Input)
@@ -51,11 +50,63 @@ namespace Gaia.Core.Curves
             _keyframes.Insert(index, keyframe);
         }
 
+        /// <summary>Replaces the keyframe at the given keyframe's input, if the curve holds one.</summary>
+        /// <remarks>
+        ///     The one way to change a keyframe, since a curve's only keyframe cannot be removed and added back. A new value
+        ///     changes the neighbors' slopes as a removal does, so a host that wants straight lines runs SetLinearTangents again.
+        /// </remarks>
+        /// <returns>True if a keyframe was replaced. False when no keyframe holds the input.</returns>
+        public bool SetKeyframe(CurveKeyframe keyframe)
+        {
+            int index = IndexAtOrAfter(keyframe.Input);
+
+            if (index == _keyframes.Count || _keyframes[index].Input != keyframe.Input)
+            {
+                return false;
+            }
+
+            _keyframes[index] = keyframe;
+            return true;
+        }
+
+        /// <summary>Removes the keyframe at an input, if the curve holds one.</summary>
+        /// <remarks>
+        ///     <para>
+        ///         The last keyframe is never removed, since an empty curve reports 0 for every input and would veto silently
+        ///         through a multiplier, which is why loading refuses an empty curve too.
+        ///     </para>
+        ///     <para>
+        ///         Removing a keyframe changes its neighbors' slopes, so tangents SetLinearTangents wrote describe a curve that
+        ///         no longer exists. A host that removes and wants straight lines runs it again.
+        ///     </para>
+        /// </remarks>
+        /// <returns>True if a keyframe was removed. False when no keyframe holds the input.</returns>
+        /// <exception cref="InvalidOperationException">The keyframe at the input is the curve's last.</exception>
+        public bool RemoveKeyframe(float input)
+        {
+            int index = IndexAtOrAfter(input);
+
+            if (index == _keyframes.Count || _keyframes[index].Input != input)
+            {
+                return false;
+            }
+
+            if (_keyframes.Count == 1)
+            {
+                throw new InvalidOperationException(
+                    $"A curve keeps its last keyframe, the one at input {input}. " +
+                    "An empty curve reports 0 for every input.");
+            }
+
+            _keyframes.RemoveAt(index);
+            return true;
+        }
+
         /// <summary>
         ///     Replaces every tangent with the slope of the neighboring segment, turning the curve into a series of straight
         ///     lines.
         /// </summary>
-        internal void SetLinearTangents()
+        public void SetLinearTangents()
         {
             for (int index = 0; index < _keyframes.Count; index++)
             {
@@ -95,6 +146,19 @@ namespace Gaia.Core.Curves
             }
 
             return EvaluateSegment(segment, input);
+        }
+
+        /// <summary>Finds the index of the keyframe at an input, or the index one would be inserted at.</summary>
+        private int IndexAtOrAfter(float input)
+        {
+            int index = 0;
+
+            while (index < _keyframes.Count && _keyframes[index].Input < input)
+            {
+                index++;
+            }
+
+            return index;
         }
 
         /// <summary>The slope of the straight line between two keyframes.</summary>

@@ -6,6 +6,11 @@ namespace Gaia.Core.Considerations
     /// <summary>Reads an int out of a data store.</summary>
     public sealed class IntVariableConsideration : VariableConsiderationBase
     {
+        /// <summary>Creates a consideration that a configuration fills.</summary>
+        internal IntVariableConsideration()
+        {
+        }
+
         /// <inheritdoc />
         protected override string QueryPhrase => "an int";
 

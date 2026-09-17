@@ -22,6 +22,11 @@ namespace Gaia.Core.Considerations
     /// <seealso>"Modular AI", Section 8.5.1</seealso>
     public sealed class EntityExistsConsideration : VariableConsiderationBase
     {
+        /// <summary>Creates a consideration that a configuration fills.</summary>
+        internal EntityExistsConsideration()
+        {
+        }
+
         /// <inheritdoc />
         protected override string QueryPhrase => "a bool";
 

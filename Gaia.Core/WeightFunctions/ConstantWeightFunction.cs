@@ -8,6 +8,11 @@ namespace Gaia.Core.WeightFunctions
     /// <seealso>"Modular AI", Section 8.5.2</seealso>
     public sealed class ConstantWeightFunction : WeightFunctionBase
     {
+        /// <summary>Creates a function that a configuration fills.</summary>
+        internal ConstantWeightFunction()
+        {
+        }
+
         /// <summary>The weight values to report for every input.</summary>
         /// <remarks>
         ///     Neutral until something sets it, so a function built in code and left alone contributes nothing, the way an

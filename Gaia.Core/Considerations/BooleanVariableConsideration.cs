@@ -6,6 +6,11 @@ namespace Gaia.Core.Considerations
     /// <summary>Reads a bool out of a data store.</summary>
     public sealed class BooleanVariableConsideration : VariableConsiderationBase
     {
+        /// <summary>Creates a consideration that a configuration fills.</summary>
+        internal BooleanVariableConsideration()
+        {
+        }
+
         /// <inheritdoc />
         protected override string QueryPhrase => "a bool";
 

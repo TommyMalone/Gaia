@@ -27,12 +27,12 @@
         public float OutTangent { get; }
 
         /// <summary>Creates a keyframe the curve flattens out at, with InTangent and OutTangent both zero.</summary>
-        internal CurveKeyframe(float input, float value) : this(input, value, 0f, 0f)
+        public CurveKeyframe(float input, float value) : this(input, value, 0f, 0f)
         {
         }
 
         /// <summary>Creates a keyframe with the given input, value and tangents.</summary>
-        internal CurveKeyframe(float input, float value, float inTangent, float outTangent)
+        public CurveKeyframe(float input, float value, float inTangent, float outTangent)
         {
             Input = input;
             Value = value;
@@ -41,7 +41,7 @@
         }
 
         /// <summary>Returns a copy of this keyframe with the given tangents.</summary>
-        internal CurveKeyframe WithTangents(float inTangent, float outTangent)
+        public CurveKeyframe WithTangents(float inTangent, float outTangent)
         {
             return new CurveKeyframe(Input, Value, inTangent, outTangent);
         }

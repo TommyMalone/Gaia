@@ -31,14 +31,14 @@ namespace Gaia.Core.Regions
         public Vector3 Origin
         {
             get => _frame.Origin;
-            internal set => _frame = new RegionFrame(value, _frame.Rotation);
+            set => _frame = new RegionFrame(value, _frame.Rotation);
         }
 
         /// <summary>How the shape's plane is turned from the ground, which is not at all until it is set.</summary>
         public Rotation Rotation
         {
             get => _frame.Rotation;
-            internal set => _frame = new RegionFrame(_frame.Origin, value);
+            set => _frame = new RegionFrame(_frame.Origin, value);
         }
 
         /// <summary>The frame the shape is placed by.</summary>

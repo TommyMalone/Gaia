@@ -28,13 +28,13 @@ namespace Gaia.Core.Regions
         private float _radiusSquared;
 
         /// <summary>The target whose position replaces Origin while one is configured, or null to use Origin.</summary>
-        public TargetBase? OriginTarget { get; internal set; }
+        public TargetBase? OriginTarget { get; set; }
 
         /// <summary>How far the region reaches from its axis.</summary>
         public float Radius
         {
             get => _radius;
-            internal set
+            set
             {
                 _radius = value;
 
@@ -44,7 +44,7 @@ namespace Gaia.Core.Regions
         }
 
         /// <summary>How far the region reaches either side of its plane.</summary>
-        public float HalfHeight { get; internal set; }
+        public float HalfHeight { get; set; }
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)

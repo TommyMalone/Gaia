@@ -33,13 +33,13 @@ namespace Gaia.Core.Targets
         private static readonly AiString ListAttribute = "List";
 
         /// <summary>The store holding the list to search.</summary>
-        public DataStoreBase? DataStore { get; internal set; }
+        public DataStoreBase? DataStore { get; set; }
 
         /// <summary>The name of the entity list on the store.</summary>
-        public AiString ListName { get; internal set; } = AiString.Empty;
+        public AiString ListName { get; set; } = AiString.Empty;
 
         /// <summary>The name of the entity to find in the list.</summary>
-        public AiString EntityName { get; internal set; } = AiString.Empty;
+        public AiString EntityName { get; set; } = AiString.Empty;
 
         /// <summary>Always true, since this kind of target is a way of naming an entity.</summary>
         public override bool HasEntity => true;

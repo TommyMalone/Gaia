@@ -19,6 +19,11 @@ namespace Gaia.Core.Regions
     ///         RandomSource is injected the same way it is for <see cref="DualUtilityReasoner" />, so a spec can make
     ///         sampling deterministic.
     ///     </para>
+    ///     <para>
+    ///         Regions are built in code as well as loaded, so their values, builders and RandomSource are public and a host
+    ///         may build its shapes in code, the way a game sorts contacts into the entity lists its considerations read.
+    ///         Loading fills the same members.
+    ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.6, Listing 8.6</seealso>
     public abstract class RegionBase : IAiComponent
@@ -26,7 +31,7 @@ namespace Gaia.Core.Regions
         private static readonly AiString OriginTargetElement = "OriginTarget";
 
         /// <summary>Where the region draws the numbers that pick a random position.</summary>
-        public IRandomSource RandomSource { get; internal set; } = new Xoshiro128RandomSource();
+        public IRandomSource RandomSource { get; set; } = new Xoshiro128RandomSource();
 
         /// <summary>Loads this region's configuration from the creation data's node.</summary>
         /// <remarks>Every region samples through the creation data's random source, so the base takes it before OnInit.</remarks>

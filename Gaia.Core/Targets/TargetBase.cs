@@ -12,6 +12,10 @@ namespace Gaia.Core.Targets
     ///         whether it can find one right now is IsValid. A target that looks a character up by name always has an entity
     ///         in the first sense and only sometimes in the second.
     ///     </para>
+    ///     <para>
+    ///         Targets are built in code as well as loaded, so their values are public and a host may point one at a
+    ///         position, an actor or a list in code. Loading fills the same members.
+    ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.5, Listing 8.5</seealso>
     public abstract class TargetBase : IAiComponent

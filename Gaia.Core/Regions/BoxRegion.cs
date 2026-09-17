@@ -24,17 +24,17 @@ namespace Gaia.Core.Regions
         /// <summary>Creates a box reaching the given extents out from a center.</summary>
         /// <param name="center">Where the middle of the box is.</param>
         /// <param name="extents">How far the box reaches from center along each axis, half of its size in each.</param>
-        internal BoxRegion(Vector3 center, Vector3 extents)
+        public BoxRegion(Vector3 center, Vector3 extents)
         {
             Min = center - extents;
             Max = center + extents;
         }
 
         /// <summary>The corner with the smallest X, Y and Z.</summary>
-        public Vector3 Min { get; internal set; }
+        public Vector3 Min { get; set; }
 
         /// <summary>The corner with the largest X, Y and Z.</summary>
-        public Vector3 Max { get; internal set; }
+        public Vector3 Max { get; set; }
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
