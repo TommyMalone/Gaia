@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Services.Random;
+﻿using System;
+using Gaia.Core.Services.Random;
 using Gaia.Core.Spatial;
 
 namespace Gaia.Core.Regions
@@ -18,6 +19,20 @@ namespace Gaia.Core.Regions
         internal static float RandomInRange(IRandomSource randomSource, float minInclusive, float maxExclusive)
         {
             return minInclusive + (maxExclusive - minInclusive) * randomSource.NextFloat();
+        }
+
+        /// <summary>Picks a point uniformly inside a disc of the given radius around (0, 0).</summary>
+        /// <remarks>
+        ///     The square root keeps the density even. Without it, points would crowd toward the middle, since a ring near
+        ///     the edge has far more area than a ring of the same width near the middle.
+        /// </remarks>
+        /// <seealso>Disk point picking, described at https://mathworld.wolfram.com/DiskPointPicking.html</seealso>
+        internal static Vector2 RandomInDisc(IRandomSource randomSource, float radius)
+        {
+            float distance = radius * MathF.Sqrt(randomSource.NextFloat());
+            float angle = randomSource.NextFloat() * 2f * MathF.PI;
+
+            return new Vector2(distance * MathF.Cos(angle), distance * MathF.Sin(angle));
         }
 
         /// <summary>Picks a position uniformly inside an axis-aligned box.</summary>

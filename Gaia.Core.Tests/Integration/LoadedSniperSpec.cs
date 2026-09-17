@@ -47,14 +47,14 @@ public class LoadedSniperSpec
         // The marketplace is 150 meters out. The line of retreat runs the other way.
         _killZone = new CircleRegion
         {
-            Center = new Vector3(0f, 0f, 150f),
+            Origin = new Vector3(0f, 0f, 150f),
             Radius = 40f,
         };
 
         _retreatRoute = new RectangleRegion
         {
-            Min = new Vector3(-5f, 0f, -200f),
-            Max = new Vector3(5f, 0f, -10f),
+            Min = new Vector2(-5f, -200f),
+            Max = new Vector2(5f, -10f),
         };
 
         string configurationText = File.ReadAllText(ConfigurationPath);

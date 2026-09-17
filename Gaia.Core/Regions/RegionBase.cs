@@ -2,6 +2,9 @@
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Spatial;
+using Gaia.Core.Specifications;
+using Gaia.Core.Strings;
+using Gaia.Core.Targets;
 
 namespace Gaia.Core.Regions
 {
@@ -9,8 +12,8 @@ namespace Gaia.Core.Regions
     /// <remarks>
     ///     <para>
     ///         A region answers two questions, whether a position is inside it and where a random position inside it would
-    ///         be. The second is allowed to fail, as Listing 8.6 notes, because a shape that has to guess and check can run
-    ///         out of attempts, and the caller has to be told rather than handed a position outside the region.
+    ///         be. The second is allowed to fail, because a shape that has to guess and check can run out of attempts, and the
+    ///         caller has to be told rather than handed a position outside the region.
     ///     </para>
     ///     <para>
     ///         RandomSource is injected the same way it is for <see cref="DualUtilityReasoner" />, so a spec can make
@@ -20,6 +23,8 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6, Listing 8.6</seealso>
     public abstract class RegionBase : IAiComponent
     {
+        private static readonly AiString OriginTargetElement = "OriginTarget";
+
         /// <summary>Where the region draws the numbers that pick a random position.</summary>
         public IRandomSource RandomSource { get; internal set; } = new Xoshiro128RandomSource();
 
@@ -35,6 +40,44 @@ namespace Gaia.Core.Regions
         /// <summary>Loads the derived region's own configuration.</summary>
         /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         protected abstract bool OnInit(AiCreationData creationData);
+
+        /// <summary>Loads the node's OriginTarget child, if it has one, for the shapes that can follow a target.</summary>
+        /// <remarks>
+        ///     Any other child is refused, and so is a second OriginTarget, since silently keeping one of two would ship half
+        ///     of what was written.
+        /// </remarks>
+        /// <param name="originTarget">The loaded target, or null when the node has no OriginTarget child.</param>
+        /// <returns>True when the children loaded. False after reporting what went wrong.</returns>
+        protected static bool LoadOriginTarget(AiCreationData creationData, out TargetBase? originTarget)
+        {
+            SpecificationNode node = creationData.Node;
+
+            originTarget = null;
+
+            foreach (SpecificationNode child in node.Children)
+            {
+                if (child.Name != OriginTargetElement)
+                {
+                    creationData.ReportError(
+                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
+                    return false;
+                }
+
+                if (originTarget != null)
+                {
+                    creationData.ReportError(
+                        $"Line {child.LineNumber}, the {node.Name.Text} element takes only one OriginTarget element");
+                    return false;
+                }
+
+                if (!creationData.Factories.Targets.TryCreate(creationData.ForChild(child), out originTarget))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
 
         /// <summary>Tests whether a position is inside the region.</summary>
         public abstract bool IsInRegion(Vector3 position);

@@ -24,7 +24,7 @@ public class XmlSpecificationReaderSpec
     private const string Snippet = """
                                    <Option Type="ConsiderationAndAction" Name="Snipe">
                                        <!-- The marketplace kill zone. -->
-                                       <Region Type="Circle" Center="(0, 0, 150)" Radius="40"/>
+                                       <Region Type="Circle" Origin="(0, 0, 150)" Radius="40"/>
                                        <Action Type="Pause" Duration="2"/>
                                    </Option>
                                    """;

@@ -9,7 +9,7 @@ namespace Gaia.Core.Regions
     /// <summary>A ball swept along a vertical segment, which takes height into account.</summary>
     /// <remarks>
     ///     <para>
-    ///         The segment runs from HalfHeight below Center to HalfHeight above it. A position is inside if it is within
+    ///         The segment runs from HalfHeight below Origin to HalfHeight above it. A position is inside if it is within
     ///         Radius of the nearest point of the segment, which caps the ends with hemispheres rather than cutting them flat.
     ///     </para>
     ///     <para>
@@ -22,17 +22,17 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class CapsuleRegion : RegionBase
     {
-        private static readonly AiString CenterAttribute = "Center";
         private static readonly AiString HalfHeightAttribute = "HalfHeight";
+        private static readonly AiString OriginAttribute = "Origin";
         private static readonly AiString RadiusAttribute = "Radius";
 
         private float _radius;
         private float _radiusSquared;
 
-        /// <summary>Where the middle of the swept segment is.</summary>
-        public Vector3 Center { get; internal set; }
+        /// <summary>Where the middle of the swept segment is. The world's origin until it is set.</summary>
+        public Vector3 Origin { get; internal set; }
 
-        /// <summary>How far the swept segment reaches above and below Center.</summary>
+        /// <summary>How far the swept segment reaches above and below Origin.</summary>
         public float HalfHeight { get; internal set; }
 
         /// <summary>How far the region reaches from the segment.</summary>
@@ -62,14 +62,22 @@ namespace Gaia.Core.Regions
                 return false;
             }
 
-            if (!node.ReadVector3(CenterAttribute, out Vector3 center) ||
-                !node.ReadFloat(RadiusAttribute, out float radius) ||
+            if (node.HasAttribute(OriginAttribute))
+            {
+                if (!node.ReadVector3(OriginAttribute, out Vector3 origin))
+                {
+                    return false;
+                }
+
+                Origin = origin;
+            }
+
+            if (!node.ReadFloat(RadiusAttribute, out float radius) ||
                 !node.ReadFloat(HalfHeightAttribute, out float halfHeight))
             {
                 return false;
             }
 
-            Center = center;
             Radius = radius;
             HalfHeight = halfHeight;
             return true;
@@ -78,8 +86,8 @@ namespace Gaia.Core.Regions
         /// <inheritdoc />
         public override bool IsInRegion(Vector3 position)
         {
-            float clampedY = Math.Clamp(position.Y, Center.Y - HalfHeight, Center.Y + HalfHeight);
-            Vector3 nearestOnSegment = new(Center.X, clampedY, Center.Z);
+            float clampedY = Math.Clamp(position.Y, Origin.Y - HalfHeight, Origin.Y + HalfHeight);
+            Vector3 nearestOnSegment = new(Origin.X, clampedY, Origin.Z);
 
             return Vector3.SquaredDistance(nearestOnSegment, position) <= _radiusSquared;
         }
@@ -88,8 +96,8 @@ namespace Gaia.Core.Regions
         public override bool TryGetRandomPosition(out Vector3 position)
         {
             Vector3 reach = new(Radius, HalfHeight + Radius, Radius);
-            Vector3 min = Center - reach;
-            Vector3 max = Center + reach;
+            Vector3 min = Origin - reach;
+            Vector3 max = Origin + reach;
 
             return MathHelpers.TryRejectionSample(this, min, max, out position);
         }

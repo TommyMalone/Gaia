@@ -19,6 +19,9 @@ namespace Gaia.Core.Spatial
         /// <summary>Converts an angle in radians to the degrees ToEulerAngles reports.</summary>
         private const float RadiansToDegrees = 180f / MathF.PI;
 
+        /// <summary>Converts an angle in the degrees FromEulerAngles takes to radians.</summary>
+        private const float DegreesToRadians = MathF.PI / 180f;
+
         /// <summary>The X component of the quaternion.</summary>
         public float X { get; }
 
@@ -55,6 +58,34 @@ namespace Gaia.Core.Spatial
         /// <remarks>The second column of the rotation matrix this quaternion describes.</remarks>
         public Vector3 Up => new(2f * (X * Y - W * Z), 1f - 2f * (X * X + Z * Z), 2f * (Y * Z + W * X));
 
+        /// <summary>Builds the rotation that pitch, yaw and roll in degrees describe, the inverse of ToEulerAngles.</summary>
+        /// <remarks>
+        ///     The turns compose in the order ToEulerAngles describes, a yaw around Y, then a pitch around X, then a roll
+        ///     around Z, so the angles it reports rebuild the rotation they came from. The arithmetic is the product of the three
+        ///     single-axis quaternions, multiplied out.
+        /// </remarks>
+        /// <param name="pitch">The turn around X in degrees, positive toward the ground.</param>
+        /// <param name="yaw">The turn around Y in degrees, positive to the right.</param>
+        /// <param name="roll">The turn around Z in degrees.</param>
+        public static Rotation FromEulerAngles(float pitch, float yaw, float roll)
+        {
+            float halfPitch = pitch * DegreesToRadians * 0.5f;
+            float halfYaw = yaw * DegreesToRadians * 0.5f;
+            float halfRoll = roll * DegreesToRadians * 0.5f;
+
+            float sinPitch = MathF.Sin(halfPitch);
+            float cosPitch = MathF.Cos(halfPitch);
+            float sinYaw = MathF.Sin(halfYaw);
+            float cosYaw = MathF.Cos(halfYaw);
+            float sinRoll = MathF.Sin(halfRoll);
+            float cosRoll = MathF.Cos(halfRoll);
+
+            return new Rotation(cosYaw * sinPitch * cosRoll + sinYaw * cosPitch * sinRoll,
+                sinYaw * cosPitch * cosRoll - cosYaw * sinPitch * sinRoll,
+                cosYaw * cosPitch * sinRoll - sinYaw * sinPitch * cosRoll,
+                cosYaw * cosPitch * cosRoll + sinYaw * sinPitch * sinRoll);
+        }
+
         /// <summary>Reports this rotation as pitch, yaw and roll in degrees.</summary>
         /// <remarks>
         ///     <para>
@@ -67,10 +98,7 @@ namespace Gaia.Core.Spatial
         ///         answer. This reports the whole turn as yaw and no roll at all, which keeps the result usable and still rebuilds
         ///         the same orientation.
         ///     </para>
-        ///     <para>
-        ///         The arithmetic is the standard conversion, with its terms rearranged from the cited page's aerospace axis
-        ///         order to the order above.
-        ///     </para>
+        ///     <para>The arithmetic is the cited conversion, with its axes relabeled to the order above.</para>
         /// </remarks>
         /// <returns>Pitch, yaw and roll in degrees.</returns>
         /// <seealso>

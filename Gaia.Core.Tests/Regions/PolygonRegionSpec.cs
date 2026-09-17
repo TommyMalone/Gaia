@@ -66,10 +66,37 @@ public class PolygonRegionSpec
     }
 
     [Test]
+    public void TurnsAboutItsOriginWithItsRotation()
+    {
+        // A quarter turn to the right lays the L along the world's X, between Z of 0 and -10, with the missing quarter
+        // now at the far end.
+        Vector3 lowerRightQuarterOnceTurned = new(2f, 0f, -8f);
+        Vector3 missingQuarterOnceTurned = new(8f, 0f, -8f);
+        Vector3 lowerLeftQuarterBeforeTurning = new(2f, 0f, 2f);
+
+        _polygon.Rotation = Rotation.FromEulerAngles(0f, 90f, 0f);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_polygon.IsInRegion(lowerRightQuarterOnceTurned), Is.True);
+            Assert.That(_polygon.IsInRegion(missingQuarterOnceTurned), Is.False, "the missing quarter turns with it");
+            Assert.That(_polygon.IsInRegion(lowerLeftQuarterBeforeTurning), Is.False);
+        });
+    }
+
+    [Test]
+    public void SamplesInsideItselfOnceTurned()
+    {
+        _polygon.Rotation = Rotation.FromEulerAngles(0f, 90f, 0f);
+
+        RegionSpecHelpers.AssertEverySampleLandsInside(_polygon);
+    }
+
+    [Test]
     public void ContainsNothingWithFewerThanThreeCorners()
     {
-        Vector3 lineStart = new(0f, 0f, 0f);
-        Vector3 lineEnd = new(10f, 0f, 0f);
+        Vector2 lineStart = new(0f, 0f);
+        Vector2 lineEnd = new(10f, 0f);
         Vector3 onTheLine = new(5f, 0f, 0f);
 
         PolygonRegion line = new() { RandomSource = _randomSource };
@@ -88,9 +115,9 @@ public class PolygonRegionSpec
     {
         const string snippet = """
                                <Region Type="Polygon">
-                                   <Corner Position="(0, 0, 0)"/>
-                                   <Corner Position="(10, 0, 0)"/>
-                                   <Corner Position="(0, 0, 10)"/>
+                                   <Corner Position="(0, 0)"/>
+                                   <Corner Position="(10, 0)"/>
+                                   <Corner Position="(0, 10)"/>
                                </Region>
                                """;
         AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
@@ -112,8 +139,8 @@ public class PolygonRegionSpec
     {
         const string snippet = """
                                <Region Type="Polygon">
-                                   <Corner Position="(0, 0, 0)"/>
-                                   <Corner Position="(10, 0, 0)"/>
+                                   <Corner Position="(0, 0)"/>
+                                   <Corner Position="(10, 0)"/>
                                </Region>
                                """;
         AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);

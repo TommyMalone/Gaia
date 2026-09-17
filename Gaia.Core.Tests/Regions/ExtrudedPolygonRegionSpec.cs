@@ -7,7 +7,8 @@ namespace Gaia.Core.Tests.Regions;
 /// <summary>Covers <see cref="ExtrudedPolygonRegion" />.</summary>
 /// <remarks>
 ///     The footprint is an L, a 10 by 10 square with its upper right quarter missing, because a convex footprint
-///     would not tell a crossing test from a bounding box.
+///     would not tell a crossing test from a bounding box. Its plane is raised to 1.5, so that a half-height of 1.5 puts
+///     the floor on the ground.
 /// </remarks>
 [TestFixture]
 public class ExtrudedPolygonRegionSpec
@@ -19,8 +20,8 @@ public class ExtrudedPolygonRegionSpec
 
         _extrudedPolygon = new ExtrudedPolygonRegion
         {
-            Floor = 0f,
-            Ceiling = 3f,
+            Origin = new Vector3(0f, 1.5f, 0f),
+            HalfHeight = 1.5f,
             RandomSource = _randomSource,
         };
         RegionSpecHelpers.AddLShapedFootprint(_extrudedPolygon);
@@ -31,20 +32,20 @@ public class ExtrudedPolygonRegionSpec
     private ExtrudedPolygonRegion _extrudedPolygon;
 
     [Test]
-    public void ContainsItsFootprintOnlyBetweenFloorAndCeiling()
+    public void ContainsItsFootprintOnlyWithinItsHalfHeight()
     {
         Vector3 lowerLeftQuarter = new(2f, 1f, 2f);
-        Vector3 onCeiling = new(2f, 3f, 2f);
-        Vector3 aboveCeiling = new(2f, 4f, 2f);
-        Vector3 belowFloor = new(2f, -1f, 2f);
+        Vector3 onTop = new(2f, 3f, 2f);
+        Vector3 aboveTheTop = new(2f, 4f, 2f);
+        Vector3 belowTheBottom = new(2f, -1f, 2f);
         Vector3 missingQuarter = new(8f, 1f, 8f);
 
         Assert.Multiple(() =>
         {
             Assert.That(_extrudedPolygon.IsInRegion(lowerLeftQuarter), Is.True);
-            Assert.That(_extrudedPolygon.IsInRegion(onCeiling), Is.True, "the ceiling counts as inside");
-            Assert.That(_extrudedPolygon.IsInRegion(aboveCeiling), Is.False);
-            Assert.That(_extrudedPolygon.IsInRegion(belowFloor), Is.False);
+            Assert.That(_extrudedPolygon.IsInRegion(onTop), Is.True, "the top counts as inside");
+            Assert.That(_extrudedPolygon.IsInRegion(aboveTheTop), Is.False);
+            Assert.That(_extrudedPolygon.IsInRegion(belowTheBottom), Is.False);
             Assert.That(_extrudedPolygon.IsInRegion(missingQuarter), Is.False, "the missing quarter is still missing");
         });
     }
@@ -56,7 +57,7 @@ public class ExtrudedPolygonRegionSpec
     }
 
     [Test]
-    public void SpreadsSamplesBetweenItsFloorAndCeiling()
+    public void SpreadsSamplesAlongItsHeight()
     {
         bool sawLowerHalf = false;
         bool sawUpperHalf = false;
@@ -77,15 +78,38 @@ public class ExtrudedPolygonRegionSpec
     }
 
     [Test]
+    public void TurnsAboutItsOriginWithItsRotation()
+    {
+        // A quarter turn to the right lays the L along the world's X, between Z of 0 and -10, at the same height.
+        Vector3 lowerRightQuarterOnceTurned = new(2f, 1f, -8f);
+        Vector3 lowerLeftQuarterBeforeTurning = new(2f, 1f, 2f);
+
+        _extrudedPolygon.Rotation = Rotation.FromEulerAngles(0f, 90f, 0f);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_extrudedPolygon.IsInRegion(lowerRightQuarterOnceTurned), Is.True);
+            Assert.That(_extrudedPolygon.IsInRegion(lowerLeftQuarterBeforeTurning), Is.False);
+        });
+    }
+
+    [Test]
+    public void SamplesInsideItselfOnceTurned()
+    {
+        _extrudedPolygon.Rotation = Rotation.FromEulerAngles(0f, 90f, 0f);
+
+        RegionSpecHelpers.AssertEverySampleLandsInside(_extrudedPolygon);
+    }
+
+    [Test]
     public void SamplesNothingWithFewerThanThreeCorners()
     {
-        Vector3 lineStart = new(0f, 0f, 0f);
-        Vector3 lineEnd = new(10f, 0f, 0f);
+        Vector2 lineStart = new(0f, 0f);
+        Vector2 lineEnd = new(10f, 0f);
 
         ExtrudedPolygonRegion line = new()
         {
-            Floor = 0f,
-            Ceiling = 3f,
+            HalfHeight = 1.5f,
             RandomSource = _randomSource,
         };
         line.AddCorner(lineStart);

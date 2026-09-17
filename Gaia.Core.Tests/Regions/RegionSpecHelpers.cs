@@ -36,12 +36,12 @@ internal static class RegionSpecHelpers
     /// <summary>Adds an L shaped footprint, a 10 by 10 square with its upper right quarter missing.</summary>
     internal static void AddLShapedFootprint(PolygonRegionBase region)
     {
-        Vector3 lowerLeft = new(0f, 0f, 0f);
-        Vector3 lowerRight = new(10f, 0f, 0f);
-        Vector3 rightNotch = new(10f, 0f, 5f);
-        Vector3 innerCorner = new(5f, 0f, 5f);
-        Vector3 topNotch = new(5f, 0f, 10f);
-        Vector3 upperLeft = new(0f, 0f, 10f);
+        Vector2 lowerLeft = new(0f, 0f);
+        Vector2 lowerRight = new(10f, 0f);
+        Vector2 rightNotch = new(10f, 5f);
+        Vector2 innerCorner = new(5f, 5f);
+        Vector2 topNotch = new(5f, 10f);
+        Vector2 upperLeft = new(0f, 10f);
 
         region.AddCorner(lowerLeft);
         region.AddCorner(lowerRight);

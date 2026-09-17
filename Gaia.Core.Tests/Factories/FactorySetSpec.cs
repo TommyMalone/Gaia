@@ -113,16 +113,16 @@ public class FactorySetSpec
     {
         (string typeName, string snippet, Type componentType)[] catalog =
         {
-            ("Circle", """<Region Type="Circle" Center="(0, 0, 0)" Radius="5"/>""", typeof(CircleRegion)),
-            ("Rectangle", """<Region Type="Rectangle" Min="(0, 0, 0)" Max="(10, 0, 10)"/>""", typeof(RectangleRegion)),
+            ("Circle", """<Region Type="Circle" Origin="(0, 0, 0)" Radius="5"/>""", typeof(CircleRegion)),
+            ("Rectangle", """<Region Type="Rectangle" Min="(0, 0)" Max="(10, 10)"/>""", typeof(RectangleRegion)),
             ("Polygon", FootprintSnippet("Polygon", ""), typeof(PolygonRegion)),
-            ("Sphere", """<Region Type="Sphere" Center="(0, 0, 0)" Radius="5"/>""", typeof(SphereRegion)),
+            ("Sphere", """<Region Type="Sphere" Origin="(0, 0, 0)" Radius="5"/>""", typeof(SphereRegion)),
             ("Box", """<Region Type="Box" Min="(0, 0, 0)" Max="(10, 10, 10)"/>""", typeof(BoxRegion)),
-            ("Cylinder", """<Region Type="Cylinder" Center="(0, 0, 0)" Radius="5" Floor="0" Ceiling="3"/>""",
+            ("Cylinder", """<Region Type="Cylinder" Origin="(0, 0, 0)" Radius="5" HalfHeight="1.5"/>""",
                 typeof(CylinderRegion)),
-            ("Capsule", """<Region Type="Capsule" Center="(0, 0, 0)" Radius="2" HalfHeight="3"/>""",
+            ("Capsule", """<Region Type="Capsule" Origin="(0, 0, 0)" Radius="2" HalfHeight="3"/>""",
                 typeof(CapsuleRegion)),
-            ("ExtrudedPolygon", FootprintSnippet("ExtrudedPolygon", " Floor=\"0\" Ceiling=\"3\""),
+            ("ExtrudedPolygon", FootprintSnippet("ExtrudedPolygon", " HalfHeight=\"1.5\""),
                 typeof(ExtrudedPolygonRegion)),
             ("ConvexHull", HullSnippet(), typeof(ConvexHullRegion)),
         };
@@ -237,9 +237,9 @@ public class FactorySetSpec
     {
         return $"""
                 <Region Type="{typeName}"{extraAttributes}>
-                    <Corner Position="(0, 0, 0)"/>
-                    <Corner Position="(10, 0, 0)"/>
-                    <Corner Position="(0, 0, 10)"/>
+                    <Corner Position="(0, 0)"/>
+                    <Corner Position="(10, 0)"/>
+                    <Corner Position="(0, 10)"/>
                 </Region>
                 """;
     }

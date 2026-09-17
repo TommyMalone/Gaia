@@ -2,12 +2,15 @@
 
 namespace Gaia.Core.Tests.Spatial;
 
-/// <summary>Covers <see cref="Rotation" />, its direction vectors, its Euler report and its value equality.</summary>
+/// <summary>
+///     Covers <see cref="Rotation" />, its direction vectors, its Euler report and construction, and its value
+///     equality.
+/// </summary>
 /// <remarks>
 ///     The rotations under test are built from single-axis half-angle quaternions and combined with a hand-rolled
-///     Hamilton product at the bottom of the fixture, so the Euler report is checked against an independent construction
-///     rather than against itself. Angle and direction asserts are tolerant because the trigonometry does not come out
-///     exact in floats.
+///     Hamilton product at the bottom of the fixture, so the Euler report and FromEulerAngles are each checked against an
+///     independent construction rather than against the other. Angle and direction asserts are tolerant because the
+///     trigonometry does not come out exact in floats.
 /// </remarks>
 [TestFixture]
 public class RotationSpec
@@ -122,6 +125,37 @@ public class RotationSpec
     }
 
     [Test]
+    public void BuildsTheSameTurnTheHandRolledProductComposes()
+    {
+        // Yaw, then pitch, then roll, the order the report describes and the constructor promises to apply.
+        Rotation composed = Multiply(Multiply(YawOf(30f), PitchOf(40f)), RollOf(25f));
+
+        AssertNearly(Rotation.FromEulerAngles(40f, 30f, 25f), composed);
+    }
+
+    [Test]
+    public void BuildsNoRotationFromNoAngles()
+    {
+        Assert.That(Rotation.FromEulerAngles(0f, 0f, 0f), Is.EqualTo(Rotation.Identity));
+    }
+
+    [Test]
+    public void RebuildsARotationFromItsOwnReport()
+    {
+        Rotation original = Multiply(Multiply(YawOf(-100f), PitchOf(-20f)), RollOf(60f));
+        Vector3 reported = original.ToEulerAngles();
+
+        Rotation rebuilt = Rotation.FromEulerAngles(reported.X, reported.Y, reported.Z);
+
+        Assert.Multiple(() =>
+        {
+            AssertNearly(rebuilt.Forward, original.Forward);
+            AssertNearly(rebuilt.Right, original.Right);
+            AssertNearly(rebuilt.Up, original.Up);
+        });
+    }
+
+    [Test]
     public void EqualsAnotherRotationWithTheSameComponents()
     {
         Rotation facing = new(0f, 0.6f, 0f, 0.8f);
@@ -213,5 +247,13 @@ public class RotationSpec
         Assert.That(actual.X, Is.EqualTo(expected.X).Within(Tolerance));
         Assert.That(actual.Y, Is.EqualTo(expected.Y).Within(Tolerance));
         Assert.That(actual.Z, Is.EqualTo(expected.Z).Within(Tolerance));
+    }
+
+    private static void AssertNearly(Rotation actual, Rotation expected)
+    {
+        Assert.That(actual.X, Is.EqualTo(expected.X).Within(Tolerance));
+        Assert.That(actual.Y, Is.EqualTo(expected.Y).Within(Tolerance));
+        Assert.That(actual.Z, Is.EqualTo(expected.Z).Within(Tolerance));
+        Assert.That(actual.W, Is.EqualTo(expected.W).Within(Tolerance));
     }
 }

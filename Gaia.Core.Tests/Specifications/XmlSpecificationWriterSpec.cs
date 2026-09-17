@@ -42,10 +42,10 @@ public class XmlSpecificationWriterSpec
     public void PutsTypeFirstWhateverTheDocumentOrder()
     {
         const string snippet = """
-                               <Region Center="(0, 0, 0)" Type="Circle" Radius="5"/>
+                               <Region Origin="(0, 0, 0)" Type="Circle" Radius="5"/>
                                """;
         const string expected = """
-                                <Region Type="Circle" Center="(0, 0, 0)" Radius="5"/>
+                                <Region Type="Circle" Origin="(0, 0, 0)" Radius="5"/>
                                 """;
 
         string written = _writer.Write(Parse(snippet));

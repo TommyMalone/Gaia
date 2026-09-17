@@ -6,9 +6,12 @@ using Gaia.Core.Targets;
 
 namespace Gaia.Core.Regions
 {
-    /// <summary>A ball around a center, which takes height into account.</summary>
+    /// <summary>A ball around an origin, which takes height into account.</summary>
     /// <remarks>
-    ///     <para>The center is Center, or CenterTarget if one is configured, as for <see cref="CircleRegion" />.</para>
+    ///     <para>
+    ///         The ball is around Origin, or around OriginTarget's position while one is configured, as for
+    ///         <see cref="CircleRegion" />.
+    ///     </para>
     ///     <para>
     ///         A random position is found by guessing inside the bounding box and keeping the first guess inside the ball,
     ///         so it can fail, though a ball fills over half its box and <see cref="MathHelpers.MaxSampleAttempts" /> is
@@ -18,20 +21,19 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class SphereRegion : RegionBase
     {
-        private static readonly AiString CenterAttribute = "Center";
-        private static readonly AiString CenterTargetElement = "CenterTarget";
+        private static readonly AiString OriginAttribute = "Origin";
         private static readonly AiString RadiusAttribute = "Radius";
 
         private float _radius;
         private float _radiusSquared;
 
-        /// <summary>Where the ball is, unless CenterTarget overrides it.</summary>
-        public Vector3 Center { get; internal set; }
+        /// <summary>Where the ball is, unless OriginTarget overrides it. The world's origin until it is set.</summary>
+        public Vector3 Origin { get; internal set; }
 
-        /// <summary>The target whose position replaces Center while one is configured, or null to use Center.</summary>
-        public TargetBase? CenterTarget { get; internal set; }
+        /// <summary>The target whose position replaces Origin while one is configured, or null to use Origin.</summary>
+        public TargetBase? OriginTarget { get; internal set; }
 
-        /// <summary>How far the region reaches from its center.</summary>
+        /// <summary>How far the region reaches from its origin.</summary>
         public float Radius
         {
             get => _radius;
@@ -47,33 +49,30 @@ namespace Gaia.Core.Regions
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            SpecificationNode node = creationData.Node;
-
-            foreach (SpecificationNode child in node.Children)
-            {
-                if (child.Name != CenterTargetElement)
-                {
-                    creationData.ReportError(
-                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
-                    return false;
-                }
-
-                if (!creationData.Factories.Targets.TryCreate(creationData.ForChild(child),
-                        out TargetBase? centerTarget))
-                {
-                    return false;
-                }
-
-                CenterTarget = centerTarget;
-            }
-
-            if (!node.ReadVector3(CenterAttribute, out Vector3 center) ||
-                !node.ReadFloat(RadiusAttribute, out float radius))
+            if (!LoadOriginTarget(creationData, out TargetBase? originTarget))
             {
                 return false;
             }
 
-            Center = center;
+            OriginTarget = originTarget;
+
+            SpecificationNode node = creationData.Node;
+
+            if (node.HasAttribute(OriginAttribute))
+            {
+                if (!node.ReadVector3(OriginAttribute, out Vector3 origin))
+                {
+                    return false;
+                }
+
+                Origin = origin;
+            }
+
+            if (!node.ReadFloat(RadiusAttribute, out float radius))
+            {
+                return false;
+            }
+
             Radius = radius;
             return true;
         }
@@ -81,18 +80,18 @@ namespace Gaia.Core.Regions
         /// <inheritdoc />
         public override bool IsInRegion(Vector3 position)
         {
-            if (!TryGetCenter(out Vector3 center))
+            if (!TryGetOrigin(out Vector3 origin))
             {
                 return false;
             }
 
-            return Vector3.SquaredDistance(center, position) <= _radiusSquared;
+            return Vector3.SquaredDistance(origin, position) <= _radiusSquared;
         }
 
         /// <inheritdoc />
         public override bool TryGetRandomPosition(out Vector3 position)
         {
-            if (!TryGetCenter(out Vector3 center))
+            if (!TryGetOrigin(out Vector3 origin))
             {
                 position = Vector3.Zero;
 
@@ -100,26 +99,26 @@ namespace Gaia.Core.Regions
             }
 
             Vector3 reach = new(Radius, Radius, Radius);
-            Vector3 min = center - reach;
-            Vector3 max = center + reach;
+            Vector3 min = origin - reach;
+            Vector3 max = origin + reach;
 
             return MathHelpers.TryRejectionSample(this, min, max, out position);
         }
 
         /// <summary>
-        ///     Finds where the center is this cycle, asking CenterTarget if one is configured and reading Center otherwise.
+        ///     Finds where the origin is this cycle, asking OriginTarget if one is configured and reading Origin otherwise.
         ///     Fails only when the target cannot answer.
         /// </summary>
-        private bool TryGetCenter(out Vector3 center)
+        private bool TryGetOrigin(out Vector3 origin)
         {
-            if (CenterTarget == null)
+            if (OriginTarget == null)
             {
-                center = Center;
+                origin = Origin;
 
                 return true;
             }
 
-            return CenterTarget.TryGetPosition(out center);
+            return OriginTarget.TryGetPosition(out origin);
         }
     }
 }

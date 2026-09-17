@@ -1,6 +1,4 @@
-﻿using System.Globalization;
-using Gaia.Core.Services.Time;
-using Gaia.Core.Spatial;
+﻿using Gaia.Core.Spatial;
 
 namespace Gaia.Core.Tests.Spatial;
 

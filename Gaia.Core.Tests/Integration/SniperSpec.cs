@@ -53,13 +53,13 @@ public class SniperSpec
         // The marketplace is 150 meters out. The line of retreat runs the other way.
         _killZone = new CircleRegion
         {
-            Center = new Vector3(0f, 0f, 150f),
+            Origin = new Vector3(0f, 0f, 150f),
             Radius = 40f,
         };
         _retreatRoute = new RectangleRegion
         {
-            Min = new Vector3(-5f, 0f, -200f),
-            Max = new Vector3(5f, 0f, -10f),
+            Min = new Vector2(-5f, -200f),
+            Max = new Vector2(5f, -10f),
         };
 
         _brain = new Brain
@@ -400,7 +400,7 @@ public class SniperSpec
         rangeBand.AddEntry(inRange);
 
         SelfTarget self = new() { Self = _sniper };
-        PositionTarget killZoneCenter = new() { Position = _killZone.Center };
+        PositionTarget killZoneCenter = new() { Position = _killZone.Origin };
 
         return new DistanceConsideration
         {

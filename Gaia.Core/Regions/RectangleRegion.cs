@@ -5,19 +5,23 @@ using Gaia.Core.Strings;
 
 namespace Gaia.Core.Regions
 {
-    /// <summary>An axis-aligned rectangle in the ground plane, which ignores height.</summary>
-    /// <remarks>Only X and Z of Min and Max are used by IsInRegion. A random position is reported at Min.Y.</remarks>
+    /// <summary>A rectangle in the plane of its frame, which ignores height.</summary>
+    /// <remarks>
+    ///     Min and Max are the corners with the smallest and the largest coordinates in that plane, measured from Origin,
+    ///     so a Rotation turns the rectangle about Origin. A rectangle that should turn about its middle puts Origin there and
+    ///     Min opposite Max.
+    /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
-    public sealed class RectangleRegion : RegionBase
+    public sealed class RectangleRegion : PlanarRegionBase
     {
         private static readonly AiString MaxAttribute = "Max";
         private static readonly AiString MinAttribute = "Min";
 
-        /// <summary>The corner with the smallest X and Z.</summary>
-        public Vector3 Min { get; internal set; }
+        /// <summary>The corner with the smallest X and Y, measured from Origin.</summary>
+        public Vector2 Min { get; internal set; }
 
-        /// <summary>The corner with the largest X and Z.</summary>
-        public Vector3 Max { get; internal set; }
+        /// <summary>The corner with the largest X and Y, measured from Origin.</summary>
+        public Vector2 Max { get; internal set; }
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
@@ -33,7 +37,8 @@ namespace Gaia.Core.Regions
                 return false;
             }
 
-            if (!node.ReadVector3(MinAttribute, out Vector3 min) || !node.ReadVector3(MaxAttribute, out Vector3 max))
+            if (!LoadFrame(creationData) || !node.ReadVector2(MinAttribute, out Vector2 min) ||
+                !node.ReadVector2(MaxAttribute, out Vector2 max))
             {
                 return false;
             }
@@ -46,14 +51,19 @@ namespace Gaia.Core.Regions
         /// <inheritdoc />
         public override bool IsInRegion(Vector3 position)
         {
-            return position.X >= Min.X && position.X <= Max.X && position.Z >= Min.Z && position.Z <= Max.Z;
+            Vector2 point = Frame.ToLocal(position, out _);
+
+            return point.X >= Min.X && point.X <= Max.X && point.Y >= Min.Y && point.Y <= Max.Y;
         }
 
         /// <inheritdoc />
+        /// <remarks>A random position lies in the rectangle's own plane, since the rectangle ignores height.</remarks>
         public override bool TryGetRandomPosition(out Vector3 position)
         {
-            position = new Vector3(MathHelpers.RandomInRange(RandomSource, Min.X, Max.X), Min.Y,
-                MathHelpers.RandomInRange(RandomSource, Min.Z, Max.Z));
+            Vector2 point = new(MathHelpers.RandomInRange(RandomSource, Min.X, Max.X),
+                MathHelpers.RandomInRange(RandomSource, Min.Y, Max.Y));
+
+            position = Frame.ToWorld(point, 0f);
 
             return true;
         }

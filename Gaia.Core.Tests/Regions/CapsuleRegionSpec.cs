@@ -15,7 +15,7 @@ public class CapsuleRegionSpec
 
         _capsule = new CapsuleRegion
         {
-            Center = new Vector3(10f, 5f, 10f),
+            Origin = new Vector3(10f, 5f, 10f),
             HalfHeight = 3f,
             Radius = 2f,
             RandomSource = _randomSource,

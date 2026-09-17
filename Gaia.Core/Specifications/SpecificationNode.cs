@@ -257,6 +257,33 @@ namespace Gaia.Core.Specifications
             return TryParseVector3(name, text, out value);
         }
 
+        /// <summary>
+        ///     Reads an optional orientation attribute, written as pitch, yaw and roll in degrees. Absence is silent,
+        ///     malformed text is reported.
+        /// </summary>
+        public bool TryGetRotation(AiString name, out Rotation value)
+        {
+            value = default;
+            return _attributes.TryGetValue(name, out string? text) && TryParseRotation(name, text, out value);
+        }
+
+        /// <summary>
+        ///     Reads a required orientation attribute, written as pitch, yaw and roll in degrees. Absence and malformed text
+        ///     are both reported.
+        /// </summary>
+        public bool ReadRotation(AiString name, out Rotation value)
+        {
+            value = default;
+
+            if (!_attributes.TryGetValue(name, out string? text))
+            {
+                ReportMissing(name);
+                return false;
+            }
+
+            return TryParseRotation(name, text, out value);
+        }
+
         /// <summary>Parses exactly "true" or "false", reporting anything else as malformed.</summary>
         private bool TryParseBool(AiString name, string text, out bool value)
         {
@@ -299,50 +326,82 @@ namespace Gaia.Core.Specifications
             return false;
         }
 
-        /// <summary>Parses the two-component tuple form, "(0, 1.5)", in invariant culture.</summary>
+        /// <summary>Parses the two-component tuple form, "(0, 1.5)".</summary>
         private bool TryParseVector2(AiString name, string text, out Vector2 value)
         {
-            string trimmed = text.Trim();
+            float[] parts = new float[2];
 
-            if (trimmed.Length >= 2 && trimmed[0] == '(' && trimmed[trimmed.Length - 1] == ')')
+            if (TryParseTuple(name, text, "a tuple like (0, 1.5)", parts))
             {
-                string[] parts = trimmed.Substring(1, trimmed.Length - 2).Split(',');
-
-                if (parts.Length == 2 &&
-                    float.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float x) &&
-                    float.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float y))
-                {
-                    value = new Vector2(x, y);
-                    return true;
-                }
+                value = new Vector2(parts[0], parts[1]);
+                return true;
             }
 
-            ReportMalformed(name, text, "a tuple like (0, 1.5)");
             value = default;
             return false;
         }
 
-        /// <summary>Parses the parenthesized tuple form, "(0, 1.5, 300)", with whitespace allowed around each part.</summary>
+        /// <summary>Parses the three-component tuple form, "(0, 1.5, 300)".</summary>
         private bool TryParseVector3(AiString name, string text, out Vector3 value)
+        {
+            float[] parts = new float[3];
+
+            if (TryParseTuple(name, text, "a tuple like (0, 1.5, 300)", parts))
+            {
+                value = new Vector3(parts[0], parts[1], parts[2]);
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
+        /// <summary>Parses pitch, yaw and roll in degrees, written in the tuple form, "(0, 45, 0)".</summary>
+        private bool TryParseRotation(AiString name, string text, out Rotation value)
+        {
+            float[] parts = new float[3];
+
+            if (TryParseTuple(name, text, "pitch, yaw and roll in degrees like (0, 45, 0)", parts))
+            {
+                value = Rotation.FromEulerAngles(parts[0], parts[1], parts[2]);
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
+        /// <summary>Parses the parenthesized tuple form into as many numbers as parts has room for.</summary>
+        /// <remarks>
+        ///     Whitespace is allowed around each part, and each is read in invariant culture, as TryParseFloat reads one.
+        ///     Anything else, a different count of parts included, is reported as not being what expected describes.
+        /// </remarks>
+        private bool TryParseTuple(AiString name, string text, string expected, float[] parts)
         {
             string trimmed = text.Trim();
 
             if (trimmed.Length >= 2 && trimmed[0] == '(' && trimmed[trimmed.Length - 1] == ')')
             {
-                string[] parts = trimmed.Substring(1, trimmed.Length - 2).Split(',');
+                string[] texts = trimmed.Substring(1, trimmed.Length - 2).Split(',');
 
-                if (parts.Length == 3 &&
-                    float.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float x) &&
-                    float.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float y) &&
-                    float.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float z))
+                if (texts.Length == parts.Length)
                 {
-                    value = new Vector3(x, y, z);
-                    return true;
+                    int parsed = 0;
+
+                    while (parsed < parts.Length && float.TryParse(texts[parsed], NumberStyles.Float,
+                               CultureInfo.InvariantCulture, out parts[parsed]))
+                    {
+                        parsed++;
+                    }
+
+                    if (parsed == parts.Length)
+                    {
+                        return true;
+                    }
                 }
             }
 
-            ReportMalformed(name, text, "a tuple like (0, 1.5, 300)");
-            value = default;
+            ReportMalformed(name, text, expected);
             return false;
         }
 

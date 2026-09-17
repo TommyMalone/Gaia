@@ -8,25 +8,24 @@ using Gaia.Core.Strings;
 namespace Gaia.Core.Regions
 {
     /// <summary>
-    ///     What <see cref="PolygonRegion" /> and <see cref="ExtrudedPolygonRegion" /> share, which is a footprint in the
-    ///     ground plane made of corners.
+    ///     What <see cref="PolygonRegion" /> and <see cref="ExtrudedPolygonRegion" /> share, which is a footprint made of
+    ///     corners in the plane of its frame.
     /// </summary>
     /// <remarks>
     ///     <para>
     ///         The footprint may be concave, which is what makes a polygon worth having over a rectangle. IsInFootprint is
-    ///         the PNPOLY even-odd crossing test. A ray cast from the position along X crosses the boundary an odd number of
-    ///         times if the position is inside. A position exactly on an edge can land either way, which no caller here
-    ///         depends on.
+    ///         the PNPOLY even-odd crossing test. A ray cast from the point along X crosses the boundary an odd number of
+    ///         times if the point is inside. A point exactly on an edge can land either way, which no caller here depends on.
     ///     </para>
     ///     <para>
-    ///         Random positions are found by guessing inside BoundsMin and BoundsMax and keeping the first guess inside the
+    ///         A random point is found by guessing inside the footprint's bounds and keeping the first guess inside the
     ///         footprint. The bounds are kept up to date by AddCorner, so neither operation walks the corners more than once.
-    ///         Subclasses decide the height, since that is the only thing that separates them.
+    ///         Subclasses carry the point out to the world, at the height they decide.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     /// <seealso>W. Randolph Franklin, PNPOLY, described at https://wrfranklin.org/Research/Short_Notes/pnpoly.html</seealso>
-    public abstract class PolygonRegionBase : RegionBase
+    public abstract class PolygonRegionBase : PlanarRegionBase
     {
         /// <summary>The fewest corners that enclose any area at all.</summary>
         private const int MinCornerCount = 3;
@@ -34,25 +33,16 @@ namespace Gaia.Core.Regions
         private static readonly AiString CornerElement = "Corner";
         private static readonly AiString PositionAttribute = "Position";
 
-        private readonly List<Vector3> _corners = new();
-        private float _boundsMaxX;
-        private float _boundsMaxZ;
-        private float _boundsMinX;
-        private float _boundsMinZ;
+        private readonly List<Vector2> _corners = new();
+        private Vector2 _boundsMax;
+        private Vector2 _boundsMin;
 
-        /// <summary>The corners of the footprint, in order around its edge. Only X and Z are used.</summary>
-        public IReadOnlyList<Vector3> Corners => _corners;
+        /// <summary>The corners of the footprint, in order around its edge, measured from Origin.</summary>
+        public IReadOnlyList<Vector2> Corners => _corners;
 
         /// <summary>True once Corners has at least MinCornerCount entries.</summary>
         public bool HasArea => _corners.Count >= MinCornerCount;
 
-        /// <summary>The smallest X and Z of any corner.</summary>
-        protected Vector3 BoundsMin => new(_boundsMinX, 0f, _boundsMinZ);
-
-        /// <summary>The largest X and Z of any corner.</summary>
-        protected Vector3 BoundsMax => new(_boundsMaxX, 0f, _boundsMaxZ);
-
-        /// <summary>Adds the next corner around the edge.</summary>
         /// <summary>Loads the footprint's corners from the node's Corner children.</summary>
         /// <remarks>
         ///     Every child must be a Corner element carrying a Position, and fewer than three corners is refused, since a
@@ -71,7 +61,7 @@ namespace Gaia.Core.Regions
                     return false;
                 }
 
-                if (!child.ReadVector3(PositionAttribute, out Vector3 corner))
+                if (!child.ReadVector2(PositionAttribute, out Vector2 corner))
                 {
                     return false;
                 }
@@ -89,26 +79,24 @@ namespace Gaia.Core.Regions
             return true;
         }
 
-        internal void AddCorner(Vector3 corner)
+        /// <summary>Adds the next corner around the edge, widening the bounds to hold it.</summary>
+        internal void AddCorner(Vector2 corner)
         {
             if (_corners.Count == 0)
             {
-                _boundsMinX = _boundsMaxX = corner.X;
-                _boundsMinZ = _boundsMaxZ = corner.Z;
+                _boundsMin = _boundsMax = corner;
             }
             else
             {
-                _boundsMinX = MathF.Min(_boundsMinX, corner.X);
-                _boundsMaxX = MathF.Max(_boundsMaxX, corner.X);
-                _boundsMinZ = MathF.Min(_boundsMinZ, corner.Z);
-                _boundsMaxZ = MathF.Max(_boundsMaxZ, corner.Z);
+                _boundsMin = new Vector2(MathF.Min(_boundsMin.X, corner.X), MathF.Min(_boundsMin.Y, corner.Y));
+                _boundsMax = new Vector2(MathF.Max(_boundsMax.X, corner.X), MathF.Max(_boundsMax.Y, corner.Y));
             }
 
             _corners.Add(corner);
         }
 
-        /// <summary>Tests whether a position is inside the footprint, ignoring height.</summary>
-        protected bool IsInFootprint(Vector3 position)
+        /// <summary>Tests whether a point of the plane is inside the footprint.</summary>
+        protected bool IsInFootprint(Vector2 point)
         {
             if (!HasArea)
             {
@@ -123,10 +111,10 @@ namespace Gaia.Core.Regions
 
             for (int cornerIndex = 0; cornerIndex < _corners.Count; cornerIndex++)
             {
-                Vector3 edgeStart = _corners[previousCornerIndex];
-                Vector3 edgeEnd = _corners[cornerIndex];
+                Vector2 edgeStart = _corners[previousCornerIndex];
+                Vector2 edgeEnd = _corners[cornerIndex];
 
-                if (EdgeCrossesRay(edgeStart, edgeEnd, position))
+                if (EdgeCrossesRay(edgeStart, edgeEnd, point))
                 {
                     isInside = !isInside;
                 }
@@ -137,24 +125,47 @@ namespace Gaia.Core.Regions
             return isInside;
         }
 
-        /// <summary>Tests whether an edge crosses the ray cast from the position toward positive X.</summary>
-        private static bool EdgeCrossesRay(Vector3 edgeStart, Vector3 edgeEnd, Vector3 position)
+        /// <summary>Guesses points inside the bounds until one is inside the footprint, or the attempts run out.</summary>
+        /// <returns>True if a guess landed inside. False when there is no area, or every attempt missed.</returns>
+        protected bool TryGetRandomFootprintPoint(out Vector2 point)
         {
-            // An edge can only cross the ray if its two ends lie on opposite sides of the ray's Z.
-            bool straddlesRay = edgeStart.Z > position.Z != edgeEnd.Z > position.Z;
+            if (HasArea)
+            {
+                for (int attempt = 0; attempt < MathHelpers.MaxSampleAttempts; attempt++)
+                {
+                    point = new Vector2(MathHelpers.RandomInRange(RandomSource, _boundsMin.X, _boundsMax.X),
+                        MathHelpers.RandomInRange(RandomSource, _boundsMin.Y, _boundsMax.Y));
+
+                    if (IsInFootprint(point))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            point = Vector2.Zero;
+
+            return false;
+        }
+
+        /// <summary>Tests whether an edge crosses the ray cast from the point toward positive X.</summary>
+        private static bool EdgeCrossesRay(Vector2 edgeStart, Vector2 edgeEnd, Vector2 point)
+        {
+            // An edge can only cross the ray if its two ends lie on opposite sides of the ray's Y.
+            bool straddlesRay = edgeStart.Y > point.Y != edgeEnd.Y > point.Y;
 
             if (!straddlesRay)
             {
                 return false;
             }
 
-            // Where along X the edge passes through the ray's Z. The division is safe, since straddling the ray means
-            // the two ends have different Z.
-            float fractionAlongEdge = (position.Z - edgeStart.Z) / (edgeEnd.Z - edgeStart.Z);
+            // Where along X the edge passes through the ray's Y. The division is safe, since straddling the ray means
+            // the two ends have different Y.
+            float fractionAlongEdge = (point.Y - edgeStart.Y) / (edgeEnd.Y - edgeStart.Y);
             float crossingX = edgeStart.X + (edgeEnd.X - edgeStart.X) * fractionAlongEdge;
 
-            // The ray runs toward positive X, so only a crossing ahead of the position counts.
-            return crossingX > position.X;
+            // The ray runs toward positive X, so only a crossing ahead of the point counts.
+            return crossingX > point.X;
         }
     }
 }
