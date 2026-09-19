@@ -119,7 +119,7 @@ public class ReasonerMonitorSpec
         SequenceReasoner sequence = new()
         {
             LogSink = logSink,
-            Monitor = new ReasonerMonitor(new MonitorSettings(nothingSelectedWarningWindow: 2)),
+            Monitor = new ReasonerMonitor(new MonitorSettings(nothingEligibleForSelectionWarningWindow: 2)),
         };
 
         sequence.AddOption(new StubOption([new StubConsideration(WeightValues.Neutral)], [new RecordAction(_executed)])

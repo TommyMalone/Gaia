@@ -26,19 +26,19 @@ public class MonitorSettingsSpec
         Assert.Multiple(() =>
         {
             Assert.That(settings.DoneWarningWindow, Is.EqualTo(60));
-            Assert.That(settings.NothingSelectedWarningWindow, Is.EqualTo(60));
+            Assert.That(settings.NothingEligibleForSelectionWarningWindow, Is.EqualTo(60));
         });
     }
 
     [Test]
     public void HoldsTheWarningWindowsItWasMadeWith()
     {
-        MonitorSettings settings = new(doneWarningWindow: 30, nothingSelectedWarningWindow: 0);
+        MonitorSettings settings = new(doneWarningWindow: 30, nothingEligibleForSelectionWarningWindow: 0);
 
         Assert.Multiple(() =>
         {
             Assert.That(settings.DoneWarningWindow, Is.EqualTo(30));
-            Assert.That(settings.NothingSelectedWarningWindow, Is.Zero, "0 turns a window off");
+            Assert.That(settings.NothingEligibleForSelectionWarningWindow, Is.Zero, "0 turns a window off");
         });
     }
 
@@ -59,7 +59,7 @@ public class MonitorSettingsSpec
         Assert.Multiple(() =>
         {
             Assert.That(() => new MonitorSettings(doneWarningWindow: -1), Throws.TypeOf<ArgumentOutOfRangeException>());
-            Assert.That(() => new MonitorSettings(nothingSelectedWarningWindow: -1),
+            Assert.That(() => new MonitorSettings(nothingEligibleForSelectionWarningWindow: -1),
                 Throws.TypeOf<ArgumentOutOfRangeException>());
         });
     }

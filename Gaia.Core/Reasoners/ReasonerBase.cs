@@ -68,10 +68,10 @@ namespace Gaia.Core.Reasoners
         ///     its options report, which a <see cref="RuleBasedReasoner" /> and a <see cref="DualUtilityReasoner" /> do, and a
         ///     <see cref="SequenceReasoner" /> chooses by position. Selecting nothing is a circumstance, such as every option
         ///     vetoed for a cycle while a sensor rewrites a list, and treating it as completion would let one such cycle advance a
-        ///     parent SequenceReasoner past unfinished work. A reasoner with an end overrides this, a sequence is done off its
-        ///     last step, and <see cref="SubreasonerAction" /> reads IsSelectionDone as well, so a step holding a scoring reasoner
-        ///     ends when the option the reasoner chose has finished. A scoring reasoner's own option ends the way every option
-        ///     ends, through its considerations.
+        ///     parent SequenceReasoner past unfinished work. A reasoner with an end overrides this, a sequence once it is past its
+        ///     last step. <see cref="SubreasonerAction" /> applies the completion rule its step was configured with, by default
+        ///     done when the option this reasoner selected has finished, which IsSelectionDone reports. A scoring reasoner's own
+        ///     option ends the way every option ends, through its considerations.
         /// </remarks>
         public virtual bool IsDone => false;
 

@@ -1,5 +1,7 @@
-﻿using Gaia.Core.Factories;
+﻿using System;
+using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
+using Gaia.Core.Services.Diagnostics;
 using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
 
@@ -7,16 +9,21 @@ namespace Gaia.Core.Actions
 {
     /// <summary>An action that holds a reasoner of its own. This allows a flat decision to become a hierarchy.</summary>
     /// <remarks>
-    ///     The contained reasoner runs only while the option holding this action is selected. Selecting the action
-    ///     enables it, deselecting it disables it, and disabling a reasoner deselects whatever it was running. A single veto
-    ///     near the root therefore tears down the whole branch beneath it. Each level's reasoner is disabled, which deselects
-    ///     the option it was running, which deselects that option's actions, considerations, and any subreasoners the actions
-    ///     hold.
+    ///     The contained reasoner runs only while the option holding this action is selected, and the step ends by the
+    ///     rule <see cref="DoneWhen" /> names. Selecting the action enables it, deselecting it disables it, and disabling a
+    ///     reasoner deselects whatever it was running. A single veto near the root therefore tears down the whole branch
+    ///     beneath it. Each level's reasoner is disabled, which deselects the option it was running, which deselects that
+    ///     option's actions, considerations, and any subreasoners the actions hold.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.4</seealso>
     public sealed class SubreasonerAction : ActionBase
     {
+        private static readonly AiString DoneWhenAttribute = "DoneWhen";
+        private static readonly AiString NothingEligibleCycleLimitAttribute = "NothingEligibleCycleLimit";
         private static readonly AiString ReasonerElement = "Reasoner";
+
+        /// <summary>Counted for the NothingEligible rule, and restarted by any cycle that selects something.</summary>
+        private int _consecutiveCyclesNothingHasBeenEligible;
 
         /// <summary>Creates an action with no reasoner, which does nothing until a configuration loads one.</summary>
         internal SubreasonerAction()
@@ -32,19 +39,89 @@ namespace Gaia.Core.Actions
         /// <summary>The reasoner this action runs. Null means the action does nothing and IsDone is immediately true.</summary>
         public ReasonerBase? Reasoner { get; internal set; }
 
-        /// <summary>True once the reasoner has run out of work or the option it selected is done. Null means done at once.</summary>
+        /// <summary>When this action reports done, loaded from the DoneWhen attribute. Defaults to SelectedOptionDone.</summary>
         /// <remarks>
-        ///     The step ends when what the reasoner chose has finished, and not while nothing is selected, since a cycle with
-        ///     nothing eligible is not completion. The reasoner says when what it chose has finished through IsSelectionDone. For
-        ///     a scoring reasoner that is its selected option being done, and for a <see cref="Reasoners.SequenceReasoner" /> it
-        ///     is the sequence running off its last step, since the steps follow one another rather than being chosen.
+        ///     The rule is on the step rather than on the reasoner, because the same subtree means different things in
+        ///     different sequences, one doing one chosen thing and carrying on where another runs until nothing is left. Whatever
+        ///     the rule, a reasoner that ran out of work ends the step, which a sequence does off its last step and a scoring
+        ///     reasoner never does.
         /// </remarks>
-        public override bool IsDone => Reasoner == null || Reasoner.IsDone || Reasoner.IsSelectionDone;
+        public SubreasonerCompletion DoneWhen { get; internal set; } = SubreasonerCompletion.SelectedOptionDone;
+
+        /// <summary>
+        ///     How many consecutive cycles with nothing eligible end the step under the NothingEligible rule, loaded from the
+        ///     NothingEligibleCycleLimit attribute. Defaults to 1 and must be at least 1.
+        /// </summary>
+        /// <remarks>
+        ///     The attribute is refused under any other rule, since no other rule reads it. A limit above 1 keeps a list
+        ///     rewritten in place, which vetoes everything for the cycle the rewrite spans, from ending the step. The count
+        ///     restarts whenever the reasoner selects something. A limit at or past the monitor's
+        ///     <see cref="MonitorSettings.NothingEligibleForSelectionWarningWindow" /> draws that warning before the step ends,
+        ///     since the monitor reads a scoring reasoner with nothing selected as one with work left.
+        /// </remarks>
+        public int NothingEligibleCycleLimit { get; internal set; } = 1;
+
+        /// <summary>True once the reasoner has run out of work, or once the DoneWhen rule is met. Null means done at once.</summary>
+        /// <remarks>
+        ///     Nothing selected is never read as done on its own, since a cycle with nothing eligible is not completion, and
+        ///     only the NothingEligible rule turns a run of such cycles into an end.
+        /// </remarks>
+        public override bool IsDone
+        {
+            get
+            {
+                if (Reasoner == null || Reasoner.IsDone)
+                {
+                    return true;
+                }
+
+                switch (DoneWhen)
+                {
+                    case SubreasonerCompletion.SelectedOptionDone:
+                        return Reasoner.IsSelectionDone;
+                    case SubreasonerCompletion.NothingEligible:
+                        return _consecutiveCyclesNothingHasBeenEligible >= NothingEligibleCycleLimit;
+                    default:
+                        // ReasonerDone. The check above the switch is the whole of that rule.
+                        return false;
+                }
+            }
+        }
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
             SpecificationNode node = creationData.Node;
+
+            if (node.TryGetString(DoneWhenAttribute, out string doneWhenText) && !TryReadDoneWhen(node, doneWhenText))
+            {
+                return false;
+            }
+
+            if (node.HasAttribute(NothingEligibleCycleLimitAttribute))
+            {
+                if (DoneWhen != SubreasonerCompletion.NothingEligible)
+                {
+                    creationData.ReportError(
+                        $"Line {node.LineNumber}, the {node.Name.Text} element sets NothingEligibleCycleLimit under the {DoneWhen} rule");
+                    return false;
+                }
+
+                if (!node.ReadInt(NothingEligibleCycleLimitAttribute, out int nothingEligibleCycleLimit))
+                {
+                    return false;
+                }
+
+                if (nothingEligibleCycleLimit < 1)
+                {
+                    node.TryGetString(NothingEligibleCycleLimitAttribute, out string nothingEligibleCycleLimitText);
+                    node.ReportMalformed(NothingEligibleCycleLimitAttribute, nothingEligibleCycleLimitText,
+                        "1 or more");
+                    return false;
+                }
+
+                NothingEligibleCycleLimit = nothingEligibleCycleLimit;
+            }
 
             foreach (SpecificationNode child in node.Children)
             {
@@ -74,9 +151,10 @@ namespace Gaia.Core.Actions
             return true;
         }
 
-        /// <summary>Calls Enable on Reasoner so that it begins making decisions.</summary>
+        /// <summary>Calls Enable on Reasoner so that it begins making decisions, and restarts the nothing-eligible count.</summary>
         protected override void OnSelect()
         {
+            _consecutiveCyclesNothingHasBeenEligible = 0;
             Reasoner?.Enable();
         }
 
@@ -86,10 +164,47 @@ namespace Gaia.Core.Actions
             Reasoner?.Disable();
         }
 
-        /// <summary>Calls Update on Reasoner, so that every level of the tree decides once per cycle.</summary>
+        /// <summary>
+        ///     Calls Update on Reasoner, so that every level of the tree decides once per cycle, and counts the cycles on
+        ///     which it selected nothing.
+        /// </summary>
         protected override void OnUpdate()
         {
-            Reasoner?.Update();
+            if (Reasoner == null)
+            {
+                return;
+            }
+
+            Reasoner.Update();
+            _consecutiveCyclesNothingHasBeenEligible = Reasoner.SelectedOption == null
+                ? _consecutiveCyclesNothingHasBeenEligible + 1
+                : 0;
+        }
+
+        /// <summary>Reads the DoneWhen attribute's text in any casing, reporting text that names no rule.</summary>
+        private bool TryReadDoneWhen(SpecificationNode node, string text)
+        {
+            if (string.Equals(text, nameof(SubreasonerCompletion.SelectedOptionDone),
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                DoneWhen = SubreasonerCompletion.SelectedOptionDone;
+                return true;
+            }
+
+            if (string.Equals(text, nameof(SubreasonerCompletion.NothingEligible), StringComparison.OrdinalIgnoreCase))
+            {
+                DoneWhen = SubreasonerCompletion.NothingEligible;
+                return true;
+            }
+
+            if (string.Equals(text, nameof(SubreasonerCompletion.ReasonerDone), StringComparison.OrdinalIgnoreCase))
+            {
+                DoneWhen = SubreasonerCompletion.ReasonerDone;
+                return true;
+            }
+
+            node.ReportMalformed(DoneWhenAttribute, text, "SelectedOptionDone, NothingEligible or ReasonerDone");
+            return false;
         }
     }
 }

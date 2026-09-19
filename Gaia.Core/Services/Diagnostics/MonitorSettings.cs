@@ -22,12 +22,15 @@ namespace Gaia.Core.Services.Diagnostics
         /// <param name="cycleCapacity">How many cycles each history holds before overwriting its oldest. At least 1.</param>
         /// <param name="optionCapacity">How many options one recorded cycle holds. At least 1.</param>
         /// <param name="doneWarningWindow">How many cycles a selected option may sit done before the warning, or 0 to never warn.</param>
-        /// <param name="nothingSelectedWarningWindow">How many cycles a reasoner may select nothing before the warning, or 0.</param>
+        /// <param name="nothingEligibleForSelectionWarningWindow">
+        ///     How many cycles a reasoner may select nothing before the
+        ///     warning, or 0.
+        /// </param>
         public MonitorSettings(
             int cycleCapacity = 256,
             int optionCapacity = 8,
             int doneWarningWindow = 60,
-            int nothingSelectedWarningWindow = 60)
+            int nothingEligibleForSelectionWarningWindow = 60)
         {
             if (cycleCapacity < 1)
             {
@@ -42,12 +45,12 @@ namespace Gaia.Core.Services.Diagnostics
             }
 
             RefuseNegative(doneWarningWindow, nameof(doneWarningWindow));
-            RefuseNegative(nothingSelectedWarningWindow, nameof(nothingSelectedWarningWindow));
+            RefuseNegative(nothingEligibleForSelectionWarningWindow, nameof(nothingEligibleForSelectionWarningWindow));
 
             CycleCapacity = cycleCapacity;
             OptionCapacity = optionCapacity;
             DoneWarningWindow = doneWarningWindow;
-            NothingSelectedWarningWindow = nothingSelectedWarningWindow;
+            NothingEligibleForSelectionWarningWindow = nothingEligibleForSelectionWarningWindow;
         }
 
         /// <summary>How many cycles each history holds before overwriting its oldest.</summary>
@@ -70,7 +73,7 @@ namespace Gaia.Core.Services.Diagnostics
         ///     but a reasoner with options and no selection for a whole window usually has every option vetoed, which plays as a
         ///     character standing still. The two windows are separate settings so either can be turned off without the other.
         /// </remarks>
-        public int NothingSelectedWarningWindow { get; }
+        public int NothingEligibleForSelectionWarningWindow { get; }
 
         /// <summary>Refuses a warning window below 0, since 0 already means off.</summary>
         private static void RefuseNegative(int value, string name)

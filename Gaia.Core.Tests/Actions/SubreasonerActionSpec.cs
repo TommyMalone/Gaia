@@ -396,6 +396,190 @@ public class SubreasonerActionSpec
     }
 
     [Test]
+    public void EndsOnceNothingHasBeenEligibleForTheConfiguredCycles()
+    {
+        // The limit is 2 here, so the first all-vetoed cycle is not the end and the second is.
+        _subreasonerAction1.DoneWhen = SubreasonerCompletion.NothingEligible;
+        _subreasonerAction1.NothingEligibleCycleLimit = 2;
+
+        _reasoner.Update();
+
+        _subreasoner1Consideration1.Veto();
+        _subreasoner1Consideration2.Veto();
+
+        _reasoner.Update();
+
+        Assert.That(_subreasonerAction1.IsDone, Is.False,
+            "one all-vetoed cycle is fewer than NothingEligibleCycleLimit");
+
+        _reasoner.Update();
+
+        Assert.That(_subreasonerAction1.IsDone, Is.True,
+            "nothing has been eligible for NothingEligibleCycleLimit cycles");
+    }
+
+    [Test]
+    public void RestartsItsCountWhenSomethingIsEligibleAgain()
+    {
+        _subreasonerAction1.DoneWhen = SubreasonerCompletion.NothingEligible;
+        _subreasonerAction1.NothingEligibleCycleLimit = 2;
+
+        _reasoner.Update();
+
+        _subreasoner1Consideration1.Veto();
+        _subreasoner1Consideration2.Veto();
+
+        _reasoner.Update();
+
+        _subreasoner1Consideration1.Pass();
+
+        _reasoner.Update();
+
+        _subreasoner1Consideration1.Veto();
+
+        _reasoner.Update();
+
+        Assert.That(_subreasonerAction1.IsDone, Is.False, "the count restarted when the subtree selected something");
+    }
+
+    [Test]
+    public void IsNotDoneUnderTheNothingEligibleRuleWhileItsReasonerChoosesFinishedOptions()
+    {
+        _subreasonerAction1.DoneWhen = SubreasonerCompletion.NothingEligible;
+
+        _reasoner.Update();
+
+        _subreasoner1RecordAction1.SetDone(true);
+
+        Assert.That(_subreasonerAction1.IsDone, Is.False,
+            "a finished choice is not the end while something is still eligible");
+    }
+
+    [Test]
+    public void NeverReportsDoneUnderTheReasonerDoneRuleWhileItContainsAScoringReasoner()
+    {
+        _subreasonerAction1.DoneWhen = SubreasonerCompletion.ReasonerDone;
+
+        _reasoner.Update();
+
+        _subreasoner1RecordAction1.SetDone(true);
+
+        Assert.That(_subreasonerAction1.IsDone, Is.False, "a scoring reasoner never runs out of work");
+
+        _subreasoner1Consideration1.Veto();
+        _subreasoner1Consideration2.Veto();
+
+        _reasoner.Update();
+
+        Assert.That(_subreasonerAction1.IsDone, Is.False, "and nothing eligible is not its end either");
+    }
+
+    [Test]
+    public void ReportsDoneUnderTheReasonerDoneRuleWhenItsSequenceRunsOffItsEnd()
+    {
+        SequenceReasoner sequence = new();
+        RecordAction onlyStepAction = new("OnlyStep", _executed);
+        sequence.AddOption(new StubOption([new StubConsideration(WeightValues.Neutral)], [onlyStepAction]));
+
+        SubreasonerAction sequenceAction = new(sequence) { DoneWhen = SubreasonerCompletion.ReasonerDone };
+
+        sequenceAction.Select();
+        sequenceAction.Update();
+
+        Assert.That(sequenceAction.IsDone, Is.True, "the reasoner's own end counts under every rule");
+    }
+
+    [Test]
+    public void LoadsItsCompletionRuleInAnyCasing()
+    {
+        const string snippet = """
+                               <Action Type="Subreasoner" Name="Investigate" DoneWhen="nothingeligible"
+                                       NothingEligibleCycleLimit="3">
+                                   <Reasoner Type="Sequence"/>
+                               </Action>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        SubreasonerAction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.DoneWhen, Is.EqualTo(SubreasonerCompletion.NothingEligible));
+            Assert.That(loaded.NothingEligibleCycleLimit, Is.EqualTo(3));
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void RefusesACompletionRuleThatNamesNothing()
+    {
+        const string snippet = """
+                               <Action Type="Subreasoner" Name="Investigate" DoneWhen="WhenReady">
+                                   <Reasoner Type="Sequence"/>
+                               </Action>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        SubreasonerAction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Action element's DoneWhen is not SelectedOptionDone, NothingEligible or ReasonerDone, it reads \"WhenReady\"",
+            }));
+        });
+    }
+
+    [Test]
+    public void RefusesANothingEligibleCycleLimitBelowOne()
+    {
+        const string snippet = """
+                               <Action Type="Subreasoner" Name="Investigate" DoneWhen="NothingEligible"
+                                       NothingEligibleCycleLimit="0">
+                                   <Reasoner Type="Sequence"/>
+                               </Action>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        SubreasonerAction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Action element's NothingEligibleCycleLimit is not 1 or more, it reads \"0\"",
+            }));
+        });
+    }
+
+    [Test]
+    public void RefusesANothingEligibleCycleLimitUnderAnotherRule()
+    {
+        // No DoneWhen, so the rule is the default, which reads no limit.
+        const string snippet = """
+                               <Action Type="Subreasoner" Name="Investigate" NothingEligibleCycleLimit="3">
+                                   <Reasoner Type="Sequence"/>
+                               </Action>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        SubreasonerAction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Action element sets NothingEligibleCycleLimit under the SelectedOptionDone rule",
+            }));
+        });
+    }
+
+    [Test]
     public void LoadsItsContainedReasoner()
     {
         const string snippet = """

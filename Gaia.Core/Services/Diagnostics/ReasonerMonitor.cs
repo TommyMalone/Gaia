@@ -138,7 +138,7 @@ namespace Gaia.Core.Services.Diagnostics
         /// </remarks>
         private void WarnAboutNothingSelected(ReasonerBase reasoner)
         {
-            if (Settings.NothingSelectedWarningWindow <= 0 || reasoner.SelectedOption != null ||
+            if (Settings.NothingEligibleForSelectionWarningWindow <= 0 || reasoner.SelectedOption != null ||
                 reasoner.OptionList.Count == 0 || reasoner.IsDone)
             {
                 _cyclesNothingSelected = 0;
@@ -147,12 +147,12 @@ namespace Gaia.Core.Services.Diagnostics
 
             _cyclesNothingSelected++;
 
-            if (_cyclesNothingSelected == Settings.NothingSelectedWarningWindow &&
+            if (_cyclesNothingSelected == Settings.NothingEligibleForSelectionWarningWindow &&
                 reasoner.LogSink.IsEnabled(LogSeverity.Warning))
             {
                 reasoner.LogSink.LogWarning(reasoner.LogChannel,
                     Located(
-                        $"nothing has been selectable for {Settings.NothingSelectedWarningWindow} cycles, every option is vetoed or scores nothing"));
+                        $"nothing has been selectable for {Settings.NothingEligibleForSelectionWarningWindow} cycles, every option is vetoed or scores nothing"));
             }
         }
 
