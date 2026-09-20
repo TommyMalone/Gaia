@@ -9,13 +9,12 @@ using Gaia.Core.WeightFunctions;
 namespace Gaia.Core.Factories
 {
     /// <summary>
-    ///     One factory per conceptual abstraction, the single thing creation data carries so any component can build
-    ///     children of any kind.
+    ///     One factory per kind of component, the single thing creation data carries so any component can build children
+    ///     of any kind.
     /// </summary>
     /// <remarks>
-    ///     The constructor registers every built-in component whose loading is implemented, so a registered name always
-    ///     means a loadable component, and a game registers its own components on the same set before loading begins. What
-    ///     registration records is also the authoring tool's catalog, which is why it lives in one place.
+    ///     The constructor registers every built-in component, so a registered name always means a loadable component,
+    ///     and a game registers its own components on the same set before loading begins.
     /// </remarks>
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>
     public sealed class FactorySet

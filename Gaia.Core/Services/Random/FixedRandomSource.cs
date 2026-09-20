@@ -2,7 +2,10 @@
 
 namespace Gaia.Core.Services.Random
 {
-    /// <summary>A random source that always returns the same value, which makes weighted selection deterministic.</summary>
+    /// <summary>
+    ///     A random source that always returns the same value, so a <see cref="Reasoners.DualUtilityReasoner" />
+    ///     selection or any other roll is deterministic.
+    /// </summary>
     public sealed class FixedRandomSource : IRandomSource
     {
         private readonly float _value;
@@ -12,9 +15,11 @@ namespace Gaia.Core.Services.Random
         {
         }
 
+        /// <summary>Creates a source that answers every ask with the given value.</summary>
         /// <param name="value">
-        ///     The value NextFloat returns. Should be in the range [0, 1) to match a real random source. The
-        ///     NextInt overloads return it truncated to an int and clamped into their range, so a value in [0, 1) makes every one
+        ///     The value NextFloat returns. Should be in the range [0, 1), the range
+        ///     <see cref="IRandomSource.NextFloat" /> promises. The bounded NextInt overloads return it truncated to an int and
+        ///     clamped into their range, and the parameterless NextInt returns it truncated, so a value in [0, 1) makes every one
         ///     of them return its lower bound.
         /// </param>
         public FixedRandomSource(float value)

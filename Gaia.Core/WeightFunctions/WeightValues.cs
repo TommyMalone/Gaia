@@ -4,7 +4,10 @@ using Gaia.Core.Strings;
 
 namespace Gaia.Core.WeightFunctions
 {
-    /// <summary>What a consideration reports about the option it belongs to.</summary>
+    /// <summary>
+    ///     What a <see cref="Considerations.ConsiderationBase" /> reports about the <see cref="Options.OptionBase" /> it
+    ///     belongs to.
+    /// </summary>
     /// <seealso>"Modular AI", Section 8.6.2.1</seealso>
     public readonly struct WeightValues : IEquatable<WeightValues>
     {
@@ -19,16 +22,18 @@ namespace Gaia.Core.WeightFunctions
         /// <remarks>
         ///     Multiplied with the option's other multipliers. A value of 0 vetoes the option outright however large its
         ///     addends are, and a value in between weakens it without vetoing it. The identity is 1. A value below 0 has no
-        ///     meaning, two of them would cancel to a positive weight, so TryRead refuses one.
+        ///     meaning, since two of them would multiply to a positive weight, so TryRead refuses one.
         /// </remarks>
         public float Multiplier { get; }
 
         /// <summary>The category this consideration puts its option in.</summary>
         /// <remarks>
-        ///     An option takes the highest rank any of its considerations reported. A reasoner then keeps only the options
-        ///     sharing the highest rank it found across all of them and decides between those on weight alone, so rank settles
-        ///     which options are eligible rather than scoring them. An option of higher rank beats every option beneath it however
-        ///     little it weighs. The identity is float.MinValue.
+        ///     An option takes the highest rank any of its considerations reported. A
+        ///     <see cref="Reasoners.DualUtilityReasoner" /> then keeps only the options sharing the highest rank it found among
+        ///     those whose weight is above 0 and decides between those on weight alone, so rank settles which options are eligible
+        ///     rather than scoring them. A <see cref="Reasoners.RuleBasedReasoner" /> or <see cref="Reasoners.SequenceReasoner" />
+        ///     never reads rank. An option of higher rank beats every option beneath it however little it weighs. The identity is
+        ///     float.MinValue.
         /// </remarks>
         public float Rank { get; }
 

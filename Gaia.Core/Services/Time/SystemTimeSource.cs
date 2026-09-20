@@ -11,8 +11,8 @@ namespace Gaia.Core.Services.Time
         public Seconds CurrentTime { get; private set; }
 
         /// <summary>
-        ///     Sample the elapsed time. Call once per cycle, before anything reads the clock, so that everything deciding on
-        ///     the same cycle agrees about what time it is.
+        ///     Sample the elapsed time. Call once per cycle of <see cref="Brains.Brain.Update" />, before anything reads the
+        ///     clock, so that everything deciding on the same cycle agrees about what time it is.
         /// </summary>
         public void Tick()
         {

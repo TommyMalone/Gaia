@@ -256,8 +256,8 @@ namespace Gaia.Core.DataStores
         }
 
         /// <summary>
-        ///     Writes a list of entities under the given name. Stores the list itself rather than a copy, so a picker can
-        ///     fill it in place.
+        ///     Writes a list of entities under the given name. Stores the list itself rather than a copy, so the host that
+        ///     wrote it can add and remove entities in place.
         /// </summary>
         public void SetEntityList(AiString name, List<EntityBase> value)
         {

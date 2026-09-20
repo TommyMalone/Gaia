@@ -12,11 +12,13 @@ namespace Gaia.Core.Considerations
     /// <remarks>
     ///     Splitting the two apart is what lets a single <see cref="DistanceConsideration" /> serve any number of
     ///     options. The class knows how to measure a distance, and the configured weight function decides what a given
-    ///     distance means. The same distance can raise the addend on one option and veto another.
+    ///     distance means. The same distance can raise the addend on one option and report <see cref="WeightValues.Vetoed" />
+    ///     for another.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.2</seealso>
     public abstract class WeightedConsiderationBase : ConsiderationBase
     {
+        /// <summary>The name of the child element a weight function is configured under.</summary>
         internal static readonly AiString WeightFunctionElement = "WeightFunction";
 
         /// <summary>

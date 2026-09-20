@@ -16,7 +16,7 @@ namespace Gaia.Core.Regions
     ///         caller has to be told rather than handed a position outside the region.
     ///     </para>
     ///     <para>
-    ///         RandomSource is injected the same way it is for <see cref="DualUtilityReasoner" />, so a spec can make
+    ///         RandomSource is injected the same way it is for <see cref="DualUtilityReasoner" />, so a test can make
     ///         sampling deterministic.
     ///     </para>
     ///     <para>
@@ -51,6 +51,7 @@ namespace Gaia.Core.Regions
         ///     Any other child is refused, and so is a second OriginTarget, since silently keeping one of two would ship half
         ///     of what was written.
         /// </remarks>
+        /// <param name="creationData">The creation data whose node carries the OriginTarget child, and whose factories build it.</param>
         /// <param name="originTarget">The loaded target, or null when the node has no OriginTarget child.</param>
         /// <returns>True when the children loaded. False after reporting what went wrong.</returns>
         protected static bool LoadOriginTarget(AiCreationData creationData, out TargetBase? originTarget)

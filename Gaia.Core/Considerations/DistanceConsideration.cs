@@ -38,7 +38,8 @@ namespace Gaia.Core.Considerations
         /// <summary>What to report when FromTarget or ToTarget is null or its <see cref="TargetBase.TryGetPosition" /> fails.</summary>
         /// <remarks>
         ///     Neutral by default, so a target that has nothing to point at leaves its option alone. A configuration that
-        ///     would rather veto the option until both ends exist sets this to do so.
+        ///     would rather veto the option until both ends exist writes Veto="true" on its Missing element, which reads as
+        ///     <see cref="WeightValues.Vetoed" />.
         /// </remarks>
         public WeightValues MissingTargetWeights { get; internal set; } = WeightValues.Neutral;
 

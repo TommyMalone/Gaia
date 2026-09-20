@@ -12,7 +12,7 @@ namespace Gaia.Core.Regions
     ///     <para>
     ///         Containment is one dot product per plane with no ray casting, since a position is inside a convex volume
     ///         exactly when it is behind every plane. A normal pointing the wrong way turns the hull inside out, and a
-    ///         symmetric hull hides that, so a spec should include a shape that is not symmetric.
+    ///         symmetric hull hides that, so a test should include a shape that is not symmetric.
     ///     </para>
     ///     <para>
     ///         Random positions are guessed inside the hull's bounding box and the first one behind every plane is kept. The

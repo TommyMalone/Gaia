@@ -238,8 +238,8 @@ namespace Gaia.Core.Reasoners
         }
 
         /// <summary>
-        ///     Runs one decision cycle. Sense observes the world, EvaluateOptions rescores every option, Think chooses which
-        ///     to run, and Act updates whatever is selected.
+        ///     Runs one decision cycle. Sense is the perception phase and is empty, EvaluateOptions rescores every option,
+        ///     Think chooses which to run, and Act updates whatever is selected.
         /// </summary>
         public void Update()
         {

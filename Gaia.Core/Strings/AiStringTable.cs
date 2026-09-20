@@ -81,9 +81,11 @@ namespace Gaia.Core.Strings
         /// <summary>Hashes the given text and records it, so that the text can be read back later.</summary>
         /// <remarks>
         ///     Two different texts can hash to the same value, so a hash that already belongs to other text is reported
-        ///     through <see cref="LogSink" /> as an error. Nothing here sits on a hot path. Register is called when an
-        ///     <see cref="AiString" /> is made, and comparing two of them afterwards comes down to an integer test that never
-        ///     touches the table, so the lock is only ever contended during loading.
+        ///     through <see cref="LogSink" /> as an error. The same text in another casing is the same string, so the table keeps
+        ///     the casing registered first and GetText reports that one. Nothing here sits on a hot path once a name is registered
+        ///     once and kept as a static AiString. Register is called when an <see cref="AiString" /> is made, and comparing two
+        ///     of them afterwards comes down to an integer test that never touches the table, so the lock is only ever contended
+        ///     during loading.
         /// </remarks>
         internal static ulong Register(string text)
         {

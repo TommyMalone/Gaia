@@ -26,6 +26,10 @@ namespace Gaia.Core.Services.Diagnostics
         ///     How many cycles a reasoner may select nothing before the
         ///     warning, or 0.
         /// </param>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     cycleCapacity or optionCapacity is below 1, or a warning window is
+        ///     negative.
+        /// </exception>
         public MonitorSettings(
             int cycleCapacity = 256,
             int optionCapacity = 8,

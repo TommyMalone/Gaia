@@ -6,21 +6,22 @@ using Gaia.Core.Strings;
 
 namespace Gaia.Core.WeightFunctions
 {
-    /// <summary>Runs the input through a response curve.</summary>
+    /// <summary>Runs the input through the Curve configured for the addend and the one configured for the multiplier.</summary>
     /// <remarks>
     ///     <para>
-    ///         AddendCurve and MultiplierCurve each map the input on their own, so one configuration can raise an option's
-    ///         desire as a value climbs while another vetoes it outside a band. A channel with no curve reports its identity,
-    ///         which is 0 for the addend and 1 for the multiplier, and so has no effect on the option's weight.
+    ///         AddendCurve and MultiplierCurve each map the input on their own, so one configuration can raise the addend of
+    ///         an <see cref="Options.OptionBase" /> as a value climbs while another vetoes it outside a band. An addend or
+    ///         multiplier with no curve reports its identity, which is 0 for the addend and 1 for the multiplier, and so has
+    ///         no effect on the option's weight.
     ///     </para>
     ///     <para>
     ///         Rank is reported as configured rather than curved, because it names a tier rather than a quantity and a value
     ///         part way between two tiers means nothing.
     ///     </para>
     ///     <para>
-    ///         A multiplier below 0 has no meaning, two of them would cancel to a positive weight, so the multiplier curve's
-    ///         output is clamped at 0. A keyframe authored below 0 draws a loading warning, and a segment that overshoots
-    ///         below 0 between keyframes clamps the same way at evaluation.
+    ///         A multiplier below 0 has no meaning, as <see cref="WeightValues.Multiplier" /> says, so the multiplier
+    ///         curve's output is clamped at 0. A keyframe authored below 0 draws a loading warning, and a segment that
+    ///         overshoots below 0 between keyframes clamps the same way at evaluation.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.2</seealso>

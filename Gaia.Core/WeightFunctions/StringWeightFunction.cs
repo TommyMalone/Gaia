@@ -10,8 +10,8 @@ namespace Gaia.Core.WeightFunctions
     ///     matched, or DefaultWeights if it matched none.
     /// </summary>
     /// <remarks>
-    ///     Used by considerations that read a named variable, such as one that vetoes any entity whose side is not
-    ///     "Enemy". Matching ignores case, because an <see cref="AiString" /> is hashed from its lower cased text.
+    ///     Used by considerations that read a named string out of a data store, such as one that vetoes unless the side
+    ///     it reads is "Enemy". Matching ignores case, because an <see cref="AiString" /> is hashed from its lower cased text.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.2</seealso>
     public sealed class StringWeightFunction : WeightFunctionBase

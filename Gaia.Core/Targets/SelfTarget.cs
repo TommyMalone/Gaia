@@ -7,8 +7,8 @@ namespace Gaia.Core.Targets
 {
     /// <summary>The character the AI controls.</summary>
     /// <remarks>
-    ///     The chapter's Self target reaches its actor through the brain it was created for. Init reads Self from the
-    ///     creation data's back-reference, the actor the brain being built belongs to, and a host or a spec sets it directly.
+    ///     The chapter's Self target reaches its actor through the brain it was created for. Init reads Self from
+    ///     <see cref="AiCreationData.Self" />, and a host or a test sets it directly.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.5</seealso>
     public sealed class SelfTarget : TargetBase

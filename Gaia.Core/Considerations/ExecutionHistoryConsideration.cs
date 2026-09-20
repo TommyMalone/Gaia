@@ -13,10 +13,16 @@ namespace Gaia.Core.Considerations
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         The finished case is how an option ends itself. A reasoner keeps a selected option until a consideration
-    ///         vetoes it, and takes no notice of its <see cref="OptionBase.IsDone" />. An option that should stop at that
-    ///         point configures a FinishedWeightFunction that vetoes, and an option with none keeps running. Once vetoed the
-    ///         option is deselected and the cooldown, if any, starts.
+    ///         The finished case is how an option ends itself. A <see cref="Reasoners.RuleBasedReasoner" /> or
+    ///         <see cref="Reasoners.DualUtilityReasoner" /> takes no notice of an option's <see cref="OptionBase.IsDone" />,
+    ///         and only a <see cref="Reasoners.SequenceReasoner" /> advances on it. Under the other two a done option stays
+    ///         selected until a consideration reports <see cref="WeightValues.Vetoed" /> or the reasoner selects another
+    ///         option or none. An option that should stop at that point configures a FinishedWeightFunction that vetoes, and
+    ///         an option with none keeps running. Once vetoed the option is deselected and the cooldown, if any, starts.
+    ///     </para>
+    ///     <para>
+    ///         Commitment is a consideration keeping an option selected between cycles, which this consideration does by
+    ///         retaining rank, and is what loading looks for through CarriesCommitment.
     ///     </para>
     ///     <para>
     ///         The elapsed time functions gate eligibility rather than schedule runs. A cooldown that has passed makes the
@@ -57,8 +63,10 @@ namespace Gaia.Core.Considerations
         /// <summary>How much of RankWhenLastSelected is kept while Option's actions run, from 0 for none to 1 for all of it.</summary>
         /// <remarks>
         ///     <para>
-        ///         None by default. All of it is the Commit pattern, and nothing can then interrupt the option until its actions
-        ///         finish. A portion is Inertia, enough to hold off near equals but not something far more important.
+        ///         None by default. All of it is the Commit pattern, which keeps the option's rank from falling below the one it
+        ///         was selected with while its actions run, so under a <see cref="Reasoners.DualUtilityReasoner" /> only an option
+        ///         of higher rank, an option of the same rank that the random pick lands on, or a veto of this option is left that
+        ///         can interrupt it. A portion is Inertia, enough to hold off near equals but not something far more important.
         ///     </para>
         ///     <para>
         ///         Retention only applies while the option runs and its <see cref="OptionBase.IsDone" /> is false. Once it is
@@ -198,7 +206,8 @@ namespace Gaia.Core.Considerations
             // Option.Calculate ran this cycle, so Option.Rank is the one it was selected at.
             RankWhenLastSelected = Option?.Rank ?? float.MinValue;
 
-            // Any of the four can be one that rolls fresh values, so selection reaches all of them.
+            // Any of the four can be a FloatSequenceWeightFunction, which rolls fresh thresholds on Select, so
+            // selection reaches all of them.
             WhileRunningWeightFunction?.Select();
             FinishedWeightFunction?.Select();
             NeverRunWeightFunction?.Select();

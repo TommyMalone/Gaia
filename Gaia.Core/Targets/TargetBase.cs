@@ -30,7 +30,7 @@ namespace Gaia.Core.Targets
         /// <summary>The entity this target represents right now, or null if it has none or cannot find it.</summary>
         public virtual EntityBase? Entity => null;
 
-        /// <summary>True if the target can be used this cycle. A target that tracks an entity is invalid while it cannot find one.</summary>
+        /// <summary>True if the target can be used right now. A target that tracks an entity is invalid while it cannot find one.</summary>
         public virtual bool IsValid => true;
 
         /// <summary>Loads this component's configuration from the creation data's node.</summary>

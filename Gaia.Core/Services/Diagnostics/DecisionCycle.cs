@@ -8,6 +8,7 @@ namespace Gaia.Core.Services.Diagnostics
     /// </summary>
     public readonly struct DecisionCycle
     {
+        /// <summary>Records what one cycle decided. The history constructs one as it opens a cycle and again as it closes one.</summary>
         internal DecisionCycle(long cycleIndex, float roll, AiString selectedName, int recordCount)
         {
             CycleIndex = cycleIndex;

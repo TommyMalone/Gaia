@@ -44,18 +44,21 @@ namespace Gaia.Core.Options
         /// <summary>The highest rank the considerations reported.</summary>
         public float Rank => _considerations.Rank;
 
-        /// <summary>True if this option can be selected, which is whenever its Weight is above 0.</summary>
+        /// <summary>
+        ///     True if this option can be selected, which is whenever its Weight is above 0. An option that can be selected
+        ///     this cycle is eligible, or a candidate, and a vetoed option is neither.
+        /// </summary>
         public bool IsValid => Weight > 0f;
 
         /// <summary>
         ///     The weight this option must reach to survive, set by <see cref="DualUtilityReasoner" /> from the best weight
-        ///     it found across all of its options, scaled by the reasoner's
+        ///     it found among the options at the highest rank, scaled by the reasoner's
         ///     <see cref="DualUtilityReasoner.WeightScreeningFactor" />.
         /// </summary>
         public float ScreeningWeight { get; internal set; }
 
         /// <summary>
-        ///     The rank this option must reach to survive, set by the reasoner from the best rank it found across all of its
+        ///     The rank this option must reach to survive, set by the reasoner from the best rank it found across its valid
         ///     options.
         /// </summary>
         public float ScreeningRank { get; internal set; } = float.MinValue;
@@ -64,8 +67,7 @@ namespace Gaia.Core.Options
         /// <remarks>
         ///     An option below either ScreeningRank or ScreeningWeight reports a Weight of 0 rather than being taken out of a
         ///     list, which is how a reasoner narrows its options without building a subset. <see cref="DualUtilityReasoner" /> is
-        ///     presently the only reasoner that sets these thresholds. For the other reasoner types PassesScreening is always
-        ///     true.
+        ///     the only reasoner that sets these thresholds. For the other reasoner types PassesScreening is always true.
         /// </remarks>
         internal bool PassesScreening =>
             _considerations.Rank >= ScreeningRank && _considerations.Weight >= ScreeningWeight;

@@ -19,8 +19,8 @@ namespace Gaia.Core.Regions
     ///     </para>
     ///     <para>
     ///         A random point is found by guessing inside the footprint's bounds and keeping the first guess inside the
-    ///         footprint. The bounds are kept up to date by AddCorner, so neither operation walks the corners more than once.
-    ///         Subclasses carry the point out to the world, at the height they decide.
+    ///         footprint. AddCorner keeps the bounds up to date, so reading them walks no corners, and each containment test
+    ///         walks them once. Subclasses carry the point out to the world, at the height they decide.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>

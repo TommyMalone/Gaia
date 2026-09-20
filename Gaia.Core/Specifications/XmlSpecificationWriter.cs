@@ -9,13 +9,12 @@ namespace Gaia.Core.Specifications
     ///         One canonical form is what keeps hand-authored and tool-authored files converging to the same bytes, so diffs
     ///         stay reviewable. Elements indent by four spaces per level, Type is always the first attribute, the remaining
     ///         attributes keep the order they were set in, an element without children closes itself, and every line ends with
-    ///         a line feed, leaving platform endings to the repository's normalization.
+    ///         a line feed alone, so a version control system that normalizes line endings converts them for each platform.
     ///     </para>
     ///     <para>
     ///         Comments write back where they stood, each above the element that carries it and trailing comments before
-    ///         their element's closing tag, so a hand-commented file survives a round trip through the reader and this writer
-    ///         byte for byte. What a written document preserves is everything the tree holds, the designer's documentation
-    ///         included.
+    ///         their element's closing tag, so a hand-commented file already in the canonical form survives a round trip
+    ///         through the reader and this writer byte for byte.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.6.3</seealso>

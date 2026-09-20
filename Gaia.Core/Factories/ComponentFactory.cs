@@ -6,14 +6,13 @@ using Gaia.Core.Strings;
 namespace Gaia.Core.Factories
 {
     /// <summary>
-    ///     Builds the components of one conceptual abstraction, looking each specification node's Type up among the
-    ///     registered creators and initializing what it constructs.
+    ///     Builds the components of the kind whose abstract base is TBase, looking each specification node's Type up
+    ///     among the registered creators and initializing what it constructs.
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         Registering a type that is already registered replaces it, which is both halves of extensibility in one rule.
-    ///         A game adds its own components by registering new names, and replaces a built-in by registering that name
-    ///         again, so the last registration always wins.
+    ///         Registering a type that is already registered replaces it. A game adds its own components by registering new
+    ///         names, and replaces a built-in by registering that name again, so the last registration is the one kept.
     ///     </para>
     ///     <para>
     ///         The factory constructs and initializes, it does not inject. A component's Init pulls whatever services and

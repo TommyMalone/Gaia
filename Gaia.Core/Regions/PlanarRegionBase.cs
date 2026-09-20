@@ -68,8 +68,8 @@ namespace Gaia.Core.Regions
         }
 
         /// <summary>
-        ///     Finds the frame this cycle, moved to the target's position when a target is given. Fails only when the target
-        ///     cannot answer, which leaves the region containing nothing.
+        ///     Finds the frame at the time of the call, moved to the target's position when a target is given. Fails only
+        ///     when the target cannot answer, which leaves the region containing nothing.
         /// </summary>
         protected bool TryGetFrame(TargetBase? originTarget, out RegionFrame frame)
         {

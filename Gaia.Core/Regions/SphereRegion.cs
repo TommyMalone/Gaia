@@ -106,8 +106,8 @@ namespace Gaia.Core.Regions
         }
 
         /// <summary>
-        ///     Finds where the origin is this cycle, asking OriginTarget if one is configured and reading Origin otherwise.
-        ///     Fails only when the target cannot answer.
+        ///     Finds where the origin is at the time of the call, asking OriginTarget if one is configured and reading Origin
+        ///     otherwise. Fails only when the target cannot answer.
         /// </summary>
         private bool TryGetOrigin(out Vector3 origin)
         {

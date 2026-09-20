@@ -9,8 +9,9 @@ namespace Gaia.Core.Curves
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         This is the same shape as an animation curve in an engine editor, and it can describe responses an exponent
-    ///         cannot, such as a value that peaks in the middle of its range and falls away at both ends.
+    ///         This is the same shape as an animation curve in an engine editor, and it can describe responses a power
+    ///         function of the input cannot. One such response is a value that peaks in the middle of its range and falls away
+    ///         at both ends.
     ///     </para>
     ///     <para>
     ///         Inputs below the first keyframe report the first keyframe's value, and inputs above the last report the last,
@@ -102,8 +103,8 @@ namespace Gaia.Core.Curves
         }
 
         /// <summary>
-        ///     Replaces every tangent with the slope of the neighboring segment, turning the curve into a series of straight
-        ///     lines.
+        ///     Replaces every tangent with the slope of the neighboring segment, or with 0 where no segment lies on that
+        ///     side, turning the curve into a series of straight lines.
         /// </summary>
         public void SetLinearTangents()
         {

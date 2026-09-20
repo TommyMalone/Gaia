@@ -2,10 +2,7 @@
 {
     /// <summary>A single point on a <see cref="Curve" />, along with the slope the curve arrives at and leaves with.</summary>
     /// <remarks>
-    ///     <para>
-    ///         The tangents are in units of value per input, the slopes in the Hermite formulation cited on
-    ///         <see cref="Curve" />.
-    ///     </para>
+    ///     <para>The tangents are the slopes of the Hermite formulation cited on Curve, in units of value per input.</para>
     ///     <para>
     ///         A segment is a straight line when both of its tangents equal the slope between the two keyframes. Tangents of
     ///         0 make the curve flatten out as it reaches the keyframe, which is what gives a two-keyframe curve an ease-in

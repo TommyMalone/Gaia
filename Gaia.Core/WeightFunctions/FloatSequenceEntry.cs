@@ -14,9 +14,9 @@ namespace Gaia.Core.WeightFunctions
     ///     </para>
     ///     <para>
     ///         Most entries hold a fixed threshold. An entry given a ThresholdMin below its ThresholdMax rolls Threshold
-    ///         from between them as it is added to a function, and again each time the containing option is selected while
-    ///         RerollOnSelect holds. Threshold is ThresholdMin until the entry is added, which is the value of an entry no
-    ///         function holds yet.
+    ///         from between them as it is added to a function, and again each time the <see cref="Options.OptionBase" />
+    ///         holding the function is selected while RerollOnSelect holds. Threshold is ThresholdMin until the entry is
+    ///         added, which is the value of an entry no function holds yet.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.2</seealso>

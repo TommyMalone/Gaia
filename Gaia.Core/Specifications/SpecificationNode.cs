@@ -9,8 +9,8 @@ namespace Gaia.Core.Specifications
 {
     /// <summary>
     ///     One element of a parsed configuration, holding its name, its type discriminator, its attributes, and its
-    ///     children. Components read their parameters from SpecificationNodes, so they do not have to directly parse
-    ///     configuration languages.
+    ///     children. Components read their parameters from SpecificationNodes in <see cref="Factories.IAiComponent.Init" />,
+    ///     so they do not have to directly parse configuration languages.
     /// </summary>
     /// <remarks>
     ///     <para>
@@ -21,7 +21,8 @@ namespace Gaia.Core.Specifications
     ///     </para>
     ///     <para>
     ///         Every report carries the source name and line captured when the node was parsed, and is filed under the
-    ///         source name as its channel, so one file's problems can be filtered from another's.
+    ///         source name as the channel of <see cref="ILogSink.Write" />, so one file's problems can be filtered from
+    ///         another's.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.6.3</seealso>
@@ -35,7 +36,7 @@ namespace Gaia.Core.Specifications
         private readonly ILogSink _logSink;
         private readonly List<string> _trailingComments = new();
 
-        /// <summary>Creates an empty node. The reader fills it through SetAttribute and AddChild.</summary>
+        /// <summary>Creates an empty node. <see cref="XmlSpecificationReader" /> fills it through SetAttribute and AddChild.</summary>
         internal SpecificationNode(
             AiString name,
             AiString type,
@@ -54,8 +55,9 @@ namespace Gaia.Core.Specifications
         public AiString Name { get; }
 
         /// <summary>
-        ///     The Type attribute, which picks the component a factory builds. An element that groups children rather than
-        ///     describing a component of its own carries no Type, and reports <see cref="AiString.Empty" /> here.
+        ///     The Type attribute, which picks the component a <see cref="Factories.ComponentFactory{TBase}" /> builds. An
+        ///     element that groups children rather than describing a component of its own carries no Type, and reports
+        ///     <see cref="AiString.Empty" /> here.
         /// </summary>
         public AiString Type { get; }
 
@@ -101,7 +103,10 @@ namespace Gaia.Core.Specifications
             _trailingComments.Add(text);
         }
 
-        /// <summary>The raw text of the named attribute, for the writer. The typed accessors are how loaders read.</summary>
+        /// <summary>
+        ///     The raw text of the named attribute, for <see cref="XmlSpecificationWriter" />. A component's Init reads
+        ///     through the typed accessors.
+        /// </summary>
         internal string GetAttributeText(AiString name)
         {
             return _attributes[name];
@@ -120,8 +125,9 @@ namespace Gaia.Core.Specifications
 
         /// <summary>Reports whether the element carries the named attribute.</summary>
         /// <remarks>
-        ///     What a loader checks before reading an optional attribute whose default is not the accessor's, so that absence
-        ///     keeps the default while malformed text still fails the read.
+        ///     What a component's Init checks before reading an optional attribute whose default is not the zero value
+        ///     TryGetFloat and its siblings leave in their out parameter, so that absence keeps the default while malformed text
+        ///     still fails the read.
         /// </remarks>
         public bool HasAttribute(AiString name)
         {
@@ -419,8 +425,8 @@ namespace Gaia.Core.Specifications
 
         /// <summary>Reports two attributes on one element that say the same thing differently.</summary>
         /// <remarks>
-        ///     Internal rather than private so that a loader can refuse a combination it cannot resolve, such as a veto and a
-        ///     multiplier.
+        ///     Internal rather than private so that a component's Init can refuse a combination it cannot resolve, such as a
+        ///     veto and a multiplier.
         /// </remarks>
         internal void ReportConflict(AiString name, AiString other)
         {
@@ -430,8 +436,8 @@ namespace Gaia.Core.Specifications
 
         /// <summary>Reports an attribute whose text cannot be read as the kind that was asked for.</summary>
         /// <remarks>
-        ///     Internal rather than private so that a loader can also refuse a value that parsed but has no meaning the
-        ///     configuration could intend, such as a negative multiplier.
+        ///     Internal rather than private so that a component's Init can also refuse a value that parsed but has no meaning
+        ///     the configuration could intend, such as a negative multiplier.
         /// </remarks>
         internal void ReportMalformed(AiString name, string text, string expected)
         {

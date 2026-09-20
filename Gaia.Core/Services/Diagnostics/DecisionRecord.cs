@@ -10,6 +10,10 @@ namespace Gaia.Core.Services.Diagnostics
     /// </remarks>
     public readonly struct DecisionRecord
     {
+        /// <summary>
+        ///     Records what one option reported in a cycle. <see cref="ReasonerMonitor.OnCycle" /> constructs one for each
+        ///     option and hands it to the history.
+        /// </summary>
         internal DecisionRecord(AiString optionName, float rank, float weight, bool passedScreening)
         {
             OptionName = optionName;

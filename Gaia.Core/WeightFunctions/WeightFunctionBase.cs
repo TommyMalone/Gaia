@@ -5,8 +5,8 @@ using Gaia.Core.Strings;
 namespace Gaia.Core.WeightFunctions
 {
     /// <summary>
-    ///     A conversion from what a consideration measured to the weight values it reports, each derived function giving
-    ///     the measurement a different shape.
+    ///     A conversion from the value a <see cref="Considerations.WeightedConsiderationBase" /> measured to the weight
+    ///     values it reports, each derived function giving the measurement a different shape.
     /// </summary>
     /// <remarks>
     ///     A shipped function is made by loading rather than by construction from game code, since its values load
@@ -44,7 +44,8 @@ namespace Gaia.Core.WeightFunctions
         /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         protected abstract bool OnInit(AiCreationData creationData);
 
-        /// <summary>Converts a bool, which throws NotSupportedException unless overridden.</summary>
+        /// <summary>Converts a bool.</summary>
+        /// <exception cref="NotSupportedException">This function does not convert a bool.</exception>
         public virtual WeightValues CalculateBool(bool value)
         {
             throw new NotSupportedException($"{GetType().Name} cannot convert a bool.");
@@ -56,19 +57,24 @@ namespace Gaia.Core.WeightFunctions
             return CalculateFloat(value);
         }
 
-        /// <summary>Converts a float, which throws NotSupportedException unless overridden.</summary>
+        /// <summary>Converts a float.</summary>
+        /// <exception cref="NotSupportedException">This function does not convert a float.</exception>
         public virtual WeightValues CalculateFloat(float value)
         {
             throw new NotSupportedException($"{GetType().Name} cannot convert a float.");
         }
 
-        /// <summary>Converts a string, which throws NotSupportedException unless overridden.</summary>
+        /// <summary>Converts a string.</summary>
+        /// <exception cref="NotSupportedException">This function does not convert a string.</exception>
         public virtual WeightValues CalculateString(AiString value)
         {
             throw new NotSupportedException($"{GetType().Name} cannot convert a string.");
         }
 
-        /// <summary>Called when the associated option is selected. OnSelect runs.</summary>
+        /// <summary>
+        ///     Called when the <see cref="Options.OptionBase" /> holding the consideration this function scores is selected.
+        ///     OnSelect runs.
+        /// </summary>
         public void Select()
         {
             OnSelect();

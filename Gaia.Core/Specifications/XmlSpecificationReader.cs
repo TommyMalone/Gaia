@@ -13,11 +13,12 @@ namespace Gaia.Core.Specifications
     /// <remarks>
     ///     <para>
     ///         Each element becomes a node carrying the element's name, its Type attribute as the discriminator, the
-    ///         remaining attributes as raw text, and its child elements in order. Comments are kept, each one riding the
-    ///         element below it, or its containing element when no element follows it, so a tree written back out gives back
-    ///         what its author documented. A comment after the root's closing tag has no element to ride and is reported as a
-    ///         warning. Non whitespace text inside an element is reported as a warning naming the element, since a
-    ///         configuration is attribute shaped and stray text usually indicates a mistake, but it does not fail the read.
+    ///         remaining attributes as raw text, and its child elements in order. Comments are kept, each one as a leading
+    ///         comment of the element below it, or as a trailing comment of its containing element when no element follows it,
+    ///         so a tree written back out gives back what its author documented. A comment after the root's closing tag has no
+    ///         element to attach to and is reported as a warning. Non whitespace text inside an element is reported as a
+    ///         warning naming the element, since a configuration is attribute shaped and stray text usually indicates a
+    ///         mistake, but it does not fail the read.
     ///     </para>
     ///     <para>
     ///         The reader takes text rather than a file, so whatever owns files does its own reading and passes the name it
@@ -28,7 +29,7 @@ namespace Gaia.Core.Specifications
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>
     public sealed class XmlSpecificationReader
     {
-        /// <summary>The name of the attribute that picks the component a factory builds.</summary>
+        /// <summary>The name of the attribute that picks the component a <see cref="Factories.ComponentFactory{TBase}" /> builds.</summary>
         private const string TypeAttributeName = "Type";
 
         /// <summary>Creates a reader reporting to the given sink, or to a <see cref="TraceLogSink" /> when given none.</summary>

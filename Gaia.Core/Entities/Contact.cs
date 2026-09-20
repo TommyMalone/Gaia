@@ -7,7 +7,8 @@ namespace Gaia.Core.Entities
     ///     <para>
     ///         A contact adds nothing to an entity structurally. What makes it a contact is whose it is, in the same way
     ///         that what separates a <see cref="BrainBlackboard" /> from the <see cref="WorldBlackboard" /> is scope rather
-    ///         than contents. Contacts live on the blackboard of the brain that holds the belief, so no other character can
+    ///         than contents. Contacts live on the blackboard of the brain that holds the belief, and a loaded configuration
+    ///         addresses only its own brain's blackboard and the world blackboard, so no other character's loaded components
     ///         read them.
     ///     </para>
     ///     <para>

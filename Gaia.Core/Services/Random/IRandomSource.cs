@@ -2,10 +2,14 @@
 
 namespace Gaia.Core.Services.Random
 {
-    /// <summary>
-    ///     Supplies the random values used by reasoners that select between options by chance. Injected rather than
-    ///     accessed statically, so that tests can substitute a deterministic source.
-    /// </summary>
+    /// <summary>Supplies the random values needed throughout Gaia. A roll is one value taken from the source.</summary>
+    /// <remarks>
+    ///     Examples of consumers include a <see cref="Reasoners.DualUtilityReasoner" /> selecting an
+    ///     <see cref="Options.OptionBase" /> in proportion to weight, a <see cref="WeightFunctions.FloatSequenceEntry" />
+    ///     rolling its threshold, a <see cref="Regions.RegionBase" /> picking a position and
+    ///     <see cref="Factories.GaiaLoader" /> seeding a brain's own source. Injected rather than accessed statically, so that
+    ///     tests can substitute a deterministic source.
+    /// </remarks>
     /// <seealso>"Modular AI", Section 8.4.4.6</seealso>
     public interface IRandomSource
     {

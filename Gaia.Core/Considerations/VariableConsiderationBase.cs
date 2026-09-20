@@ -13,7 +13,10 @@ namespace Gaia.Core.Considerations
     ///         The store, the name and the weight function are all configured, so the game writes what it knows onto a
     ///         blackboard or an entity and the AI reads it back without either side knowing about the other.
     ///     </para>
-    ///     <para>DataStore is a fixed reference for now. The chapter also allows it to come from a target.</para>
+    ///     <para>
+    ///         DataStore is a fixed reference, the brain's or the world's blackboard, since a loaded Store attribute names
+    ///         one of the two. The chapter also allows it to come from a target.
+    ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.6.2.3, Listing 8.9</seealso>
     public abstract class VariableConsiderationBase : WeightedConsiderationBase
@@ -39,7 +42,8 @@ namespace Gaia.Core.Considerations
         /// <summary>What to report when DataStore is null, or it has nothing under VariableName.</summary>
         /// <remarks>
         ///     Neutral by default, so a variable that has not been written yet leaves its option alone. A configuration that
-        ///     would rather veto the option until the value arrives sets this to do so.
+        ///     would rather veto the option until the value arrives writes Veto="true" on its Missing element, which reads as
+        ///     <see cref="WeightValues.Vetoed" />.
         /// </remarks>
         public WeightValues MissingVariableWeights { get; protected internal set; } = WeightValues.Neutral;
 

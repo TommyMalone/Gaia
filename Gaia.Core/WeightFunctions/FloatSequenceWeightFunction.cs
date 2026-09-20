@@ -158,8 +158,8 @@ namespace Gaia.Core.WeightFunctions
         /// <summary>Loads one entry from an Entry element, in either its fixed or its rolled threshold form.</summary>
         /// <remarks>
         ///     The checks <see cref="AddEntry" /> and the entry's constructor enforce with exceptions are made here first and
-        ///     reported through the sink instead, so a configuration mistake reads as a located error rather than a thrown
-        ///     exception.
+        ///     reported through the creation data's <see cref="Services.Log.ILogSink" /> instead, so a configuration mistake reads
+        ///     as an error naming the source document and line rather than a thrown exception.
         /// </remarks>
         private bool TryLoadEntry(SpecificationNode entryNode, AiCreationData creationData)
         {

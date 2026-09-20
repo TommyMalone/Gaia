@@ -49,6 +49,7 @@ namespace Gaia.Core.Services.Random
         {
         }
 
+        /// <summary>Creates a source that runs from the given seed.</summary>
         /// <param name="seed">A seed value. The same seed produces the same sequence of values.</param>
         public Xoshiro128RandomSource(int seed)
         {
