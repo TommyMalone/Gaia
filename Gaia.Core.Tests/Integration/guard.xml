@@ -1,0 +1,51 @@
+<Brain>
+    <Reasoner Type="DualUtility">
+        <!-- A Tuning consideration defaults to an addend of 1, a multiplier of 1 and the lowest rank, and
+             loading gives an option holding no Tuning consideration an injected one at those defaults. Fight,
+             Investigate and Alarm hold none, so each one's addends sum to 1. -->
+        <Option Type="ConsiderationAndAction" Name="Fight">
+            <!-- Rank 10 while any threat is known, vetoed while the Threats list holds none. Until the game writes
+                 the list the consideration reports neutral values, which leave the option below Patrol's rank 0. -->
+            <Consideration Type="EntityExists" Variable="Threats">
+                <WeightFunction Type="Boolean">
+                    <True Rank="10"/>
+                    <False Veto="true"/>
+                </WeightFunction>
+            </Consideration>
+            <Action Type="Record" Name="Fight" Done="false"/>
+        </Option>
+        <Option Type="ConsiderationAndAction" Name="Investigate">
+            <!-- Rank 5 while the noise is recent, neutral values once it fades, vetoed if it never happened. -->
+            <Consideration Type="FloatVariable" Variable="SecondsSinceNoise">
+                <Missing Veto="true"/>
+                <WeightFunction Type="FloatSequence">
+                    <Entry Threshold="3" Rank="5"/>
+                </WeightFunction>
+            </Consideration>
+            <!-- The Inertia pattern of ExecutionHistoryConsideration. Keeps six tenths of the rank the Investigate
+                 option was selected at, so the walk outlasts the noise that started it. The Finished veto ends the
+                 walk once its action reports done. The Record action stands in for the walk and is marked
+                 Done="false", so in this file that veto never fires. -->
+            <Consideration Type="ExecutionHistory" RankRetentionFactor="0.6">
+                <Finished Type="Constant" Veto="true"/>
+            </Consideration>
+            <Action Type="Record" Name="Investigate" Done="false"/>
+        </Option>
+        <Option Type="ConsiderationAndAction" Name="Alarm">
+            <!-- A fresh alarm is a fresh rank 5, which beats whatever the walk retained. -->
+            <Consideration Type="FloatVariable" Variable="SecondsSinceAlarm">
+                <Missing Veto="true"/>
+                <WeightFunction Type="FloatSequence">
+                    <Entry Threshold="3" Rank="5"/>
+                </WeightFunction>
+            </Consideration>
+            <Action Type="Record" Name="Alarm" Done="false"/>
+        </Option>
+        <Option Type="ConsiderationAndAction" Name="Patrol">
+            <!-- Rank 0 and never vetoed, so Patrol is selected whenever every other option is vetoed or below rank
+                 0. -->
+            <Consideration Type="Tuning" Addend="1" Rank="0"/>
+            <Action Type="Record" Name="Patrol" Done="false"/>
+        </Option>
+    </Reasoner>
+</Brain>

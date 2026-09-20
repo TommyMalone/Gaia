@@ -25,6 +25,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <None Include="Integration\guard.xml" CopyToOutputDirectory="PreserveNewest"/>
         <None Include="Integration\sniper.xml" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
 

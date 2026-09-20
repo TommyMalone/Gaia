@@ -4,13 +4,13 @@
             <!-- Vetoes unless the game has flagged the sniper as under fire. -->
             <Consideration Type="BooleanVariable" Variable="IsUnderFire">
                 <WeightFunction Type="Boolean">
-                    <False Multiplier="0"/>
+                    <False Veto="true"/>
                 </WeightFunction>
             </Consideration>
             <!-- Vetoes while any contact stands on the retreat route. -->
             <Consideration Type="EntityExists" Variable="RetreatRouteContacts">
                 <WeightFunction Type="Boolean">
-                    <True Multiplier="0"/>
+                    <True Veto="true"/>
                 </WeightFunction>
             </Consideration>
             <Action Type="Record" Name="Retreat" Done="false"/>
@@ -18,7 +18,7 @@
         <Option Type="ConsiderationAndAction" Name="FightBack">
             <Consideration Type="BooleanVariable" Variable="IsUnderFire">
                 <WeightFunction Type="Boolean">
-                    <False Multiplier="0"/>
+                    <False Veto="true"/>
                 </WeightFunction>
             </Consideration>
             <Action Type="Record" Name="FightBack" Done="false"/>
@@ -26,13 +26,13 @@
         <Option Type="ConsiderationAndAction" Name="Snipe">
             <Consideration Type="EntityExists" Variable="RetreatRouteContacts">
                 <WeightFunction Type="Boolean">
-                    <True Multiplier="0"/>
+                    <True Veto="true"/>
                 </WeightFunction>
             </Consideration>
             <!-- Vetoes until some contact is in the kill zone. -->
             <Consideration Type="EntityExists" Variable="KillZoneContacts">
                 <WeightFunction Type="Boolean">
-                    <False Multiplier="0"/>
+                    <False Veto="true"/>
                 </WeightFunction>
             </Consideration>
             <!-- Vetoes unless the kill zone is between 50 and 300 meters from the sniper. -->
@@ -40,16 +40,16 @@
                 <From Type="Self"/>
                 <To Type="Position" Position="(0, 0, 150)"/>
                 <WeightFunction Type="FloatSequence">
-                    <Entry Threshold="50" Multiplier="0"/>
+                    <Entry Threshold="50" Veto="true"/>
                     <Entry Threshold="300"/>
-                    <Default Multiplier="0"/>
+                    <Default Veto="true"/>
                 </WeightFunction>
             </Consideration>
             <!-- Ends the shot once the sequence has fired, and vetoes for a minute or two after, rolled each time. -->
             <Consideration Type="ExecutionHistory">
-                <Finished Type="Constant" Multiplier="0"/>
+                <Finished Type="Constant" Veto="true"/>
                 <SinceLastRun Type="FloatSequence">
-                    <Entry ThresholdMin="60" ThresholdMax="120" Multiplier="0"/>
+                    <Entry ThresholdMin="60" ThresholdMax="120" Veto="true"/>
                 </SinceLastRun>
             </Consideration>
             <Action Type="Subreasoner" Name="TakeTheShot">
