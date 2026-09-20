@@ -165,8 +165,8 @@ public class ConvexHullRegionSpec
     [Test]
     public void HasNoBoundsWhenItsPlanesLeaveAnOpenEnd()
     {
-        // Three planes around the Y axis make a triangular tube with no top or bottom. Its walls meet pairwise along
-        // vertical lines, never three at a point, so the tube has no corners for the bounds to be worked out from.
+        // Three planes around the Y axis make a triangular tube with no top or bottom. Three planes are fewer than the
+        // four a closed volume needs, so TryGetBounds reports no bounds before the region looks for corners.
         Plane leftWall = new(TowardNegativeX, 0f);
         Plane nearWall = new(TowardNegativeZ, 0f);
         Plane diagonal = new(DiagonalNormal, 10f);

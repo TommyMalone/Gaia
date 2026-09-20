@@ -7,6 +7,8 @@ namespace Gaia.Core.Tests.Helpers;
 /// <remarks>
 ///     The snippet is parsed through <see cref="XmlSpecificationReader" /> under the source name guard.xml, and the
 ///     creation data reports to the given sink, so a spec asserts loading errors the same way it asserts reader errors.
+///     The source name is fixed so that every loading spec asserts errors under one prefix, whatever its snippet
+///     configures.
 /// </remarks>
 internal static class LoadingSpecHelpers
 {

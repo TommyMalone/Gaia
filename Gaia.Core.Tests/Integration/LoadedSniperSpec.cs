@@ -11,8 +11,8 @@ using Gaia.Core.Tests.Helpers;
 namespace Gaia.Core.Tests.Integration;
 
 /// <summary>
-///     Covers the sniper loaded from sniper.xml, the first whole brain built from a configuration file, run through
-///     the same behavior the hand-built <see cref="SniperSpec" /> asserts.
+///     Covers the sniper loaded from sniper.xml, a whole brain built from a configuration file, run through the same
+///     behavior the hand-built <see cref="SniperSpec" /> asserts.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -22,8 +22,8 @@ namespace Gaia.Core.Tests.Integration;
 ///         blackboard. Everything the sniper decides with comes from the file.
 ///     </para>
 ///     <para>
-///         The registration of Record on the factory set is the game-facing extension surface in use, a component the
-///         library does not ship built by name from a configuration.
+///         Registering Record on the factory set is the game-facing extension point in use. A component the library does
+///         not ship is built by name from the configuration.
 ///     </para>
 /// </remarks>
 /// <seealso>"Modular AI", Section 8.3.3</seealso>
@@ -44,7 +44,7 @@ public class LoadedSniperSpec
             Position = new Vector3(0f, 10f, 0f),
         };
 
-        // The marketplace is 150 meters out. The line of retreat runs the other way.
+        // The kill zone is 150 meters out. The line of retreat runs the other way.
         _killZone = new CircleRegion
         {
             Origin = new Vector3(0f, 0f, 150f),
@@ -88,7 +88,10 @@ public class LoadedSniperSpec
 
     private const string CharacterName = "Sniper";
 
-    /// <summary>A roll of 0.5 puts every cooldown at 90 seconds, which keeps the timings exact.</summary>
+    /// <summary>
+    ///     A roll of 0.5 lands halfway along the 60 to 120 second cooldown sniper.xml configures, so every cooldown is 90
+    ///     seconds and the timings are exact.
+    /// </summary>
     private const float CooldownRoll = 0.5f;
 
     private static readonly string ConfigurationPath =

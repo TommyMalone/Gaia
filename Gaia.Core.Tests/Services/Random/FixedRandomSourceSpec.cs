@@ -4,10 +4,10 @@ namespace Gaia.Core.Tests.Services.Random;
 
 /// <summary>Covers <see cref="FixedRandomSource" />.</summary>
 /// <remarks>
-///     Specs normally configure the value in [0, 1), the way a real <see cref="IRandomSource.NextFloat" /> reports
-///     it, though the tests here also use whole numbers to reach the integer overloads. What matters for the specs that
-///     use this source is that every overload truncates and clamps into the bounds it was given, so that a reasoner or
-///     weight function under test never reads outside a range it asked for.
+///     Specs normally configure the value in [0, 1), the range <see cref="IRandomSource.NextFloat" /> promises,
+///     though the tests here also use whole numbers to reach the integer overloads. What matters for the specs that use
+///     this source is that every overload truncates and clamps into the bounds it was given, so that a reasoner or weight
+///     function under test never reads outside a range it asked for.
 /// </remarks>
 [TestFixture]
 public class FixedRandomSourceSpec

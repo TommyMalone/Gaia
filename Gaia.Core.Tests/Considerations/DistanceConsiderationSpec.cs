@@ -11,8 +11,8 @@ namespace Gaia.Core.Tests.Considerations;
 /// <summary>Covers <see cref="DistanceConsideration" />.</summary>
 /// <remarks>
 ///     The weight function is stubbed, so what is asserted is the distance that reached it. One end is a
-///     <see cref="SelfTarget" /> on an actor and the other a <see cref="PositionTarget" />, since those are the two ends
-///     the sniper's configuration uses.
+///     <see cref="Targets.SelfTarget" /> on an actor and the other a <see cref="Targets.PositionTarget" />, since those
+///     are the two ends the sniper's configuration in sniper.xml uses.
 /// </remarks>
 [TestFixture]
 public class DistanceConsiderationSpec
@@ -81,7 +81,7 @@ public class DistanceConsiderationSpec
     [Test]
     public void MeasuresAlongTheGroundWhenToldToIgnoreHeight()
     {
-        // Measured along the ground, a sniper on a roof is no farther from the marketplace than one at street level.
+        // Measured along the ground, a sniper on a roof is no farther from the kill zone than one at street level.
         _positionTarget.Position = new Vector3(0f, 12f, 5f);
         _consideration.IgnoreHeight = true;
 
@@ -145,8 +145,8 @@ public class DistanceConsiderationSpec
     [Test]
     public void WorksWithAByNameTargetAtEitherEnd()
     {
-        // The sniper's picker measures from a SelfTarget to the contact under consideration. With no picker yet, a
-        // ByNameTarget on the contact list is the nearest equivalent.
+        // The end that tracks a contact is a ByNameTarget on the contact list, since a ByNameTarget is the one target
+        // that finds an entity in a list.
         StubEntity lookout = new("Lookout") { Position = new Vector3(0f, 0f, 50f) };
         List<EntityBase> contacts = [lookout];
 
@@ -170,8 +170,9 @@ public class DistanceConsiderationSpec
     [Test]
     public void ServesTheSnipersRangeBand()
     {
-        // Listing 8.11 vetoes below 50 m and above 300 m, allows in between. This is the consideration and a real
-        // weight function together, as a configuration would combine them.
+        // Listing 8.11 of the chapter cited on DistanceConsideration vetoes below 50 m and above 300 m, allows in
+        // between. This is the consideration and a shipped weight function together, as a configuration would combine
+        // them.
         FloatSequenceWeightFunction rangeBand = new(WeightValues.Vetoed);
         FloatSequenceEntry nearEdge = new(50f, WeightValues.Vetoed);
         FloatSequenceEntry farEdge = new(300f, WeightValues.Neutral);

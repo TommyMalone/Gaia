@@ -8,9 +8,7 @@ namespace Gaia.Core.Tests.Reasoners;
 
 /// <summary>
 ///     Covers <see cref="SequenceReasoner" />, which runs its options one at a time in the order they were added and
-///     moves on when the selected option's <see cref="OptionBase.IsDone" /> is true. It behaves much like a sequence node
-///     in a behavior tree. Every option is executed when its turn comes, so the weights the considerations report play no
-///     part in which option runs.
+///     moves on when the selected option's <see cref="OptionBase.IsDone" /> is true.
 /// </summary>
 /// <remarks>
 ///     The fixture is three options, each holding a single <see cref="RecordAction" /> constructed with work left to
@@ -95,8 +93,9 @@ public class SequenceReasonerSpec
 
         _sequenceReasoner.Update();
 
-        // This is what separates a sequence from a per-cycle walk. The decision depends on what was chosen last cycle,
-        // not only on the current situation.
+        // This is what separates a sequence from a RuleBasedReasoner or DualUtilityReasoner, which decide from the
+        // current weights alone each cycle. The decision depends on what was chosen last cycle, not only on the current
+        // situation.
         Assert.That(_executed, Is.EqualTo(new[]
         {
             // @formatter:off

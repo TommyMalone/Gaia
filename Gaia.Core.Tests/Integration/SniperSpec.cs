@@ -25,10 +25,10 @@ namespace Gaia.Core.Tests.Integration;
 ///         <see cref="SequenceReasoner" /> of set pose, raise weapon, a <see cref="PauseAction" /> and fire.
 ///     </para>
 ///     <para>
-///         There is no picker yet, so the spec stands in for the game's sensors. Before each cycle it sorts the contacts
-///         the sniper knows about into the kill zone list and the retreat route list by asking the two regions, which is
-///         the work a picker would do from inside the <see cref="EntityExistsConsideration" /> instances. The concrete
-///         actions are <see cref="RecordAction" /> instances, so what is asserted is the order things were selected in.
+///         Sensing belongs to the game, so the spec stands in for its sensors. Before each cycle it sorts the contacts
+///         the sniper knows about into the kill zone list and the retreat route list by asking the two regions, and the
+///         <see cref="EntityExistsConsideration" /> instances read those lists. The concrete actions are
+///         <see cref="RecordAction" /> instances, so what is asserted is the order things were selected in.
 ///     </para>
 /// </remarks>
 /// <seealso>"Modular AI", Section 8.3.3</seealso>
@@ -50,7 +50,7 @@ public class SniperSpec
             Position = new Vector3(0f, 10f, 0f),
         };
 
-        // The marketplace is 150 meters out. The line of retreat runs the other way.
+        // The kill zone is 150 meters out. The line of retreat runs the other way.
         _killZone = new CircleRegion
         {
             Origin = new Vector3(0f, 0f, 150f),
@@ -197,7 +197,8 @@ public class SniperSpec
 
         Assert.That(CountSelections("Fire"), Is.EqualTo(1));
 
-        // The shot lands. With nothing left in the kill zone the sniper hides, and the cooldown starts.
+        // The target is marked invalid, so Sense drops it from the kill zone list. With nothing left in the kill zone
+        // the sniper hides, and the cooldown starts.
         patrol.IsValid = false;
         Cycle();
 
@@ -217,8 +218,8 @@ public class SniperSpec
     [Test]
     public void TakesAnotherShotAfterTheCooldownWithTheTargetStillStanding()
     {
-        // A shot every minute or two as long as there are still enemies in the marketplace. Once the sequence has
-        // fired, the Snipe option reports IsDone and its ExecutionHistoryConsideration vetoes it through
+        // A shot every minute or two as long as there are still enemies in the kill zone. Once the sequence has fired,
+        // the Snipe option reports IsDone and its ExecutionHistoryConsideration vetoes it through
         // FinishedWeightFunction. Deselection starts the SinceLastRunWeightFunction cooldown, and the sniper hides
         // until it has passed.
         AddContact("Patrol", InKillZone);

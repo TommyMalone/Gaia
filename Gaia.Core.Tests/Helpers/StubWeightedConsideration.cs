@@ -14,7 +14,7 @@ namespace Gaia.Core.Tests.Helpers;
 /// </remarks>
 internal sealed class StubWeightedConsideration : WeightedConsiderationBase
 {
-    /// <summary>The value handed to the weight function in place of a real measurement.</summary>
+    /// <summary>The value handed to the weight function in place of a measured one.</summary>
     internal float QueryResult { get; set; }
 
     /// <summary>How many times CalculateWeights has run.</summary>

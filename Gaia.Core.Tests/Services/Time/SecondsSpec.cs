@@ -51,7 +51,8 @@ public class SecondsSpec
     [Test]
     public void IncludesTheBoundaryInItsOrEqualComparisons()
     {
-        // A duration that lands exactly on a cycle boundary is common, so the boundary has to count.
+        // An elapsed time exactly equal to a PauseAction's Duration is common when a host advances its clock in fixed
+        // steps, so the boundary has to count.
         Seconds time = new(2f);
         Seconds sameTime = new(2f);
 

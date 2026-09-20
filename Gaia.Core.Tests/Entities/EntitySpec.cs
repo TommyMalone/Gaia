@@ -224,7 +224,8 @@ public class EntitySpec
     [Test]
     public void RunsOnlyWhatItsBrainsReasonerSelects()
     {
-        // An actor's brain is a real decision tree rather than a flag, so a vetoed option is not run.
+        // Update runs the brain's root reasoner, which selects only an option whose weight is above 0, so a vetoed
+        // option is never run.
         StubConsideration veto = new(WeightValues.Vetoed);
         RecordAction vetoedAction = new("Vetoed", _executed, false);
         StubOption vetoedOption = new([veto], [vetoedAction]);

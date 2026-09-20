@@ -218,7 +218,8 @@ public class ExecutionHistoryConsiderationSpec
     [Test]
     public void StopsRetainingRankOnceTheActionsAreFinished()
     {
-        // RankRetentionFactor sees the actions through. Once IsDone is true, FinishedWeightFunction alone decides.
+        // Retention applies only while the option's IsDone is false. Once IsDone is true, FinishedWeightFunction alone
+        // decides.
         _consideration.RankRetentionFactor = 1f;
 
         SelectTheOption();
@@ -360,7 +361,8 @@ public class ExecutionHistoryConsiderationSpec
     [Test]
     public void PassesSelectionAlongToEveryWeightFunction()
     {
-        // Any of the four can be one that rolls fresh values, so selection reaches all of them.
+        // A FloatSequenceWeightFunction with a randomized entry rolls a fresh threshold in its OnSelect, and any of the
+        // four can be one, so selection reaches all of them.
         _consideration.Select();
         _consideration.Deselect();
 

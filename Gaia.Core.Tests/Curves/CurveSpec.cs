@@ -218,7 +218,8 @@ public class CurveSpec
     [Test]
     public void FollowsAPeakThatFallsAwayAtBothEnds()
     {
-        // The response an exponent cannot describe, and the reason to prefer a curve over an exponent.
+        // The value peaks in the middle of its range and falls away at both ends. No single power of the input produces
+        // that shape.
         CurveKeyframe start = new(0f, 0f);
         CurveKeyframe peak = new(5f, 1f);
         CurveKeyframe end = new(10f, 0f);
@@ -271,9 +272,9 @@ public class CurveSpec
         AddStraightLine();
 
         // No comparison against a NaN is ever true, so it falls past both clamps and out of the segment search on the
-        // first segment, and the arithmetic reports NaN in turn. That leaves the option holding this curve unable to
-        // be selected, which is silent but safe. The alternative would be substituting a number the configuration never
-        // specified.
+        // first segment, and the arithmetic reports NaN in turn. A NaN weight fails the option's screening comparison
+        // in OptionBase.PassesScreening the same way, so the option's Weight reads 0 and it cannot be selected, which
+        // is silent but safe. The alternative would be substituting a number the configuration never specified.
         Assert.That(_curve.Evaluate(float.NaN), Is.NaN);
     }
 

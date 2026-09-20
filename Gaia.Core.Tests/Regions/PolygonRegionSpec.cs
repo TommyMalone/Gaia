@@ -8,8 +8,8 @@ namespace Gaia.Core.Tests.Regions;
 
 /// <summary>Covers <see cref="PolygonRegion" />.</summary>
 /// <remarks>
-///     The footprint is an L, a 10 by 10 square with its upper right quarter missing, because a convex footprint
-///     would not tell a crossing test from a bounding box.
+///     The footprint is an L, since a rectangular footprint would not tell <see cref="PolygonRegionBase" />'s
+///     crossing test from a bounding box. It is a 10 by 10 square with its upper right quarter missing.
 /// </remarks>
 [TestFixture]
 public class PolygonRegionSpec

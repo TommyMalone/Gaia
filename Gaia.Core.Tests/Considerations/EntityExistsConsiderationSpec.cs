@@ -139,7 +139,8 @@ public class EntityExistsConsiderationSpec
     [Test]
     public void CanBeConfiguredToVetoEitherWay()
     {
-        // The sniper's two uses. Veto when nothing is in the kill zone, and veto when something blocks the retreat.
+        // The sniper's configuration in sniper.xml uses the consideration both ways. Veto when nothing is in the kill
+        // zone, and veto when something blocks the retreat.
         BooleanWeightFunction vetoWhenEmpty = new(WeightValues.Neutral, WeightValues.Vetoed);
         BooleanWeightFunction vetoWhenFound = new(WeightValues.Vetoed, WeightValues.Neutral);
 

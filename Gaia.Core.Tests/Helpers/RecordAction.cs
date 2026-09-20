@@ -6,9 +6,9 @@ using Gaia.Core.Strings;
 namespace Gaia.Core.Tests.Helpers;
 
 /// <summary>
-///     An action that records every lifecycle call it receives as "Name.Phase". Stands in for Move, FireWeapon, etc.
-///     Recording Select, Deselect, and Update separately is what lets a spec distinguish an option that kept running from
-///     one that was torn down and restarted.
+///     An action that records every lifecycle call it receives as "Name.Phase". Stands in for a game's own actions,
+///     such as Move or FireWeapon. Recording Select, Deselect, and Update separately is what lets a spec distinguish an
+///     option that kept running from one that was torn down and restarted.
 /// </summary>
 /// <remarks>Specs that compare whole logs write the expected entries grouped a cycle per line.</remarks>
 internal sealed class RecordAction : ActionBase
@@ -18,7 +18,10 @@ internal sealed class RecordAction : ActionBase
     private readonly List<string> _log;
     private bool _isDone;
 
-    /// <summary>Creates an action for the factories to build, appending to the given log under its loaded Name.</summary>
+    /// <summary>
+    ///     Creates an action a spec registers on a <see cref="FactorySet" /> for loading to build by type name, appending
+    ///     to the given log under its loaded Name.
+    /// </summary>
     /// <param name="log">The shared list every lifecycle call is appended to. The spec owns it and reads it back.</param>
     internal RecordAction(List<string> log)
     {
@@ -41,7 +44,7 @@ internal sealed class RecordAction : ActionBase
         Name = name;
     }
 
-    /// <summary>Whatever the constructor or SetDone last set.</summary>
+    /// <summary>Whatever the constructor, a loaded Done attribute or SetDone last set.</summary>
     public override bool IsDone => _isDone;
 
     /// <summary>Takes an optional Done attribute for actions that keep running.</summary>

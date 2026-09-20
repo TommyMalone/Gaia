@@ -55,7 +55,8 @@ public class WeightedConsiderationBaseSpec
         {
             Assert.That(_bareConsideration.Weights, Is.EqualTo(WeightValues.Neutral));
 
-            // CalculateWeights is never reached, so a consideration cannot measure anything it has nowhere to send.
+            // A consideration with no weight function has nowhere to send a measurement, so CalculateWeights is never
+            // reached.
             Assert.That(_bareConsideration.CalculateWeightsCount, Is.EqualTo(0));
         });
     }

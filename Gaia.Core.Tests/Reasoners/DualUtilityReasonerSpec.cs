@@ -36,9 +36,10 @@ public class DualUtilityReasonerSpec
         // covers is skipped sets its own roll instead.
         _dualUtilityReasoner.RandomSource = new FixedRandomSource(0f);
 
-        // A neutral TuningConsideration contributes nothing, but its presence stops Init from adding the default one
-        // with an addend of 1. That keeps each option's weight exactly what its StubConsideration reports.
-        // TuningConsideration holds no per-option state, so one instance can sit in every option.
+        // A neutral TuningConsideration contributes nothing, but its presence stops EnsureTuningConsideration from
+        // adding the default one with an addend of 1. That keeps each option's weight exactly what its
+        // StubConsideration reports. TuningConsideration holds no per-option state, so one instance can sit in every
+        // option.
         TuningConsideration neutralTuning = new(WeightValues.Neutral);
 
         _firstConsideration = new StubConsideration(WeightValues.Neutral);
@@ -178,8 +179,8 @@ public class DualUtilityReasonerSpec
     [Test]
     public void KeepsTheSameOptionSelectedAcrossCycles()
     {
-        // Selection is re-run every cycle. With nothing changing and a fixed roll the same option wins again, so it
-        // is updated a second time rather than torn down and restarted.
+        // Selection is re-run every cycle. With nothing changing and a fixed roll the same option is selected again, so
+        // it is updated a second time rather than torn down and restarted.
         _firstConsideration.Set(_heavyWeight);
         _secondConsideration.Set(_lightWeight);
 

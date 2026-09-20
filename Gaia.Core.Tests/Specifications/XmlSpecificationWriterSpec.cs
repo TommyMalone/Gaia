@@ -92,9 +92,9 @@ public class XmlSpecificationWriterSpec
     [Test]
     public void RoundTripsTheSniperConfigurationCommentsAndAll()
     {
-        // The first document the authoring tool will ever open, proven to survive an open and a save untouched. The
-        // comparison normalizes endings the same way Canonical does, since the copied file carries whatever endings
-        // the checkout gave it.
+        // The shipped sniper.xml survives a read and a write back untouched, comments included. The comparison
+        // normalizes endings the same way Canonical does, since the copied file carries whatever endings the checkout
+        // gave it.
         string configurationPath = Path.Combine(AppContext.BaseDirectory, "Integration", "sniper.xml");
         string configurationText = File.ReadAllText(configurationPath);
 

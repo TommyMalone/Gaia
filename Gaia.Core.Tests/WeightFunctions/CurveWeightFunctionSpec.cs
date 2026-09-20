@@ -181,7 +181,8 @@ public class CurveWeightFunctionSpec
         {
             Assert.That(loaded.Init(creationData), Is.True);
 
-            // The default flat tangents would ease through 0.625 here. The straight line passes through 1 exactly.
+            // A Keyframe element loaded without InTangent or OutTangent carries tangents of 0, and without Linear the
+            // ease they give would pass through 0.625 here. The straight line passes through 1 exactly.
             Assert.That(loaded.CalculateFloat(2.5f).Addend, Is.EqualTo(1f).Within(Tolerance));
         });
     }

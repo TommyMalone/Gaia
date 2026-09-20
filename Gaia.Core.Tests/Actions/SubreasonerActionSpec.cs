@@ -327,8 +327,9 @@ public class SubreasonerActionSpec
 
         Assert.Multiple(() =>
         {
-            // Shutting off the brain is a different entry point from an option becoming invalid, and it has to reach
-            // the same way down the tree. The last group comes from Disable rather than from a cycle.
+            // Disabling the root reasoner, which is what Brain.Disable forwards to, is a different entry point from an
+            // option becoming invalid, and it has to reach the same way down the tree. The last group comes from
+            // Disable rather than from a cycle.
             Assert.That(_executed, Is.EqualTo(new[]
             {
                 // @formatter:off

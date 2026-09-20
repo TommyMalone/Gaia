@@ -74,7 +74,7 @@ public class BlackboardSpec
     public void ShowsEveryHolderWhatWasWrittenToTheWorld()
     {
         // Nothing here enforces that there is only one WorldBlackboard. Handing the same instance to everyone is the
-        // host's job, and this records what that buys.
+        // host's job, and this records what that provides.
         WorldBlackboard sharedByAnotherComponent = _worldBlackboard;
 
         _worldBlackboard.SetBool("IsRaining", true);

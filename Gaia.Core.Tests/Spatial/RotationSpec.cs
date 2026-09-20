@@ -43,7 +43,7 @@ public class RotationSpec
     [Test]
     public void TurnsItsDirectionsWithAQuarterTurnToTheRight()
     {
-        // Facing what used to be right, the right hand points back the way the world calls backward.
+        // A yaw of 90 degrees turns Forward onto the world's right and Right onto the world's back.
         Vector3 worldBack = new(0f, 0f, -1f);
         Rotation quarterTurnRight = YawOf(90f);
 

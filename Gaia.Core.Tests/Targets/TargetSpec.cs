@@ -156,8 +156,8 @@ public class TargetSpec
     [Test]
     public void StillHasAnEntityWhenItCannotFindOne()
     {
-        // This is the distinction Listing 8.5 draws. The target is the kind that has an entity, and there just is no
-        // entity by that name right now.
+        // This is the distinction Listing 8.5 draws. The target is the kind that has an entity, and no entity by that
+        // name exists right now.
         _byNameTarget.EntityName = "Officer";
 
         Assert.Multiple(() =>

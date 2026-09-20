@@ -10,9 +10,10 @@ namespace Gaia.Core.Tests.Helpers;
 ///     that <see cref="OptionBase.Init" /> would otherwise have supplied.
 /// </summary>
 /// <remarks>
-///     The option is assembled rather than loaded, so it calls EnsureTuningConsideration itself instead of running an
-///     Init that has no configuration to read. The OnInit override exists because <see cref="OptionBase" /> requires one
-///     of every concrete option, and it refuses, the way the other hand-built helpers do.
+///     The option is assembled rather than loaded, so it never runs Init. It calls EnsureTuningConsideration itself
+///     so that a spec can read the option's weight before any reasoner has enabled it. The OnInit override exists because
+///     <see cref="OptionBase" /> requires one of every concrete option, and it refuses, the way the other hand-built
+///     helpers do.
 /// </remarks>
 internal sealed class StubOption : OptionBase
 {
@@ -29,8 +30,8 @@ internal sealed class StubOption : OptionBase
             AddAction(action);
         }
 
-        // Assembled rather than loaded. Init is not called, there is no configuration to read, and the default
-        // tuning Init would have ensured is ensured directly instead.
+        // Assembled rather than loaded, so Init is not called. The default tuning is ensured here rather than at
+        // enable, so a spec can read the option's weight without a reasoner.
         EnsureTuningConsideration();
     }
 

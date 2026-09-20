@@ -122,7 +122,7 @@ public class DataStoreBaseSpec
         {
             Assert.That(_dataStore.TryGetEntityList("SnipeTargets", out List<EntityBase>? storedTargets), Is.True);
 
-            // A picker fills the list in place, so the store has to hold the list rather than a copy of it.
+            // The host fills the list in place, so the store has to hold the list rather than a copy of it.
             Assert.That(storedTargets, Is.SameAs(targets));
         });
     }

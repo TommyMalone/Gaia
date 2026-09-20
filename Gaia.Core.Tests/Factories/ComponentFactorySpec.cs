@@ -105,7 +105,7 @@ public class ComponentFactorySpec
     [Test]
     public void ReplacesARegistrationWithTheSameName()
     {
-        // A game overriding a built-in is just registering its name again, so the later creator must win.
+        // A game overriding a built-in registers its name again, so the later creator must be the one kept.
         _factory.Register("Widget", () => new UnloadableComponent());
         _factory.Register("Widget", () => new LoadableComponent());
         AiCreationData creationData = CreationDataFor("""<Widget Type="Widget"/>""");
