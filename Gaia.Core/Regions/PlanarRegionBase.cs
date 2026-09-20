@@ -31,7 +31,7 @@ namespace Gaia.Core.Regions
         public Vector3 Origin
         {
             get => _frame.Origin;
-            set => _frame = new RegionFrame(value, _frame.Rotation);
+            set => _frame = _frame.WithOrigin(value);
         }
 
         /// <summary>How the shape's plane is turned from the ground, which is not at all until it is set.</summary>

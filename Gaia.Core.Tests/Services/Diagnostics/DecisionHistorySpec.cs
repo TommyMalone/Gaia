@@ -82,6 +82,16 @@ public class DecisionHistorySpec
     }
 
     [Test]
+    public void RefusesACapacityBelowOne()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => new DecisionHistory(0, 4), Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(() => new DecisionHistory(16, 0), Throws.TypeOf<ArgumentOutOfRangeException>());
+        });
+    }
+
+    [Test]
     public void AllocatesFiftySixKibibytesAtItsDefaultCapacities()
     {
         // The type's remarks quote a cost per history, and this is where that number comes from. The two structs

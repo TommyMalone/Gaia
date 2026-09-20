@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Strings;
+﻿using System;
+using Gaia.Core.Strings;
 
 namespace Gaia.Core.Services.Diagnostics
 {
@@ -33,8 +34,25 @@ namespace Gaia.Core.Services.Diagnostics
         private int _recordsInOpenCycle;
 
         /// <summary>Creates a history holding the given number of cycles of the given number of options each.</summary>
+        /// <remarks>
+        ///     <see cref="MonitorSettings" /> refuses the same two values, and a <see cref="ReasonerMonitor" /> builds its
+        ///     history from settings, so the refusal here is for a history built directly, which the public constructor allows.
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException">cycleCapacity or optionCapacity is below 1.</exception>
         public DecisionHistory(int cycleCapacity = 256, int optionCapacity = 8)
         {
+            if (cycleCapacity < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(cycleCapacity), cycleCapacity,
+                    "a history holds at least one cycle");
+            }
+
+            if (optionCapacity < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(optionCapacity), optionCapacity,
+                    "a recorded cycle holds at least one option");
+            }
+
             CycleCapacity = cycleCapacity;
             OptionCapacity = optionCapacity;
 

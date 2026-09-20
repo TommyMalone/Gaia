@@ -122,7 +122,10 @@ public class XmlSpecificationWriterSpec
     /// <summary>Parses a snippet, asserting nothing went wrong, and hands back the root.</summary>
     private SpecificationNode Parse(string snippet)
     {
-        _reader.TryRead(snippet, "guard.xml", out SpecificationNode? root);
+        bool wasRead = _reader.TryRead(snippet, "guard.xml", out SpecificationNode? root);
+
+        Assert.That(wasRead, Is.True, "the snippet parses");
+
         return root!;
     }
 

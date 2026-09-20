@@ -13,8 +13,8 @@ namespace Gaia.Core.Tests.Services.Diagnostics;
 /// </summary>
 /// <remarks>
 ///     The fixture is a root reasoner whose one option, Snipe, holds a subreasoner action over a nested reasoner
-///     whose one option is Aim. Both options are always eligible, so the nested reasoner runs every cycle the root does
-///     and the two histories can be read against each other.
+///     whose one option is Aim. Aim is always eligible, and Snipe's one consideration is held by the fixture so a test can
+///     veto it for a cycle, which is the one way to keep the nested reasoner off a cycle the root runs.
 /// </remarks>
 [TestFixture]
 public class BrainMonitorSpec
@@ -30,7 +30,8 @@ public class BrainMonitorSpec
         _nestedReasoner.AddOption(aim);
 
         SubreasonerAction snipeStep = new(_nestedReasoner);
-        StubOption snipe = new([new StubConsideration(WeightValues.Neutral)], [snipeStep]) { Name = "Snipe" };
+        _snipeGate = new StubConsideration(WeightValues.Neutral);
+        StubOption snipe = new([_snipeGate], [snipeStep]) { Name = "Snipe" };
         _rootReasoner = new RuleBasedReasoner();
         _rootReasoner.AddOption(snipe);
 
@@ -40,6 +41,7 @@ public class BrainMonitorSpec
     private List<string> _executed;
     private RuleBasedReasoner _nestedReasoner;
     private RuleBasedReasoner _rootReasoner;
+    private StubConsideration _snipeGate;
     private Brain _brain;
 
     [Test]
@@ -67,7 +69,11 @@ public class BrainMonitorSpec
         _brain.Monitor = monitor;
         _brain.Enable();
 
+        // Snipe sits out the first cycle, so the nested reasoner runs on two of the brain's three cycles and its
+        // own count cannot pass for the brain's.
+        _snipeGate.Veto();
         _brain.Update();
+        _snipeGate.Pass();
         _brain.Update();
         _brain.Update();
 
@@ -78,6 +84,7 @@ public class BrainMonitorSpec
         {
             Assert.That(monitor.CycleIndex, Is.EqualTo(3));
             Assert.That(root.GetCycle(0).CycleIndex, Is.EqualTo(3));
+            Assert.That(nested.CycleCount, Is.EqualTo(2), "the nested reasoner ran on two cycles");
             Assert.That(nested.GetCycle(0).CycleIndex, Is.EqualTo(3),
                 "the nested reasoner records the brain's cycle rather than a count of its own");
             Assert.That(nested.GetCycle(0).SelectedName.Text, Is.EqualTo("Aim"));
