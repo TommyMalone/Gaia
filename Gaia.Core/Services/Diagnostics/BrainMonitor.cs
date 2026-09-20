@@ -3,6 +3,7 @@ using Gaia.Core.Actions;
 using Gaia.Core.Brains;
 using Gaia.Core.Options;
 using Gaia.Core.Reasoners;
+using Gaia.Core.Strings;
 
 namespace Gaia.Core.Services.Diagnostics
 {
@@ -39,6 +40,14 @@ namespace Gaia.Core.Services.Diagnostics
         /// <summary>The settings every reasoner monitor this one makes records under.</summary>
         public MonitorSettings Settings { get; }
 
+        /// <summary>The channel the brain reports under, taken at each attach, or empty before the first one.</summary>
+        /// <remarks>
+        ///     A report of what this monitor holds says which character it watched, the way each reasoner monitor's Path says
+        ///     which reasoner. The brain is in hand only while attaching, so the channel is read there rather than reached for
+        ///     later.
+        /// </remarks>
+        public AiString LogChannel { get; private set; } = AiString.Empty;
+
         /// <summary>How many cycles the brain has run since this monitor was attached. Advanced before the root reasoner runs.</summary>
         public long CycleIndex { get; private set; }
 
@@ -46,11 +55,12 @@ namespace Gaia.Core.Services.Diagnostics
         public IReadOnlyList<ReasonerMonitor> ReasonerMonitors => _reasonerMonitors;
 
         /// <summary>
-        ///     Gives every reasoner in the brain's tree a monitor, keeping the ones this monitor made and their histories.
-        ///     Called by the brain.
+        ///     Gives every reasoner in the brain's tree a monitor, keeping the ones this monitor made and their histories,
+        ///     and takes the brain's log channel. Called by the brain.
         /// </summary>
         internal void Attach(Brain brain)
         {
+            LogChannel = brain.LogChannel;
             _reasonerMonitors.Clear();
 
             if (brain.RootReasoner != null)
