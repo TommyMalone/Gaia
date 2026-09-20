@@ -148,7 +148,7 @@ public class ConsiderationAndActionOptionSpec
             Assert.That(loaded.Init(creationData), Is.True);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
-                "Warning  the Disabled option's fixed values sum to a weight of 0 or less, it can never be selected",
+                "Warning  the Disabled option's fixed values sum to a weight of 0 or less, a reasoner that selects by weight can never select it",
             }));
         });
     }

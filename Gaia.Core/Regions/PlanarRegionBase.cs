@@ -11,9 +11,9 @@ namespace Gaia.Core.Regions
     ///     <para>
     ///         The shape is described in the plane of its frame, so a rectangle is two <see cref="Vector2" /> corners and a
     ///         footprint is a ring of them. A position is brought into the plane before the shape tests it, and a random
-    ///         position is picked in the plane and carried out, so each shape's arithmetic is the flat kind whichever way it
-    ///         is turned. Height, the distance from the plane, is ignored by the shapes that are only a footprint and bounded
-    ///         by the ones that are extruded.
+    ///         position is picked in the plane and then carried back out into the world, so each shape's arithmetic is the
+    ///         flat kind whichever way it is turned. Height, the distance from the plane, is ignored by the shapes that are
+    ///         only a footprint and bounded by the ones that are extruded.
     ///     </para>
     ///     <para>
     ///         Origin and Rotation are read from attributes of the same names, and both are optional, so a shape that writes

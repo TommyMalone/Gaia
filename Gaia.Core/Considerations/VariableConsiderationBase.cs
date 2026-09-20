@@ -120,7 +120,10 @@ namespace Gaia.Core.Considerations
             return CalculateWeights(weightFunction, DataStore);
         }
 
-        /// <summary>Returns the configured missing values, warning once the first time they are served.</summary>
+        /// <summary>
+        ///     Returns <see cref="MissingVariableWeights" />, warning the first time they are served unless a Missing element
+        ///     configured them.
+        /// </summary>
         /// <remarks>
         ///     <para>
         ///         A typo in a variable name is unreachable by the loader, since names are runtime data, and without this

@@ -5,10 +5,7 @@ using Gaia.Core.Strings;
 
 namespace Gaia.Core.HostSpecs;
 
-/// <summary>
-///     A game-defined action built against the public surface alone, recording each selection it receives. This is
-///     the extension path a real game takes for actions it defines.
-/// </summary>
+/// <summary>A game-defined action built against the public surface alone, recording each selection it receives.</summary>
 /// <remarks>
 ///     This project has no InternalsVisibleTo grant, so the ActionBase hooks, the creation data and the node
 ///     accessors this type reaches are the surface a host gets.

@@ -13,7 +13,8 @@ namespace Gaia.Core.Tests.Reasoners;
 /// <remarks>
 ///     The fixture is three options, each holding a single <see cref="RecordAction" /> constructed with work left to
 ///     do, so the sequence holds each step until a test marks it done. The instantaneous tests mark steps done up front,
-///     which is the done-at-Select contract documented on <see cref="ActionBase" />.
+///     which is the case <see cref="ActionBase.IsDone" /> describes, an action that answers true from the moment it is
+///     selected.
 /// </remarks>
 /// <seealso>"Modular AI", Section 8.5.3</seealso>
 [TestFixture]

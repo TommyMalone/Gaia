@@ -58,7 +58,7 @@ public class AllocationSpec
 
     private ManualTimeSource _timeSource;
 
-    /// <summary>Wraps the reasoner in a monitored, enabled brain, the configuration whose cycle the promise covers.</summary>
+    /// <summary>Wraps the reasoner in a monitored, enabled brain, the configuration whose cycle the fixture measures.</summary>
     private static Brain BuildMonitoredBrain(ReasonerBase reasoner)
     {
         Brain brain = new(reasoner) { Monitor = new BrainMonitor(new MonitorSettings()) };

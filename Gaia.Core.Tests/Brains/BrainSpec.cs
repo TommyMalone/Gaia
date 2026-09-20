@@ -155,8 +155,8 @@ public class BrainSpec
     public void EnablesOnlyOnce()
     {
         // A second Enable must not restart the reasoner. A SequenceReasoner makes that observable, since enabling one
-        // puts it back at its first option. The sequence here is mid-run on Second, its instantaneous First passed in
-        // the first cycle, so a restart would show First selected again instead of the sequence finishing.
+        // puts it back at its first option. The sequence here is mid-run on Second, having passed its instantaneous
+        // First in the first cycle, so a restart would show First selected again instead of the sequence finishing.
         RecordAction firstAction = new("First", _executed);
         RecordAction secondAction = new("Second", _executed, false);
 
@@ -388,8 +388,8 @@ public class BrainSpec
     [Test]
     public void ReportsAFaultThatThrowsAgainWhileStopping()
     {
-        // Disable deselects the action that just threw, and the same bug usually throws again there. That second
-        // throw is the recorded limit of the host-side contract, and the one the library guards.
+        // Disable deselects the action that just threw, and the same bug usually throws again there. Containment covers
+        // the stop too, so the second throw is reported on a line of its own and the brain still ends disabled.
         Brain brain = BuildThrowingBrain(true);
         brain.FaultPolicy = FaultPolicy.Contain;
 

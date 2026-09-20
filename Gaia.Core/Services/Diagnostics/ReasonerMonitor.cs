@@ -18,10 +18,11 @@ namespace Gaia.Core.Services.Diagnostics
     ///         per cycle after it has chosen, and pays one null check per cycle when it has no monitor.
     ///     </para>
     ///     <para>
-    ///         The monitor also names two shapes the cycle cannot refuse and loading cannot see, an option left done for a
-    ///         whole window with nothing ending it and a reasoner that has selected nothing for one. Both windows are
-    ///         <see cref="MonitorSettings" />, so a run is watched as closely as its host asks and a run with no monitor is
-    ///         not watched at all.
+    ///         The monitor also names two shapes the cycle cannot refuse and loading cannot see. One is an option left done
+    ///         for a whole window with nothing ending it, and the other is a reasoner that has selected nothing for a whole
+    ///         window. The two windows are <see cref="MonitorSettings.DoneWarningWindow" /> and
+    ///         <see cref="MonitorSettings.NothingEligibleForSelectionWarningWindow" />, so a run is watched as closely as its
+    ///         host asks and a run with no monitor is not watched at all.
     ///     </para>
     ///     <para>
     ///         A cycle is stamped with the brain's cycle when a brain monitor made this one, so the histories of every

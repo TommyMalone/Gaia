@@ -23,8 +23,8 @@ public class FloatSequenceWeightFunctionSpec
         _weightFunction.AddEntry(tooCloseEntry);
         _weightFunction.AddEntry(inRangeEntry);
 
-        // Rolls its threshold between 50 and 150 as it joins a function, and again on selection. Not on the
-        // sequence above, for the tests about rolling.
+        // Rolls its threshold between 50 and 150 as it joins a function, and again on selection. It is left off the
+        // function above, for the tests about rolling to use.
         _randomizedEntry = new FloatSequenceEntry(50f, 150f, _inRangeWeights);
     }
 

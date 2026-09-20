@@ -160,9 +160,10 @@ namespace Gaia.Core.Options
 
         /// <summary>Warns when every consideration is a fixed tuning whose combined weight can never select the option.</summary>
         /// <remarks>
-        ///     Only fixed values can be judged at load, one dynamic consideration and the answer depends on the world. A
-        ///     fixed weight of 0 or less fails <see cref="IsValid" /> every cycle, so the option is configuration that can never
-        ///     run, which is sometimes a deliberate off switch and accepts the one warning.
+        ///     Only fixed values can be judged at load, since one dynamic consideration is enough to make the answer depend
+        ///     on the world. A fixed weight of 0 or less fails <see cref="IsValid" /> every cycle, so under a reasoner that
+        ///     selects by weight the option is configuration that can never run, which is sometimes a deliberate off switch and
+        ///     accepts the one warning.
         /// </remarks>
         private void WarnWhenFixedValuesCannotSelect(AiCreationData creationData)
         {
@@ -183,7 +184,7 @@ namespace Gaia.Core.Options
             if (addendSum * multiplierProduct <= 0f)
             {
                 creationData.LogSink.LogWarning(creationData.LogChannel,
-                    $"the {Name.Text} option's fixed values sum to a weight of 0 or less, it can never be selected");
+                    $"the {Name.Text} option's fixed values sum to a weight of 0 or less, a reasoner that selects by weight can never select it");
             }
         }
 

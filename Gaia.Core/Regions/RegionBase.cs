@@ -20,9 +20,9 @@ namespace Gaia.Core.Regions
     ///         sampling deterministic.
     ///     </para>
     ///     <para>
-    ///         Regions are built in code as well as loaded, so their values, builders and RandomSource are public and a host
-    ///         may build its shapes in code, the way a game sorts contacts into the entity lists its considerations read.
-    ///         Loading fills the same members.
+    ///         Regions are built in code as well as loaded, so their values and RandomSource are public and a host may build
+    ///         its shapes in code, the way a game sorts contacts into the entity lists its considerations read. Loading fills
+    ///         the same members.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.6, Listing 8.6</seealso>

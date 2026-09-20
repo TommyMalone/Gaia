@@ -12,8 +12,8 @@ namespace Gaia.Core.Considerations
     /// <remarks>
     ///     <para>
     ///         The addend raises or lowers the option's weight, the multiplier scales it, and a multiplier of 0 is a veto
-    ///         that removes the option from selection entirely. The rank is a priority class that a reasoner may settle before
-    ///         comparing weights at all. Considerations are meant to be small and reusable.
+    ///         that removes the option from selection under any reasoner that selects by weight. The rank is a priority class
+    ///         that a reasoner may settle before comparing weights at all. Considerations are meant to be small and reusable.
     ///     </para>
     ///     <para>
     ///         A shipped consideration is made by loading rather than by construction from game code, since its values load

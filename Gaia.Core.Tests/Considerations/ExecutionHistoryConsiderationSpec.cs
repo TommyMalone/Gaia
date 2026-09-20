@@ -403,8 +403,8 @@ public class ExecutionHistoryConsiderationSpec
     [Test]
     public void RefusesARetentionFactorOutsideZeroToOne()
     {
-        // Above 1 the option keeps a rank it never held, which promotes it above every rival instead of holding
-        // it against near equals, and the tree refuses a negative multiplier and a negative window already.
+        // Above 1 the option keeps a rank it never held, which holds it against rivals up to that rank instead of
+        // against near equals, and a negative factor is refused the way a negative multiplier already is.
         const string snippet = """
                                <Consideration Type="ExecutionHistory" RankRetentionFactor="-0.5"/>
                                """;

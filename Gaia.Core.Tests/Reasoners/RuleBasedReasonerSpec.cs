@@ -271,7 +271,7 @@ public class RuleBasedReasonerSpec
             Assert.That(loaded.Init(creationData), Is.True);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
-                "Warning  the Patrol option's fixed values sum to a weight of 0 or less, it can never be selected",
+                "Warning  the Patrol option's fixed values sum to a weight of 0 or less, a reasoner that selects by weight can never select it",
             }), "the vetoing tuning is the deliberate off switch shape, which accepts its one warning");
 
             loaded.Enable();

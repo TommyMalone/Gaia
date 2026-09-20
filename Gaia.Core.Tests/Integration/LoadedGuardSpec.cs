@@ -51,6 +51,8 @@ public class LoadedGuardSpec
         _loaded = loader.TryParse(configurationText, "guard.xml", out SpecificationNode? root) &&
                   loader.TryLoadBrain(root!, out brain, self: _guard, randomSource: tieBreakingRolls);
 
+        // A failed load yields no brain. An empty stand-in keeps the fixture alive so LoadsTheWholeBrainFromTheFile can
+        // report the failure instead of every test failing in SetUp.
         _brain = brain ?? new Brain();
         _guard.Brain = _brain;
 

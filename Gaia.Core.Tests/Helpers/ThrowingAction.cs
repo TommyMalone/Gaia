@@ -9,7 +9,8 @@ namespace Gaia.Core.Tests.Helpers;
 /// </summary>
 /// <remarks>
 ///     Never done, so its option keeps running and every cycle reaches OnUpdate. Throwing from Deselect as well is
-///     the shape a fault in a game usually has, the same bug meeting the same action on the way down.
+///     the shape a fault in a game usually has, since a brain stopping deselects the action that just threw and the same
+///     bug throws again.
 /// </remarks>
 internal sealed class ThrowingAction : ActionBase
 {
@@ -21,7 +22,7 @@ internal sealed class ThrowingAction : ActionBase
         _throwsOnDeselect = throwsOnDeselect;
     }
 
-    /// <summary>Never, so the option stays selected and keeps updating.</summary>
+    /// <summary>Never done.</summary>
     public override bool IsDone => false;
 
     /// <inheritdoc />

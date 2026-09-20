@@ -26,7 +26,7 @@ namespace Gaia.Core.Reasoners
         /// </remarks>
         public override bool IsDone => _currentIndex >= OptionList.Count;
 
-        /// <summary>True once the sequence has run off its last step, the same as IsDone.</summary>
+        /// <summary>The same as IsDone, since a sequence's selection is finished only once the sequence is.</summary>
         /// <remarks>
         ///     The sequence selects each step in turn, so its selected option being done finishes only that step. A
         ///     <see cref="Actions.SubreasonerAction" /> holding the sequence would otherwise report done as soon as one step
@@ -50,10 +50,11 @@ namespace Gaia.Core.Reasoners
                 return;
             }
 
-            // An instantaneous step is done the moment it is selected, so stepping keeps going until it reaches a
-            // step with work left or runs out of options. A step passed this way receives Select and Deselect with no
-            // Update between, which is why an instantaneous action completes its work in OnSelect. The option that
-            // just finished is the one at _currentIndex, and nothing selected means the sequence has not started yet.
+            // An instantaneous step is done the moment it is selected, so stepping keeps going until it reaches a step
+            // with work left or runs out of options. A step passed this way receives Select and Deselect with no Update
+            // between, which is why an instantaneous action completes its work in OnSelect. The option that just
+            // finished is the one at _currentIndex, and nothing selected means the sequence has either not started or
+            // already run off its end, neither of which is a step to move past.
             do
             {
                 if (SelectedOption != null)

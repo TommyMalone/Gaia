@@ -12,11 +12,10 @@ namespace Gaia.Core.HostSpecs;
 ///     surface. The document is parsed once and both brains load from the same root.
 /// </summary>
 /// <remarks>
-///     The swap is what a reload does. A designer edits the file, the host builds a new brain, and the character
-///     carries on. The swapped-in brain is loaded with the first brain's blackboard. On an empty blackboard every variable
-///     the file reads would be missing and report neutral values, so the sniper's rule-based reasoner would select
-///     Retreat, its first option. Selecting Hide therefore shows the swapped-in brain decided from values written before
-///     it existed.
+///     A designer edits the file, the host builds a new brain, and the character carries on. The swapped-in brain is
+///     loaded with the first brain's blackboard. On an empty blackboard every variable the file reads would be missing and
+///     report neutral values, so the sniper's rule-based reasoner would select Retreat, its first option. Selecting Hide
+///     therefore shows the swapped-in brain decided from values written before it existed.
 /// </remarks>
 [TestFixture]
 public class BrainSwapHostSpec

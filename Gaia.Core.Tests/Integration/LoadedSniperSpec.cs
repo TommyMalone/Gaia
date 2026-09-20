@@ -16,10 +16,10 @@ namespace Gaia.Core.Tests.Integration;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The spec plays the host, through the same <see cref="GaiaLoader" /> surface a game uses. It supplies the
-///         services, the actor and the sensor work exactly as <see cref="SniperSpec" /> does, registers the Record action
-///         the file's Action elements name, and writes the variables the loaded considerations read onto the brain's own
-///         blackboard. Everything the sniper decides with comes from the file.
+///         The spec plays the host, through the same <see cref="GaiaLoader" /> surface a game uses. Its services, actor
+///         and sensor work are the ones <see cref="SniperSpec" /> uses. It registers the Record action the file's Action
+///         elements name, and writes the variables the loaded considerations read onto the brain's own blackboard.
+///         Everything the sniper decides with comes from the file.
 ///     </para>
 ///     <para>
 ///         Registering Record on the factory set is the game-facing extension point in use. A component the library does
@@ -192,8 +192,8 @@ public class LoadedSniperSpec
         Cycle();
         Cycle(AimTime);
 
-        // The sequence finished in the cycle it fired, so one more cycle is all the cooldown needs to see Snipe
-        // IsDone and veto it.
+        // The sequence finished in the cycle it fired, so one more cycle is all it takes for the Finished function to
+        // see Snipe done and veto it.
         Cycle();
 
         Assert.That(Selections(), Is.EqualTo(new[] { "SetPose", "RaiseWeapon", "Fire", "Hide" }));

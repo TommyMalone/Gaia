@@ -12,7 +12,7 @@ namespace Gaia.Core.Factories
 {
     /// <summary>
     ///     Builds a brain and the whole tree beneath it from configuration, carrying the factory set and the services
-    ///     every load shares. A load starts at a Brain element, which in a single-brain document is the document's own root.
+    ///     every load shares. A load starts at a Brain element, which is the document's root.
     /// </summary>
     /// <remarks>
     ///     <para>
@@ -28,9 +28,11 @@ namespace Gaia.Core.Factories
     ///         a content edit shifts the load order. Two actors with the same name therefore get identical streams. Any other
     ///         brain given no source takes the master's next value, so the master seed reproduces its stream only when the
     ///         loads before it happen in the same order. A loader given no random source rolls a master seed and reports it
-    ///         through the sink. A fleet is every brain one loader built, and any fleet can be reproduced by constructing a
-    ///         <see cref="Xoshiro128RandomSource" /> with the reported seed and repeating the same loads, in the same order
-    ///         for the brains that take the master's next value.
+    ///         through the sink. A fleet is every brain one loader built, and a fleet whose master is a
+    ///         <see cref="Xoshiro128RandomSource" /> can be reproduced by constructing one with that source's seed and
+    ///         repeating the same loads, in the same order for the brains that take the master's next value. A loader given a
+    ///         source of any other kind has no seed to report and none to derive from, so reproducing its fleet is whatever
+    ///         reproducing that source is.
     ///     </para>
     /// </remarks>
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>
@@ -113,7 +115,8 @@ namespace Gaia.Core.Factories
         /// <param name="worldBlackboard">The blackboard every character shares, or null when the game keeps none.</param>
         /// <param name="self">
         ///     The actor the brain belongs to, or null. A load without one leaves every
-        ///     <see cref="Targets.SelfTarget" /> in the brain empty and its log channel unnamed, and nothing sets them later.
+        ///     <see cref="Targets.SelfTarget" /> in the brain empty and its log channel unnamed, which a host then sets in code or
+        ///     leaves.
         /// </param>
         /// <param name="brainBlackboard">
         ///     The blackboard the brain keeps, or null to make its own. A host swapping a character's
@@ -154,7 +157,8 @@ namespace Gaia.Core.Factories
         /// <param name="worldBlackboard">The blackboard every character shares, or null when the game keeps none.</param>
         /// <param name="self">
         ///     The actor the brain belongs to, or null. A load without one leaves every
-        ///     <see cref="Targets.SelfTarget" /> in the brain empty and its log channel unnamed, and nothing sets them later.
+        ///     <see cref="Targets.SelfTarget" /> in the brain empty and its log channel unnamed, which a host then sets in code or
+        ///     leaves.
         /// </param>
         /// <param name="brainBlackboard">
         ///     The blackboard the brain keeps, or null to make its own. A host swapping a character's

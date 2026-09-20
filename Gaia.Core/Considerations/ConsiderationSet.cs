@@ -14,7 +14,6 @@ namespace Gaia.Core.Considerations
     {
         private static readonly AiString ConsiderationElement = "Consideration";
 
-        /// <summary>The considerations in the set, in the order they were added.</summary>
         private readonly List<ConsiderationBase> _considerations = new();
 
         /// <summary>The option the set belongs to, once AttachTo has said which that is.</summary>

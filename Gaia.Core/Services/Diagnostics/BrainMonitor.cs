@@ -15,10 +15,11 @@ namespace Gaia.Core.Services.Diagnostics
     ///         A host attaches one through <see cref="Brains.Brain.Monitor" />, and <see cref="Factories.GaiaLoader" />
     ///         attaches one to every brain it loads when it carries a <see cref="MonitorSettings" />. Attaching walks the
     ///         tree, the root reasoner, its options, and the reasoners their subreasoner actions hold, and gives each reasoner
-    ///         a <see cref="ReasonerMonitor" /> it does not yet have, so a nested reasoner's history is read through
-    ///         <see cref="ReasonerMonitors" /> without the tree being opened to the host. The walk runs again when the brain
-    ///         is enabled, so a tree finished after attaching is still covered, and a monitor already in place is kept along
-    ///         with what it has recorded.
+    ///         a <see cref="ReasonerMonitor" /> of this monitor's own, so a nested reasoner's history is read through
+    ///         <see cref="ReasonerMonitors" /> without the tree being opened to the host. A monitor this one already made is
+    ///         kept along with what it has recorded, and any other is replaced, so a monitor a host attached by hand does not
+    ///         survive attaching a brain monitor. The walk runs again when the brain is enabled, so a tree finished after
+    ///         attaching is still covered.
     ///     </para>
     ///     <para>
     ///         The brain's cycle is what lines the histories up. A nested reasoner runs only while its option is selected
@@ -44,7 +45,10 @@ namespace Gaia.Core.Services.Diagnostics
         /// <summary>The monitors on the brain's reasoners, the root first and then in tree order.</summary>
         public IReadOnlyList<ReasonerMonitor> ReasonerMonitors => _reasonerMonitors;
 
-        /// <summary>Gives every reasoner in the brain's tree a monitor, keeping any already in place. Called by the brain.</summary>
+        /// <summary>
+        ///     Gives every reasoner in the brain's tree a monitor, keeping the ones this monitor made and their histories.
+        ///     Called by the brain.
+        /// </summary>
         internal void Attach(Brain brain)
         {
             _reasonerMonitors.Clear();

@@ -9,11 +9,12 @@ namespace Gaia.Core.Actions
 {
     /// <summary>An action that holds a reasoner of its own. This allows a flat decision to become a hierarchy.</summary>
     /// <remarks>
-    ///     The contained reasoner runs only while the option holding this action is selected, and the step ends by the
-    ///     rule <see cref="DoneWhen" /> names. Selecting the action enables it, deselecting it disables it, and disabling a
-    ///     reasoner deselects whatever it was running. A single veto near the root therefore tears down the whole branch
-    ///     beneath it. Each level's reasoner is disabled, which deselects the option it was running, which deselects that
-    ///     option's actions, considerations, and any subreasoners the actions hold.
+    ///     The contained reasoner runs only while the option holding this action is selected. The rule
+    ///     <see cref="DoneWhen" /> names says when the action reports done, which is what lets its option finish and a parent
+    ///     <see cref="Reasoners.SequenceReasoner" /> move past that step. Selecting the action enables it, deselecting it
+    ///     disables it, and disabling a reasoner deselects whatever it was running. A veto near the root therefore reaches
+    ///     every level beneath it, since deselecting an option deselects its actions and considerations, and each subreasoner
+    ///     action among them disables the reasoner it holds.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.4</seealso>
     public sealed class SubreasonerAction : ActionBase
@@ -41,10 +42,10 @@ namespace Gaia.Core.Actions
 
         /// <summary>When this action reports done, loaded from the DoneWhen attribute. Defaults to SelectedOptionDone.</summary>
         /// <remarks>
-        ///     The rule is on the step rather than on the reasoner, because the same subtree means different things in
-        ///     different sequences, one doing one chosen thing and carrying on where another runs until nothing is left. Whatever
-        ///     the rule, a reasoner that ran out of work ends the step, which a sequence does off its last step and a scoring
-        ///     reasoner never does.
+        ///     The rule is on the action rather than on the reasoner, because the same subtree can be wanted two ways. One
+        ///     sequence wants its step to end as soon as the option the reasoner chose has finished, and another wants it to run
+        ///     until nothing is eligible. Whatever the rule, a reasoner that ran out of work ends the step, which a sequence does
+        ///     off its last step and a scoring reasoner never does.
         /// </remarks>
         public SubreasonerCompletion DoneWhen { get; internal set; } = SubreasonerCompletion.SelectedOptionDone;
 
@@ -53,15 +54,15 @@ namespace Gaia.Core.Actions
         ///     NothingEligibleCycleLimit attribute. Defaults to 1 and must be at least 1.
         /// </summary>
         /// <remarks>
-        ///     The attribute is refused under any other rule, since no other rule reads it. A limit above 1 keeps a list
-        ///     rewritten in place, which vetoes everything for the cycle the rewrite spans, from ending the step. The count
+        ///     The attribute is refused under any other rule, since no other rule reads it. A list rewritten in place vetoes
+        ///     everything for the cycle the rewrite spans, and a limit above 1 keeps such a cycle from ending the step. The count
         ///     restarts whenever the reasoner selects something. A limit at or past the monitor's
         ///     <see cref="MonitorSettings.NothingEligibleForSelectionWarningWindow" /> draws that warning before the step ends,
         ///     since the monitor reads a scoring reasoner with nothing selected as one with work left.
         /// </remarks>
         public int NothingEligibleCycleLimit { get; internal set; } = 1;
 
-        /// <summary>True once the reasoner has run out of work, or once the DoneWhen rule is met. Null means done at once.</summary>
+        /// <summary>True once the reasoner has run out of work, or once the DoneWhen rule is met.</summary>
         /// <remarks>
         ///     Nothing selected is never read as done on its own, since a cycle with nothing eligible is not completion, and
         ///     only the NothingEligible rule turns a run of such cycles into an end.

@@ -10,9 +10,10 @@ namespace Gaia.Core.Actions
     ///     through IsDone when there is nothing left to do.
     /// </summary>
     /// <remarks>
-    ///     A shipped action is made by loading rather than by construction from game code, since its values load through
-    ///     Init and its setters are internal. Loading through <see cref="Factories.GaiaLoader" /> is the public way to make
-    ///     one. A game's own derived actions belong to the game and expose whatever constructors it wants.
+    ///     A shipped action is made by loading rather than by construction from game code, since the actions this library
+    ///     ships declare their constructors internal and their configuration loads through Init. Loading through
+    ///     <see cref="Factories.GaiaLoader" /> is the public way to make one. A game's own derived actions belong to the game
+    ///     and expose whatever constructors it wants.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.4, Listing 8.4</seealso>
     public abstract class ActionBase : IAiComponent

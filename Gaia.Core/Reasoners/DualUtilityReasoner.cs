@@ -28,8 +28,9 @@ namespace Gaia.Core.Reasoners
         ///     Loading refuses anything outside 0 to 1. Screening keeps an option whose weight is at or above the threshold,
         ///     so a factor above 1 puts the threshold above the best weight in the winning rank and screens out every option
         ///     including the best, leaving the reasoner selecting nothing for as long as the configuration ships. A negative
-        ///     factor screens against a threshold below zero, which no weight can fail, so it reads as no screening while saying
-        ///     something else.
+        ///     factor puts the threshold below zero, where an option with a negative weight can sit above it, since an addend is
+        ///     read with no sign constraint. Such an option passes screening and then subtracts from the total the weighted pick
+        ///     runs over.
         /// </remarks>
         public float WeightScreeningFactor { get; internal set; }
 

@@ -7,11 +7,11 @@ namespace Gaia.Core.Services.Diagnostics
     ///     attaches.
     /// </summary>
     /// <remarks>
-    ///     Settings are immutable once made, so every brain a loader loads and the one brain under investigation cannot
-    ///     share a mutable object by accident. They sit on the host's side of the line the configuration language draws. A
-    ///     designer's file says what a character does, and how closely a run is watched is a property of the run, so nothing
-    ///     here is read from a Brain or Reasoner element. <see cref="Factories.GaiaLoader.Diagnostics" /> applies one to every
-    ///     brain a loader loads, and a single load may carry its own.
+    ///     Settings are immutable once made, so a host can hand the same object to every brain a loader loads and to the
+    ///     one brain under investigation without one run changing how another is watched. A designer's file says what a
+    ///     character does, and how closely a run is watched is a property of the run, so nothing here is read from a Brain or
+    ///     Reasoner element. <see cref="Factories.GaiaLoader.Diagnostics" /> applies one to every brain a loader loads, and a
+    ///     single load may carry its own.
     /// </remarks>
     public sealed class MonitorSettings
     {
@@ -66,8 +66,10 @@ namespace Gaia.Core.Services.Diagnostics
         /// <summary>How many cycles a selected option may sit done before the warning, or 0 to never warn.</summary>
         /// <remarks>
         ///     An option whose actions have finished stays selected until a consideration rules it out, so an option done
-        ///     cycle after cycle with nothing ending it usually has a finished veto missing. The window is counted in cycles, so
-        ///     on a reasoner run less often than once per tick it spans more wall clock.
+        ///     cycle after cycle with nothing ending it usually has a finished veto missing. A finished veto is an
+        ///     <see cref="Considerations.ExecutionHistoryConsideration" /> whose Finished weight function reports Vetoed once the
+        ///     option's actions are done, which is what ends an option that has finished under a reasoner that selects by weight.
+        ///     The window is counted in cycles, so on a reasoner run less often than once per tick it spans more wall clock.
         /// </remarks>
         public int DoneWarningWindow { get; }
 
@@ -75,7 +77,7 @@ namespace Gaia.Core.Services.Diagnostics
         /// <remarks>
         ///     Selecting nothing is legal for a cycle or two, and a reasoner that has run out of work is excused entirely,
         ///     but a reasoner with options and no selection for a whole window usually has every option vetoed, which plays as a
-        ///     character standing still. The two windows are separate settings so either can be turned off without the other.
+        ///     character standing still.
         /// </remarks>
         public int NothingEligibleForSelectionWarningWindow { get; }
 

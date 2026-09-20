@@ -3,12 +3,13 @@
 namespace Gaia.Core.Tests.Spatial;
 
 /// <summary>
-///     Covers <see cref="Vector2" /> as a value, the two members it has that <see cref="Vector3" /> does not, and the
-///     invariant formatting every spatial value now shares.
+///     Covers <see cref="Vector2" /> as a value, its <see cref="Vector2.Perpendicular" />, and the
+///     <see cref="Vector2.Cross" /> that reports a signed area where <see cref="Vector3" />'s reports a vector.
 /// </summary>
 /// <remarks>
-///     The equality asserts are exact because every value here is chosen to add, scale and divide without rounding.
-///     The reading of a Vector2 attribute is covered where the other kinds are, in SpecificationNodeSpec.
+///     The equality asserts are exact because every value here is chosen to add, scale and divide without rounding,
+///     and the one length measured is a 3-4-5, whose root is exact as well. The reading of a Vector2 attribute is covered
+///     where the other kinds are, in SpecificationNodeSpec.
 /// </remarks>
 [TestFixture]
 public class Vector2Spec

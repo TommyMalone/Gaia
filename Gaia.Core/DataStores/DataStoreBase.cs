@@ -38,9 +38,9 @@ namespace Gaia.Core.DataStores
     public abstract class DataStoreBase
     {
         /// <summary>
-        ///     The sink a store reports through until a host or a loader wires one. Shared, where every other default sink in
-        ///     the library is per instance, because a store is the one a game allocates per entity and this sink holds no state
-        ///     worth an allocation each time.
+        ///     The sink a store reports through until a host or a loader wires one. Shared, where the sinks on the components
+        ///     are per instance, because a store is the one a game allocates per entity and this sink holds no state worth an
+        ///     allocation each time.
         /// </summary>
         private static readonly TraceLogSink DefaultLogSink = new();
 
@@ -63,9 +63,9 @@ namespace Gaia.Core.DataStores
 
         /// <summary>Where kind mismatches are reported.</summary>
         /// <remarks>
-        ///     Public rather than internal set because stores are made by hosts as often as by loading, the world blackboard
-        ///     and every entity among them. A loaded brain stamps its own blackboard's sink and channel, and a host wires the
-        ///     stores it makes itself.
+        ///     Public rather than internal set because a host makes stores of its own, the world blackboard and every
+        ///     entity's, as often as loading makes them. A loaded brain stamps its own blackboard's sink and channel, and a host
+        ///     wires the stores it makes itself.
         /// </remarks>
         public ILogSink LogSink { get; set; } = DefaultLogSink;
 
@@ -366,8 +366,9 @@ namespace Gaia.Core.DataStores
 
         /// <summary>Reports a mismatch if the failed read was one, rather than a name that was never written.</summary>
         /// <remarks>
-        ///     The extra lookup this needs runs only on reads that already failed, which a correctly configured brain does
-        ///     not walk in a steady state. A name that was never written is an ordinary miss rather than a collision.
+        ///     The extra lookup this needs runs only on reads that already failed, so a read that finds its value pays
+        ///     nothing and a consideration that expects a miss pays one lookup a cycle. A name that was never written is an
+        ///     ordinary miss rather than a collision.
         /// </remarks>
         private void ReportAnyTypeMismatch(AiString name, DataStoreValueType requestedValueType)
         {

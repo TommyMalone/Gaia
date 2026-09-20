@@ -28,7 +28,10 @@ namespace Gaia.Core.Services.Diagnostics
         /// <summary>The highest rank the option's considerations reported this cycle.</summary>
         public float Rank { get; }
 
-        /// <summary>What the option's considerations added up to this cycle, before screening.</summary>
+        /// <summary>
+        ///     What the option's considerations came to this cycle, their addends' sum scaled by their multipliers' product,
+        ///     before screening.
+        /// </summary>
         public float Weight { get; }
 
         /// <summary>False if the reasoner's screening removed the option before the pick.</summary>

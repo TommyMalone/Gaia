@@ -13,9 +13,9 @@ namespace Gaia.Core.HostSpecs;
 /// </summary>
 /// <remarks>
 ///     The behavioral assertions live in LoadedSniperSpec, in Gaia.Core.Tests. What is asserted here is the host's
-///     contract, the configuration loads through <see cref="GaiaLoader" />, a game-registered action type is built by name
-///     from the file, and the loaded brain runs. Cycle counts are generous rather than exact, so this spec does not
-///     restate how many cycles each step of a <see cref="SequenceReasoner" /> takes.
+///     contract, which is three things. The configuration loads through <see cref="GaiaLoader" />, a game-registered
+///     action type is built by name from the file, and the loaded brain runs. Cycle counts are generous rather than exact,
+///     so this spec does not restate how many cycles each step of a <see cref="SequenceReasoner" /> takes.
 /// </remarks>
 [TestFixture]
 public class LoadedBrainHostSpec
@@ -42,6 +42,8 @@ public class LoadedBrainHostSpec
         string configurationText = File.ReadAllText(configurationPath);
 
         _loaded = loader.TryLoadBrain(configurationText, "sniper.xml", out Brain? brain, self: _sniper);
+        // A failed load yields no brain. An empty stand-in keeps the fixture alive so
+        // LoadsTheSniperThroughThePublicSurface can report the failure instead of every test failing in SetUp.
         _brain = brain ?? new Brain();
         _sniper.Brain = _brain;
     }
@@ -71,6 +73,9 @@ public class LoadedBrainHostSpec
         List<EntityBase> killZoneContacts = new();
         List<EntityBase> retreatRouteContacts = new();
 
+        // An absent variable reads as neutral rather than false, so without an empty KillZoneContacts the Snipe option
+        // would not be vetoed. Writing the two lists empty is the host saying there is nothing there, which is not the
+        // same as saying nothing.
         _brain.Blackboard.SetBool("IsUnderFire", false);
         _brain.Blackboard.SetEntityList("KillZoneContacts", killZoneContacts);
         _brain.Blackboard.SetEntityList("RetreatRouteContacts", retreatRouteContacts);

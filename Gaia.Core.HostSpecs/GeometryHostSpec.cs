@@ -10,9 +10,10 @@ namespace Gaia.Core.HostSpecs;
 
 /// <summary>Proves that game code can build regions, targets and curves and query them through the public surface alone.</summary>
 /// <remarks>
-///     A region is queried by the host, not by the library. Nothing here fills a <see cref="Contact" /> list, so a
-///     host tests each contact against a region itself and writes the ones inside to the blackboard entity list a
-///     configuration's <see cref="EntityExistsConsideration" /> reads, which is what the public surface is for.
+///     A region is queried by the host, not by the library. The library fills no <see cref="Contact" /> list, so a
+///     host tests each contact against a region itself and writes the ones inside to the blackboard entity list that a
+///     configuration's <see cref="EntityExistsConsideration" /> reads, which is the work this fixture does through the
+///     public surface alone.
 /// </remarks>
 [TestFixture]
 public class GeometryHostSpec
@@ -112,8 +113,7 @@ public class GeometryHostSpec
     [Test]
     public void ReshapesACurveByHand()
     {
-        // Raising the end and taking out the peak leaves a straight line from 0 to 4, once the tangents are set
-        // again, which is how a tuning tool moves a response around without rebuilding it.
+        // Raising the end and taking out the peak leaves a straight line from 0 to 4, once the tangents are set again.
         Curve response = new();
         response.AddKeyframe(new CurveKeyframe(0f, 0f));
         response.AddKeyframe(new CurveKeyframe(1f, 5f));

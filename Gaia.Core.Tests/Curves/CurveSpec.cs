@@ -128,7 +128,8 @@ public class CurveSpec
     [Test]
     public void KeepsItsLastKeyframe()
     {
-        // An empty curve reports 0 for every input, which loading refuses, so the code door refuses it too.
+        // An empty curve reports 0 for every input, which loading refuses, so RemoveKeyframe refuses to empty one from
+        // code as well.
         CurveKeyframe only = new(5f, 3f);
         _curve.AddKeyframe(only);
 

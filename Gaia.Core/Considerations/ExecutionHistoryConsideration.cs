@@ -75,9 +75,9 @@ namespace Gaia.Core.Considerations
         ///     </para>
         ///     <para>Only a positive rank is retained, since a portion of a negative rank would be higher than the rank itself.</para>
         ///     <para>
-        ///         Loading refuses anything outside 0 to 1. A factor above 1 retains a rank the option never held, which
-        ///         promotes a running option above every rival rather than holding it against near equals, and a negative factor
-        ///         retains nothing while saying something else.
+        ///         Loading refuses anything outside 0 to 1. A factor above 1 retains a rank the option never held, which holds
+        ///         it against rivals up to that rank rather than against near equals, and a negative factor retains nothing while
+        ///         saying something else.
         ///     </para>
         /// </remarks>
         public float RankRetentionFactor { get; internal set; }
@@ -253,8 +253,8 @@ namespace Gaia.Core.Considerations
         /// </summary>
         private static WeightValues Convert(WeightFunctionBase? weightFunction, Seconds elapsedTime)
         {
-            // Weight functions convert floats. Elapsed times on the scales considerations measure, seconds to
-            // minutes, sit far inside float precision, so the narrowing loses nothing a curve could see.
+            // Weight functions convert floats. Considerations measure elapsed times on scales of seconds to minutes,
+            // which sit far inside float precision, so the narrowing loses nothing a curve could see.
             return weightFunction?.CalculateFloat((float)elapsedTime.Value) ?? WeightValues.Neutral;
         }
 

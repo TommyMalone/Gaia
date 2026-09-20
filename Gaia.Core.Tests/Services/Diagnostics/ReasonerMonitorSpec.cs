@@ -61,8 +61,8 @@ public class ReasonerMonitorSpec
     [Test]
     public void WarnsWhenItsSelectionHasBeenDoneForAWholeWindow()
     {
-        // The option's one action is done at Select and nothing vetoes the option afterward, which is the
-        // missing-finished-veto shape the warning exists to name.
+        // The option's one action is done at Select and nothing vetoes the option afterward, which is the shape
+        // MonitorSettings.DoneWarningWindow describes, a finished veto missing.
         RecordingLogSink logSink = new();
         RuleBasedReasoner reasoner = new()
         {

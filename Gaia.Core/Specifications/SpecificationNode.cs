@@ -294,8 +294,8 @@ namespace Gaia.Core.Specifications
         /// <summary>Parses "true" or "false" in any casing, reporting anything else as malformed.</summary>
         private bool TryParseBool(AiString name, string text, out bool value)
         {
-            // Names match case-insensitively everywhere, and a value stricter than its own attribute name is a
-            // mismatch an author copying the chapter's Veto="True" would meet.
+            // Names match case-insensitively everywhere, so a value parsed more strictly than its own attribute name is
+            // matched would turn the chapter's Veto="True" into a malformed-value error.
             if (string.Equals(text, "true", StringComparison.OrdinalIgnoreCase))
             {
                 value = true;

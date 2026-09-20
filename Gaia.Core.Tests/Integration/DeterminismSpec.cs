@@ -192,7 +192,7 @@ public class DeterminismSpec
     ///     Neither brain is loaded for an actor, so neither takes a name-derived seed. Each is seeded from the master's
     ///     next value instead, which makes its stream a function of the master seed and its place in the load order. Loading
     ///     the pair again in that order reproduces both brains, and the second load leaves the first brain's rolls untouched,
-    ///     because each brain drew a seed of its own rather than both drawing from the master.
+    ///     because each brain runs on a source of its own seeded from the master rather than drawing from the master itself.
     /// </remarks>
     private static (BrainMonitor, BrainMonitor) RunFleetOnce()
     {

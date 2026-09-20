@@ -53,8 +53,9 @@ namespace Gaia.Core.Curves
 
         /// <summary>Replaces the keyframe at the given keyframe's input, if the curve holds one.</summary>
         /// <remarks>
-        ///     The one way to change a keyframe, since a curve's only keyframe cannot be removed and added back. A new value
-        ///     changes the neighbors' slopes as a removal does, so a host that wants straight lines runs SetLinearTangents again.
+        ///     The only way to change a curve's one remaining keyframe, since that one cannot be removed and added back. A
+        ///     new value changes the neighbors' slopes as a removal does, so a host that wants straight lines runs
+        ///     SetLinearTangents again.
         /// </remarks>
         /// <returns>True if a keyframe was replaced. False when no keyframe holds the input.</returns>
         public bool SetKeyframe(CurveKeyframe keyframe)
@@ -73,8 +74,8 @@ namespace Gaia.Core.Curves
         /// <summary>Removes the keyframe at an input, if the curve holds one.</summary>
         /// <remarks>
         ///     <para>
-        ///         The last keyframe is never removed, since an empty curve reports 0 for every input and would veto silently
-        ///         through a multiplier, which is why loading refuses an empty curve too.
+        ///         A curve's one remaining keyframe is never removed, since an empty curve reports 0 for every input and would
+        ///         veto silently through a multiplier, which is why loading refuses an empty curve too.
         ///     </para>
         ///     <para>
         ///         Removing a keyframe changes its neighbors' slopes, so tangents SetLinearTangents wrote describe a curve that
@@ -82,7 +83,7 @@ namespace Gaia.Core.Curves
         ///     </para>
         /// </remarks>
         /// <returns>True if a keyframe was removed. False when no keyframe holds the input.</returns>
-        /// <exception cref="InvalidOperationException">The keyframe at the input is the curve's last.</exception>
+        /// <exception cref="InvalidOperationException">The keyframe at the input is the only one the curve holds.</exception>
         public bool RemoveKeyframe(float input)
         {
             int index = IndexAtOrAfter(input);
@@ -95,7 +96,7 @@ namespace Gaia.Core.Curves
             if (_keyframes.Count == 1)
             {
                 throw new InvalidOperationException(
-                    $"A curve keeps its last keyframe, the one at input {input}. An empty curve reports 0 for every input.");
+                    $"A curve keeps its only keyframe, the one at input {input}. An empty curve reports 0 for every input.");
             }
 
             _keyframes.RemoveAt(index);

@@ -28,7 +28,8 @@ namespace Gaia.Core.Reasoners
         ///     Iterating a List through IReadOnlyList boxes its enumerator, one small heap allocation per loop, which a
         ///     decision cycle runs several of. Iterating the concrete list keeps the enumerator on the stack, so per-cycle code
         ///     loops over this and everything else reads Options. It is protected so a game's own reasoner loops the same way, and
-        ///     internal in Options' place, so the monitors read the list without the tree opening.
+        ///     internal as well because the monitors read it and cannot reach Options, which is protected alone. Neither tier puts
+        ///     a reasoner's options on the public surface.
         /// </remarks>
         protected internal List<OptionBase> OptionList { get; } = new();
 
@@ -36,14 +37,17 @@ namespace Gaia.Core.Reasoners
         /// <remarks>
         ///     Diagnostics are attached from code by a host, a <see cref="BrainMonitor" /> for a whole brain or this for one
         ///     reasoner, and never from configuration, since how closely a run is watched is a property of the run rather than of
-        ///     the character. The setter is public for that reason. A reasoner with no monitor pays one null check per cycle.
+        ///     the character. The setter is public for that reason. A <see cref="BrainMonitor" /> attached afterward replaces a
+        ///     monitor set here by hand, so a host uses one or the other. A reasoner with no monitor pays one null check per
+        ///     cycle.
         /// </remarks>
         public ReasonerMonitor? Monitor { get; set; }
 
         /// <summary>Where this reasoner reports the decisions it makes.</summary>
         /// <remarks>
-        ///     The setter is public, like every service on the public structure, because hand assembly has no factory to
-        ///     inject them. Loading stamps them from the creation data, so a loaded tree needs no hand wiring.
+        ///     The setter is public, as it is on <see cref="Brains.Brain" /> and <see cref="Actions.ActionBase" />, because a
+        ///     host assembling a tree by hand has no factory to inject the services. Loading stamps them from the creation data,
+        ///     so a loaded tree needs no hand wiring.
         /// </remarks>
         public ILogSink LogSink { get; set; } = new TraceLogSink();
 
@@ -67,7 +71,7 @@ namespace Gaia.Core.Reasoners
         ///     Done means ran out of work, never nothing was eligible this cycle. A scoring reasoner chooses by the weights
         ///     its options report, which a <see cref="RuleBasedReasoner" /> and a <see cref="DualUtilityReasoner" /> do, and a
         ///     <see cref="SequenceReasoner" /> chooses by position. Selecting nothing is a circumstance, such as every option
-        ///     vetoed for a cycle while a sensor rewrites a list, and treating it as completion would let one such cycle advance a
+        ///     vetoed for a cycle while the host rewrites a list, and treating it as completion would let one such cycle advance a
         ///     parent SequenceReasoner past unfinished work. A reasoner with an end overrides this, a sequence once it is past its
         ///     last step. <see cref="SubreasonerAction" /> applies the completion rule its step was configured with, by default
         ///     done when the option this reasoner selected has finished, which IsSelectionDone reports. A scoring reasoner's own
@@ -76,8 +80,8 @@ namespace Gaia.Core.Reasoners
         public virtual bool IsDone => false;
 
         /// <summary>
-        ///     True once this reasoner's selected option is done. A <see cref="SubreasonerAction" /> running the reasoner
-        ///     reports done when this is true.
+        ///     True once this reasoner's selected option is done. A <see cref="SubreasonerAction" /> under its default
+        ///     SelectedOptionDone rule reports done when this is true.
         /// </summary>
         /// <remarks>
         ///     A reasoner that runs several of its options in turn, as a <see cref="SequenceReasoner" /> does, overrides this

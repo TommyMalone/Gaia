@@ -22,7 +22,7 @@ namespace Gaia.Core.Regions
         /// <summary>The target whose position replaces Origin while one is configured, or null to use Origin.</summary>
         public TargetBase? OriginTarget { get; set; }
 
-        /// <summary>How far the region reaches from its origin.</summary>
+        /// <summary>How far the region reaches from its axis.</summary>
         public float Radius
         {
             get => _radius;

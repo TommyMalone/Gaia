@@ -269,11 +269,10 @@ public class DualUtilityReasonerSpec
     [Test]
     public void SelectsInProportionToWeightOverManyCycles()
     {
-        // The suite's one test that samples a distribution, so it takes a seeded source where the others pin a
-        // single roll. Weights of 3 and 1 make First the selection in three cycles out of four. The seed rolls
-        // the same sequence on every run and ten thousand cycles settle the share, which is what allows a band
-        // this narrow. A selection that ignored weight would fail here. Always taking the heaviest option gives
-        // a share of 1, and choosing evenly among the survivors gives 0.5.
+        // Weights of 3 and 1 make First the selection in three cycles out of four. The seed rolls the same sequence on
+        // every run and ten thousand cycles settle the share, which is what allows a band this narrow. A selection that
+        // ignored weight would fail here. Always taking the heaviest option gives a share of 1, and choosing evenly
+        // among the survivors gives 0.5.
         const int cycleCount = 10000;
 
         _firstConsideration.Set(_heavyWeight);
@@ -355,7 +354,7 @@ public class DualUtilityReasonerSpec
     [Test]
     public void RefusesAScreeningFactorOutsideZeroToOne()
     {
-        // Above 1 the threshold passes the best weight in the winning rank, so every option is screened out and
+        // Above 1 the threshold rises above the best weight in the winning rank, so every option is screened out and
         // the reasoner selects nothing for as long as the configuration ships, with nothing to say why.
         const string snippet = """
                                <Reasoner Type="DualUtility" WeightScreeningFactor="1.5"/>

@@ -94,9 +94,9 @@ public class DecisionHistorySpec
     [Test]
     public void AllocatesFiftySixKibibytesAtItsDefaultCapacities()
     {
-        // The type's remarks quote a cost per history, and this is where that number comes from. The two structs
-        // are measured rather than summed by hand, since the runtime pads DecisionCycle's float before its AiString,
-        // and one history is built and dropped first so type initialization and the JIT are not charged to the one
+        // The type's remarks quote a cost per history, and this is where that number comes from. The two structs are
+        // measured rather than summed by hand, since the runtime pads DecisionCycle's float before its AiString. One
+        // history is built and dropped first, so that type initialization and the JIT are not charged to the one
         // measured.
         const int cycleCapacity = 256;
         const int optionCapacity = 8;
@@ -111,6 +111,8 @@ public class DecisionHistorySpec
         DecisionHistory measured = new();
         long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
 
+        // KeepAlive holds the reference past the allocation count, so the runtime cannot treat the instance as dead
+        // before the measurement is taken. The warm-up history needs none, since nothing is measured on it.
         GC.KeepAlive(measured);
 
         TestContext.Out.WriteLine($"DecisionRecord {recordSize} B, DecisionCycle {cycleSize} B, " +

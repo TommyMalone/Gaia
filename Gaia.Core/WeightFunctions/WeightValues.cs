@@ -56,7 +56,7 @@ namespace Gaia.Core.WeightFunctions
         private static readonly AiString RankAttribute = "Rank";
         private static readonly AiString VetoAttribute = "Veto";
 
-        /// <summary>Reads the optional Addend, Multiplier and Rank attributes of an element as one set of weight values.</summary>
+        /// <summary>Reads the optional Addend, Multiplier, Rank and Veto attributes of an element as one set of weight values.</summary>
         /// <remarks>
         ///     An absent attribute keeps its identity value, so an element saying nothing reads as <see cref="Neutral" />. A
         ///     veto is written Veto="true", in any casing. Malformed text fails the read once the node has reported it, and so
@@ -68,7 +68,7 @@ namespace Gaia.Core.WeightFunctions
             return TryRead(node, Neutral, out values);
         }
 
-        /// <summary>Reads the same three attributes over the given defaults, for an element whose identity is not Neutral.</summary>
+        /// <summary>Reads the same attributes over the given defaults, for an element whose identity is not Neutral.</summary>
         /// <remarks>
         ///     <see cref="Considerations.TuningConsideration" /> is the one element that has a unique default value, an
         ///     addend of 1. Everything else reads over Neutral.
@@ -115,7 +115,7 @@ namespace Gaia.Core.WeightFunctions
 
                 if (veto)
                 {
-                    // An author who vetoes and option and provides a multiplier has two opinions about the same number.
+                    // An author who vetoes an option and provides a multiplier has two opinions about the same number.
                     // The reader should not pick one.
                     if (node.HasAttribute(MultiplierAttribute))
                     {

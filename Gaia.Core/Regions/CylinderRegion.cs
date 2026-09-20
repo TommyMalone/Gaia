@@ -15,7 +15,7 @@ namespace Gaia.Core.Regions
     ///     </para>
     ///     <para>
     ///         A random position is picked on the disc the way <see cref="CircleRegion" /> picks one and spread evenly along
-    ///         the height, so it never fails.
+    ///         the height, so it fails only where a configured OriginTarget has no position.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>

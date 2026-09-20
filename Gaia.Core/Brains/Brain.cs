@@ -24,7 +24,10 @@ namespace Gaia.Core.Brains
 
         private BrainMonitor? _monitor;
 
-        /// <summary>Creates a brain that decides nothing until a configuration or a host supplies its reasoner.</summary>
+        /// <summary>
+        ///     Creates a brain that decides nothing until a configuration supplies its reasoner. A host assembling a brain in
+        ///     code uses the constructor that takes one, since RootReasoner cannot be set afterward.
+        /// </summary>
         public Brain()
         {
         }
@@ -39,8 +42,7 @@ namespace Gaia.Core.Brains
         /// <remarks>
         ///     The brain makes its own blackboard, and <see cref="Factories.GaiaLoader" /> accepts a kept one at load, so a
         ///     character whose brain is swapped keeps what it knew. What survives a swap is decided by the host, since the brain
-        ///     never clears what it is handed. Blackboard swapping is supported primarily to allow for runtime editing and
-        ///     iteration.
+        ///     never clears what it is handed.
         /// </remarks>
         public BrainBlackboard Blackboard { get; internal set; } = new();
 
@@ -78,7 +80,8 @@ namespace Gaia.Core.Brains
         /// <remarks>
         ///     Setting one attaches it, which walks the tree and gives each reasoner a <see cref="ReasonerMonitor" />, and
         ///     the walk runs again at Enable so a tree finished after attaching is covered. Diagnostics are attached from code, by
-        ///     a host or by <see cref="Factories.GaiaLoader" /> for every brain it loads, and never from configuration.
+        ///     a host or by <see cref="Factories.GaiaLoader" /> for every brain it loads when it carries a
+        ///     <see cref="MonitorSettings" />, and never from configuration.
         /// </remarks>
         public BrainMonitor? Monitor
         {

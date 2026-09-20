@@ -42,7 +42,7 @@ namespace Gaia.Core.Services.Random
         ///     The Environment.TickCount reading is combined with a count of default constructions, because a loop that makes
         ///     several default sources inside one millisecond would otherwise hand them all the same seed and the sources would
         ///     move in step. The count is multiplied by 0x2545F491 first, so consecutive counts differ across the whole word
-        ///     rather than only in the low bits a clock reading also varies.
+        ///     rather than only in the low bits, which is where a clock reading already differs.
         /// </remarks>
         public Xoshiro128RandomSource() : this(Environment.TickCount ^
                                                (Interlocked.Increment(ref _defaultSeedCount) * 0x2545F491))
@@ -56,8 +56,11 @@ namespace Gaia.Core.Services.Random
             Seed = seed;
 
             // The four state words come from a splitmix64 walk over the seed, the seeding the generator's authors
-            // recommend. The walk's increment keeps the state from ever starting all zero, the one state the
-            // generator cannot leave.
+            // recommend. The walk's increment keeps the state from ever starting all zero, the one state the generator
+            // cannot leave. The cast is part of the reported-seed contract. A seed is reported as an int and reproduced
+            // from one, and the (uint) zero-extends it, so a negative seed walks from the unsigned reading of its bits
+            // rather than from a sign-extended one. Changing the conversion would change every walk a negative seed has
+            // ever reported.
             ulong seedingState = (uint)seed;
 
             ulong first = SplitMix64(ref seedingState);
@@ -69,7 +72,7 @@ namespace Gaia.Core.Services.Random
             _state3 = (uint)(second >> 32);
         }
 
-        /// <summary>The seed the sequence runs from, which is what reproduces it.</summary>
+        /// <summary>The seed the sequence runs from.</summary>
         public int Seed { get; }
 
         /// <inheritdoc />

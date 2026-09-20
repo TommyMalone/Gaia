@@ -265,8 +265,8 @@ public class FactorySetSpec
     [Test]
     public void RefusesAMissingRequiredAttributeInEveryRegion()
     {
-        // Origin is optional on every shape, so a bare round shape names Radius, and the two with a height name
-        // HalfHeight once given one.
+        // Origin is optional on the shapes that take one and absent from Box, so a bare round shape names Radius, the
+        // two with a height name HalfHeight once given one, and the shapes defined by corners name Min.
         AssertMissingAttributeRefused("Region", new[]
         {
             ("Box", "", "Min"), ("Capsule", "", "Radius"), ("Capsule", " Radius=\"2\"", "HalfHeight"),

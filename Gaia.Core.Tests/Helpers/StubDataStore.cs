@@ -11,7 +11,7 @@ internal sealed class StubDataStore : DataStoreBase
     /// <summary>Every mismatch reported so far, as "Name stored requested".</summary>
     internal IReadOnlyList<string> TypeMismatches => _typeMismatches;
 
-    /// <summary>Records the mismatch as "Name stored requested".</summary>
+    /// <summary>Records the mismatch for TypeMismatches to report.</summary>
     protected override void OnTypeMismatch(
         AiString name,
         DataStoreValueType storedValueType,

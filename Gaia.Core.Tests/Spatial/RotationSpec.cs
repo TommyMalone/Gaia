@@ -9,8 +9,8 @@ namespace Gaia.Core.Tests.Spatial;
 /// <remarks>
 ///     The rotations under test are built from single-axis half-angle quaternions and combined with a hand-rolled
 ///     Hamilton product at the bottom of the fixture, so the Euler report and FromEulerAngles are each checked against an
-///     independent construction rather than against the other. Angle and direction asserts are tolerant because the
-///     trigonometry does not come out exact in floats.
+///     independent construction, and one test besides closes the round trip by feeding the report back into the
+///     construction. Angle and direction asserts are tolerant because the trigonometry does not come out exact in floats.
 /// </remarks>
 [TestFixture]
 public class RotationSpec

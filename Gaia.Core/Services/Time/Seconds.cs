@@ -11,8 +11,8 @@ namespace Gaia.Core.Services.Time
     ///     </para>
     ///     <para>
     ///         The backing value is a double because absolute session time outgrows a float. Accumulating sixtieths of a
-    ///         second in a float drifts by several percent from around four and a half hours of session, runs almost twice as
-    ///         fast from around seventy three, and stops advancing near a hundred and forty five, where the step falls below
+    ///         second in a float runs several percent off from around four and a half hours of session, almost twice as fast
+    ///         from around seventy seven, and stops advancing after around a hundred and sixteen, where the step falls below
     ///         half a unit of precision. A double holds tick precision for any session a game can run. The engine boundary
     ///         converts once, and a float fed to the constructor widens losslessly.
     ///     </para>
