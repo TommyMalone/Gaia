@@ -77,8 +77,8 @@ public class DecisionHistoryWriterSpec
             [new RecordAction("Aim", new List<string>(), false)]) { Name = "Aim" });
 
         RuleBasedReasoner root = new();
-        root.AddOption(new StubOption([new StubConsideration(WeightValues.Neutral)],
-            [new SubreasonerAction(nested)]) { Name = "Snipe" });
+        root.AddOption(new StubOption([new StubConsideration(WeightValues.Neutral)], [new SubreasonerAction(nested)])
+            { Name = "Snipe" });
 
         BrainMonitor monitor = new(new MonitorSettings());
         Brain brain = new(root) { LogChannel = "Guard", Monitor = monitor };
@@ -91,8 +91,7 @@ public class DecisionHistoryWriterSpec
         Assert.Multiple(() =>
         {
             Assert.That(Lines(text)[5], Is.EqualTo("brain\tGuard\t1"));
-            Assert.That(Lines(text)[6], Is.EqualTo("reasoner\t\t1\t256\t8"),
-                "the root reasoner sits under no option");
+            Assert.That(Lines(text)[6], Is.EqualTo("reasoner\t\t1\t256\t8"), "the root reasoner sits under no option");
             Assert.That(Lines(text), Has.Some.EqualTo("reasoner\tSnipe\t1\t256\t8"));
         });
     }
@@ -120,7 +119,11 @@ public class DecisionHistoryWriterSpec
     }
 
     /// <summary>Records one cycle through the surface the monitor uses, so a test states what a history holds.</summary>
-    private static void RecordCycle(DecisionHistory history, long cycleIndex, float roll, AiString selectedName,
+    private static void RecordCycle(
+        DecisionHistory history,
+        long cycleIndex,
+        float roll,
+        AiString selectedName,
         params DecisionRecord[] records)
     {
         history.BeginCycle(cycleIndex);
