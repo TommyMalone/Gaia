@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Specifications;
+﻿using System.Collections.Concurrent;
+using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
 using Gaia.Core.Tests.Helpers;
 
@@ -28,6 +29,37 @@ public class XmlSpecificationReaderSpec
                                        <Action Type="Pause" Duration="2"/>
                                    </Option>
                                    """;
+
+    /// <summary>The category of a test that tries every character, which takes seconds where the others take milliseconds.</summary>
+    /// <remarks>
+    ///     A run that leaves the category out, with the filter TestCategory!=Sweep, skips them, and a run before landing
+    ///     keeps them.
+    /// </remarks>
+    internal const string SweepCategory = "Sweep";
+
+    /// <summary>The documents the sweeps of this spec and of <see cref="XmlSpecificationWriterSpec" /> fill in.</summary>
+    /// <remarks>Each sweep replaces {c} with a character as itself and {x} with the same character's number in hexadecimal.</remarks>
+    internal static readonly string[] SweepShapes =
+    {
+        "<{c}/>",
+        "<a{c}/>",
+        "<a {c}=\"v\"/>",
+        "<a b{c}=\"v\"/>",
+        "<a v=\"{c}\"/>",
+        "<a v=\"&#x{x};\"/>",
+        "<a Type=\"{c}\"/>",
+        "<a Type=\"&#x{x};\"/>",
+        "<!--{c}--><a/>",
+        "<a><!--{c}--><b/></a>",
+        "<a><!--x{c}--></a>",
+        "<a>{c}</a>",
+        "<a {c}=\"1\" k=\"2\"/>",
+        "<a t{c}pe=\"1\" Type=\"2\"/>",
+        "<{c}:a xmlns:{c}=\"urn:p\"/>",
+        "<a xmlns:p=\"urn:p\" p:{c}=\"1\"/>",
+        "<!DOCTYPE a [<!ATTLIST a {c} CDATA \"1\">]><a k=\"2\"/>",
+        "<!DOCTYPE a [<!ENTITY e \"{c}\">]><a v=\"&e;\"/>",
+    };
 
     private RecordingLogSink _logSink;
     private XmlSpecificationReader _reader;
@@ -192,5 +224,269 @@ public class XmlSpecificationReaderSpec
                 "Warning test.xml Line 1, the Option element holds stray text \"oops\"",
             }));
         });
+    }
+
+    [Test]
+    public void TakesTheTypeInAnyCasing()
+    {
+        _reader.TryRead("""<Region type="Circle" Radius="4"/>""", SourceName, out SpecificationNode? root);
+
+        AiString circleType = "Circle";
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(root!.Type, Is.EqualTo(circleType));
+            Assert.That(root.AttributeSpellings, Is.EqualTo(new[] { "Radius" }),
+                "the discriminator is not an attribute");
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void KeepsTheSpellingsTheDocumentUsed()
+    {
+        _reader.TryRead("""<rEGION Type="cIRCLE" rADIUS="4"/>""", SourceName, out SpecificationNode? root);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(root!.NameSpelling, Is.EqualTo("rEGION"));
+            Assert.That(root.TypeSpelling, Is.EqualTo("cIRCLE"));
+            Assert.That(root.AttributeSpellings, Is.EqualTo(new[] { "rADIUS" }));
+        });
+    }
+
+    [Test]
+    public void GivesEachParsedChildItsParent()
+    {
+        _reader.TryRead(Snippet, SourceName, out SpecificationNode? root);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(root!.Parent, Is.Null);
+            Assert.That(root.Children[0].Parent, Is.SameAs(root));
+            Assert.That(root.Children[1].Parent, Is.SameAs(root));
+        });
+    }
+
+    // @formatter:off
+    [TestCase("""<Region Radius="4" radius="5"/>""",
+        "Error test.xml Line 1, the Region element carries Radius twice, the second time as radius")]
+    [TestCase("<Option>\n    <Region Radius=\"4\" radius=\"5\"/>\n</Option>",
+        "Error test.xml Line 2, the Region element carries Radius twice, the second time as radius")]
+    [TestCase("""<Region Type="Circle" type="Sphere"/>""",
+        "Error test.xml Line 1, the Region element carries Type twice, the second time as type")]
+    [TestCase("<Option>\n    <Region Type=\"Circle\" type=\"Sphere\"/>\n</Option>",
+        "Error test.xml Line 2, the Region element carries Type twice, the second time as type")]
+    // @formatter:on
+    public void RefusesAnElementThatCarriesOneNameInTwoSpellings(string document, string expectedEntry)
+    {
+        bool wasRead = _reader.TryRead(document, SourceName, out SpecificationNode? root);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wasRead, Is.False);
+            Assert.That(root, Is.Null);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[] { expectedEntry }));
+        });
+    }
+
+    [Test]
+    public void RefusesADefaultNamespaceDeclaration()
+    {
+        bool wasRead = _reader.TryRead("""<Region xmlns="urn:x"><Origin/></Region>""", SourceName,
+            out SpecificationNode? root);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wasRead, Is.False);
+            Assert.That(root, Is.Null);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error test.xml Line 1, the Region element declares the XML namespace \"urn:x\", and Gaia reads no XML namespace",
+            }), "the elements the declaration covers are not reported again");
+        });
+    }
+
+    [Test]
+    public void RefusesAPrefixDeclaration()
+    {
+        bool wasRead = _reader.TryRead("""<Region xmlns:p="urn:p"/>""", SourceName, out SpecificationNode? root);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wasRead, Is.False);
+            Assert.That(root, Is.Null);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error test.xml Line 1, the Region element declares the XML namespace \"urn:p\", and Gaia reads no XML namespace",
+            }));
+        });
+    }
+
+    [Test]
+    public void RefusesAnAttributeWrittenWithAPrefix()
+    {
+        const string snippet = """
+                               <Brain xmlns:p="urn:p">
+                                   <Region p:Radius="4"/>
+                               </Brain>
+                               """;
+
+        bool wasRead = _reader.TryRead(snippet, SourceName, out SpecificationNode? root);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wasRead, Is.False);
+            Assert.That(root, Is.Null);
+            Assert.That(_logSink.Entries,
+                Does.Contain(
+                    "Error test.xml Line 2, the Region element's Radius is in the XML namespace \"urn:p\", and Gaia reads no XML namespace"));
+        });
+    }
+
+    [Test]
+    public void RefusesAnElementWrittenWithAPrefix()
+    {
+        const string snippet = """
+                               <Brain xmlns:p="urn:p">
+                                   <p:Region Radius="4"/>
+                               </Brain>
+                               """;
+
+        bool wasRead = _reader.TryRead(snippet, SourceName, out SpecificationNode? root);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wasRead, Is.False);
+            Assert.That(root, Is.Null);
+            Assert.That(_logSink.Entries,
+                Does.Contain(
+                    "Error test.xml Line 2, the Region element is in the XML namespace \"urn:p\", and Gaia reads no XML namespace"));
+        });
+    }
+
+    [Test]
+    public void DoesNotTakeAPrefixedTypeForTheType()
+    {
+        const string snippet = """
+                               <Region xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="Circle"/>
+                               """;
+
+        bool wasRead = _reader.TryRead(snippet, SourceName, out SpecificationNode? root);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wasRead, Is.False);
+            Assert.That(root, Is.Null);
+            Assert.That(_logSink.Entries,
+                Does.Contain(
+                    "Error test.xml Line 1, the Region element's type is in the XML namespace \"http://www.w3.org/2001/XMLSchema-instance\", and Gaia reads no XML namespace"));
+        });
+    }
+
+    [Test]
+    public void RefusesAnElementNamedXmlns()
+    {
+        bool wasRead = _reader.TryRead("<Brain><xmlns/></Brain>", SourceName, out SpecificationNode? root);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wasRead, Is.False);
+            Assert.That(root, Is.Null);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error test.xml Line 1, the xmlns element's name is what XML declares a namespace with, and Gaia reads no XML namespace",
+            }));
+        });
+    }
+
+    [Test]
+    public void TakesXmlnsInAnotherCasingAsAnOrdinaryName()
+    {
+        bool wasRead = _reader.TryRead("""<XMLNS Xmlns="urn:x"/>""", SourceName, out SpecificationNode? root);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wasRead, Is.True);
+            Assert.That(root!.NameSpelling, Is.EqualTo("XMLNS"));
+            Assert.That(root.AttributeSpellings, Is.EqualTo(new[] { "Xmlns" }));
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void ReportsWhatIsRefusedBeneathARefusedElementInTheSameRead()
+    {
+        const string snippet = """
+                               <Brain xmlns="urn:x">
+                                   <Region Radius="4" radius="5"/>
+                                   <Region Height="4" HEIGHT="5"/>
+                               </Brain>
+                               """;
+
+        _reader.TryRead(snippet, SourceName, out SpecificationNode? _);
+
+        Assert.That(_logSink.Entries, Is.EqualTo(new[]
+        {
+            "Error test.xml Line 1, the Brain element declares the XML namespace \"urn:x\", and Gaia reads no XML namespace",
+            "Error test.xml Line 2, the Region element carries Radius twice, the second time as radius",
+            "Error test.xml Line 3, the Region element carries Height twice, the second time as HEIGHT",
+        }));
+    }
+
+    [Test]
+    [Category(SweepCategory)]
+    public void ReturnsWithoutThrowingWhateverCharacterStandsAnywhereInADocument()
+    {
+        // Every value a char can take, the lone halves of a pair included, is put in the marked place of each of
+        // SweepShapes. The shapes cover an element name, an attribute name, a prefix, a value and a Type as the
+        // character and as a character reference, a comment in each place the reader keeps one, stray text, an
+        // attribute name beside k and beside Type that may be the other's in another casing, and an attribute name
+        // and an entity that a document type declares. A read that refuses has to say why, and not through the guard
+        // that catches a node's own exception, which would mean the reader called a member without asking its
+        // question.
+        ConcurrentQueue<string> failures = new();
+
+        Parallel.For(0, SweepShapes.Length * 0x10000, index =>
+        {
+            char character = (char)(index % 0x10000);
+            string document = SweepShapes[index / 0x10000].Replace("{c}", character.ToString())
+                .Replace("{x}", ((int)character).ToString("X"));
+
+            RecordingLogSink logSink = new();
+            XmlSpecificationReader reader = new(logSink);
+
+            try
+            {
+                bool wasRead = reader.TryRead(document, SourceName, out SpecificationNode? root);
+
+                if (wasRead != (root != null))
+                {
+                    failures.Enqueue(
+                        $"U+{(int)character:X4} in {SweepShapes[index / 0x10000]} returned {wasRead} beside its tree");
+                }
+
+                if (!wasRead && logSink.Entries.Count == 0)
+                {
+                    failures.Enqueue($"U+{(int)character:X4} in {SweepShapes[index / 0x10000]} was refused in silence");
+                }
+
+                foreach (string entry in logSink.Entries)
+                {
+                    if (entry.Contains("could not be built"))
+                    {
+                        failures.Enqueue(
+                            $"U+{(int)character:X4} in {SweepShapes[index / 0x10000]} reached the guard, {entry}");
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                failures.Enqueue(
+                    $"U+{(int)character:X4} in {SweepShapes[index / 0x10000]} threw {exception.GetType().Name}");
+            }
+        });
+
+        Assert.That(failures, Is.Empty);
     }
 }
