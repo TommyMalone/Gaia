@@ -17,6 +17,10 @@ namespace Gaia.Core.Options
     {
         private static readonly AiString NameAttribute = "Name";
 
+        /// <summary>Describes the Name attribute Init reads on every option, for a derived option's description to include.</summary>
+        internal static readonly AttributeDescription NameDescription = AttributeDescription.Required(NameAttribute,
+            "Name", AttributeKind.String, "What the option is called in decisions and the log.");
+
         private readonly List<ActionBase> _actions = new();
         private readonly ConsiderationSet _considerations = new();
 

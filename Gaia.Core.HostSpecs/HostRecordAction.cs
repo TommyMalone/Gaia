@@ -7,12 +7,23 @@ namespace Gaia.Core.HostSpecs;
 
 /// <summary>A game-defined action built against the public surface alone, recording each selection it receives.</summary>
 /// <remarks>
-///     This project has no InternalsVisibleTo grant, so the ActionBase hooks, the creation data and the node
-///     accessors this type reaches are the surface a host gets.
+///     This project has no InternalsVisibleTo grant, so the ActionBase hooks, the creation data, the node accessors
+///     and the description builders this type reaches are the surface a host gets. The description names Name itself,
+///     since the base's own description of it is internal.
 /// </remarks>
 internal sealed class HostRecordAction : ActionBase
 {
     private static readonly AiString DoneAttribute = "Done";
+
+    /// <summary>Describes the action for the host specs that register it.</summary>
+    internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Actions,
+        "Records each selection it receives.", new[]
+        {
+            AttributeDescription.Required("Name", "Name", AttributeKind.String,
+                "What the action is called in the log."),
+            AttributeDescription.Optional(DoneAttribute, "Done", AttributeKind.Bool, "true",
+                "Whether the action is done as soon as it is selected."),
+        }, Array.Empty<SlotDescription>());
 
     private readonly List<string> _selections;
 

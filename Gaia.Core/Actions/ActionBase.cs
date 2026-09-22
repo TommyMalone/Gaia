@@ -20,6 +20,10 @@ namespace Gaia.Core.Actions
     {
         private static readonly AiString NameAttribute = "Name";
 
+        /// <summary>Describes the Name attribute Init reads on every action, for a derived action's description to include.</summary>
+        internal static readonly AttributeDescription NameDescription = AttributeDescription.Required(NameAttribute,
+            "Name", AttributeKind.String, "What the action is called in the log.");
+
         /// <summary>What this action is called, which is how its entries are recognized in the log.</summary>
         public AiString Name { get; protected internal set; } = AiString.Empty;
 

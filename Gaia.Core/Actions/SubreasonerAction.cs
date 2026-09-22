@@ -23,6 +23,20 @@ namespace Gaia.Core.Actions
         private static readonly AiString NothingEligibleCycleLimitAttribute = "NothingEligibleCycleLimit";
         private static readonly AiString ReasonerElement = "Reasoner";
 
+        private static readonly SlotDescription ReasonerSlot = new(ReasonerElement, "Reasoner",
+            ConceptualAbstraction.Reasoners, 1, 1);
+
+        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Actions,
+            "Runs a reasoner of its own while selected, which nests one decision inside another.", new[]
+            {
+                NameDescription,
+                AttributeDescription.Enumeration<SubreasonerCompletion>(DoneWhenAttribute, "DoneWhen",
+                    nameof(SubreasonerCompletion.SelectedOptionDone), "When the action reports done."),
+                AttributeDescription.Optional(NothingEligibleCycleLimitAttribute, "NothingEligibleCycleLimit",
+                    AttributeKind.Int, "1",
+                    "How many cycles in a row with nothing eligible end the action, under the NothingEligible rule alone."),
+            }, new[] { ReasonerSlot });
+
         /// <summary>Counted for the NothingEligible rule, and restarted by any cycle that selects something.</summary>
         private int _consecutiveCyclesNothingHasBeenEligible;
 

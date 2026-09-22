@@ -18,6 +18,16 @@ namespace Gaia.Core.Options
         private static readonly AiString ActionElement = "Action";
         private static readonly AiString ConsiderationElement = "Consideration";
 
+        private static readonly SlotDescription ActionSlot = new(ActionElement, "Action", ConceptualAbstraction.Actions,
+            0, SlotDescription.Unbounded);
+
+        private static readonly SlotDescription ConsiderationSlot = new(ConsiderationElement, "Consideration",
+            ConceptualAbstraction.Considerations, 0, SlotDescription.Unbounded);
+
+        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Options,
+            "One thing the character could do, scored by its considerations and carried out by its actions.",
+            new[] { NameDescription }, new[] { ConsiderationSlot, ActionSlot });
+
         /// <summary>Creates an option for the factories to build. Init loads its name and children.</summary>
         internal ConsiderationAndActionOption()
         {

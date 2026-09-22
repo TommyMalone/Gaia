@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Factories;
+﻿using System;
+using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
 using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
@@ -15,6 +16,13 @@ namespace Gaia.Core.Targets
     public sealed class PositionTarget : TargetBase
     {
         private static readonly AiString PositionAttribute = "Position";
+
+        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Targets,
+            "A fixed position in the world.", new[]
+            {
+                AttributeDescription.Required(PositionAttribute, "Position", AttributeKind.Vector3,
+                    "Where the target is, as (x, y, z)."),
+            }, Array.Empty<SlotDescription>());
 
         /// <summary>Where this target is.</summary>
         public Vector3 Position { get; set; }

@@ -16,6 +16,14 @@ namespace Gaia.Core.Reasoners
     {
         private static readonly AiString WeightScreeningFactorAttribute = "WeightScreeningFactor";
 
+        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Reasoners,
+            "Picks among the options of the highest rank at random, in proportion to their weights.", new[]
+            {
+                AttributeDescription.Optional(WeightScreeningFactorAttribute, "WeightScreeningFactor",
+                    AttributeKind.Float, "0",
+                    "How close to the best weight an option must come to stay in the pick, from 0 for no screening to 1 for the best alone."),
+            }, new[] { OptionSlot });
+
         /// <summary>Where the reasoner draws the roll that picks among the surviving options.</summary>
         public IRandomSource RandomSource { get; set; } = new Xoshiro128RandomSource();
 

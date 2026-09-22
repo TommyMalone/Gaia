@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Factories;
+﻿using System;
+using Gaia.Core.Factories;
 using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
 
@@ -10,6 +11,13 @@ namespace Gaia.Core.WeightFunctions
     {
         private static readonly AiString FalseElement = "False";
         private static readonly AiString TrueElement = "True";
+
+        private static readonly SlotDescription FalseSlot = new(FalseElement, "False", WeightValues.Description, 0, 1);
+        private static readonly SlotDescription TrueSlot = new(TrueElement, "True", WeightValues.Description, 0, 1);
+
+        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.WeightFunctions,
+            "Reports one set of weight values when the input is true and another when it is false.",
+            Array.Empty<AttributeDescription>(), new[] { TrueSlot, FalseSlot });
 
         /// <summary>Creates a function that reports Neutral for either answer until a configuration loads.</summary>
         internal BooleanWeightFunction() : this(WeightValues.Neutral, WeightValues.Neutral)

@@ -4,6 +4,7 @@ using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Time;
 using Gaia.Core.Spatial;
+using Gaia.Core.Strings;
 
 namespace Gaia.Core.HostSpecs;
 
@@ -13,9 +14,10 @@ namespace Gaia.Core.HostSpecs;
 /// </summary>
 /// <remarks>
 ///     The behavioral assertions live in LoadedSniperSpec, in Gaia.Core.Tests. What is asserted here is the host's
-///     contract, which is three things. The configuration loads through <see cref="GaiaLoader" />, a game-registered
-///     action type is built by name from the file, and the loaded brain runs. Cycle counts are generous rather than exact,
-///     so this spec does not restate how many cycles each step of a <see cref="SequenceReasoner" /> takes.
+///     contract, which is four things. The configuration loads through <see cref="GaiaLoader" />, a game-registered action
+///     type is built by name from the file, the loaded brain runs, and the description the game registered its action with
+///     is read back through the set. Cycle counts are generous rather than exact, so this spec does not restate how many
+///     cycles each step of a <see cref="SequenceReasoner" /> takes.
 /// </remarks>
 [TestFixture]
 public class LoadedBrainHostSpec
@@ -33,10 +35,10 @@ public class LoadedBrainHostSpec
             Position = new Vector3(0f, 10f, 0f),
         };
 
-        FactorySet factories = new();
-        factories.Actions.Register("Record", () => new HostRecordAction(_selections));
+        _factories = new FactorySet();
+        _factories.Actions.Register("Record", () => new HostRecordAction(_selections), HostRecordAction.Description);
 
-        GaiaLoader loader = new(factories, _timeSource, logSink: _logSink);
+        GaiaLoader loader = new(_factories, _timeSource, logSink: _logSink);
 
         string configurationPath = Path.Combine(AppContext.BaseDirectory, "sniper.xml");
         string configurationText = File.ReadAllText(configurationPath);
@@ -51,10 +53,30 @@ public class LoadedBrainHostSpec
     private ManualTimeSource _timeSource;
     private List<string> _selections;
     private ListLogSink _logSink;
+    private FactorySet _factories;
 
     private Actor _sniper;
     private Brain _brain;
     private bool _loaded;
+
+    [Test]
+    public void ReadsAGameComponentsDescriptionBackThroughTheSet()
+    {
+        bool isRegistered = _factories.Actions.TryGetDescription("Record", out ComponentDescription? description);
+        AttributeDescription done = description!.Attributes[1];
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(isRegistered, Is.True);
+            Assert.That(description, Is.SameAs(HostRecordAction.Description));
+            Assert.That(description.Abstraction, Is.EqualTo(ConceptualAbstraction.Actions));
+            Assert.That(done.Spelling, Is.EqualTo("Done"));
+            Assert.That(done.Kind, Is.EqualTo(AttributeKind.Bool));
+            Assert.That(done.DefaultText, Is.EqualTo("true"));
+            Assert.That(_factories.Actions.Types[^1], Is.EqualTo(new AiString("Record")),
+                "a game's type is listed after the built-ins");
+        });
+    }
 
     [Test]
     public void LoadsTheSniperThroughThePublicSurface()

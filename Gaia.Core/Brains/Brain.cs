@@ -22,6 +22,13 @@ namespace Gaia.Core.Brains
     {
         private static readonly AiString ReasonerElement = "Reasoner";
 
+        private static readonly SlotDescription ReasonerSlot = new(ReasonerElement, "Reasoner",
+            ConceptualAbstraction.Reasoners, 0, 1);
+
+        /// <summary>Describes the Brain element, which <see cref="FactorySet.Root" /> reports, since no factory builds a brain.</summary>
+        internal static readonly ComponentDescription Description = new("The decisions of one character.",
+            Array.Empty<AttributeDescription>(), new[] { ReasonerSlot });
+
         private BrainMonitor? _monitor;
 
         /// <summary>

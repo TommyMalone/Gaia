@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Factories;
+﻿using System;
+using Gaia.Core.Factories;
 using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
 
@@ -8,6 +9,10 @@ namespace Gaia.Core.WeightFunctions
     /// <seealso>"Modular AI", Section 8.5.2</seealso>
     public sealed class ConstantWeightFunction : WeightFunctionBase
     {
+        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.WeightFunctions,
+            "Reports the same weight values whatever the input.", WeightValues.Attributes,
+            Array.Empty<SlotDescription>());
+
         /// <summary>Creates a function that a configuration fills.</summary>
         internal ConstantWeightFunction()
         {

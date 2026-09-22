@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Factories;
+﻿using System;
+using Gaia.Core.Factories;
 using Gaia.Core.Services.Time;
 using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
@@ -10,6 +11,14 @@ namespace Gaia.Core.Actions
     public sealed class PauseAction : ActionBase
     {
         private static readonly AiString DurationAttribute = "Duration";
+
+        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Actions,
+            "Waits for a set time, then reports done.", new[]
+            {
+                NameDescription,
+                AttributeDescription.Required(DurationAttribute, "Duration", AttributeKind.Float,
+                    "How long to wait, in seconds."),
+            }, Array.Empty<SlotDescription>());
 
         /// <summary>True while the action is selected.</summary>
         private bool _isRunning;

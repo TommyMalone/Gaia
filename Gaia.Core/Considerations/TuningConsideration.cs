@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Factories;
+﻿using System;
+using Gaia.Core.Factories;
 using Gaia.Core.Specifications;
 using Gaia.Core.WeightFunctions;
 
@@ -14,6 +15,10 @@ namespace Gaia.Core.Considerations
         ///     whose addend is 1, so that an element writing only a multiplier scales something rather than scaling nothing.
         /// </remarks>
         internal static readonly WeightValues Default = new(1f, 1f, float.MinValue);
+
+        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Considerations,
+            "Fixed values that tune the option by hand.", WeightValues.DescribeAttributes(Default),
+            Array.Empty<SlotDescription>());
 
         /// <summary>Creates a consideration that reports the chapter's Tuning defaults until a configuration loads.</summary>
         internal TuningConsideration() : this(Default)

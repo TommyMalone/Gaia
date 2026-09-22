@@ -4,13 +4,17 @@ using Gaia.Core.Factories;
 using Gaia.Core.Options;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Regions;
+using Gaia.Core.Strings;
 using Gaia.Core.Targets;
 using Gaia.Core.Tests.Helpers;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Tests.Factories;
 
-/// <summary>Covers <see cref="FactorySet" />, the built-in registrations its constructor installs.</summary>
+/// <summary>
+///     Covers <see cref="FactorySet" />, the built-in registrations its constructor installs and the order it lists
+///     them in.
+/// </summary>
 [TestFixture]
 public class FactorySetSpec
 {
@@ -21,6 +25,65 @@ public class FactorySetSpec
     }
 
     private RecordingLogSink _logSink;
+
+    [Test]
+    public void EnumeratesEachAbstractionInRegistrationOrder()
+    {
+        FactorySet factories = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(factories.Actions.Types, Is.EqualTo(Names("Pause", "Subreasoner")));
+            Assert.That(factories.Considerations.Types,
+                Is.EqualTo(Names("BooleanVariable", "ConsiderationSet", "Distance", "EntityExists", "ExecutionHistory",
+                    "FloatVariable", "IntVariable", "StringVariable", "Tuning")));
+            Assert.That(factories.Options.Types, Is.EqualTo(Names("ConsiderationAndAction")));
+            Assert.That(factories.Reasoners.Types, Is.EqualTo(Names("DualUtility", "RuleBased", "Sequence")));
+            Assert.That(factories.Regions.Types,
+                Is.EqualTo(Names("Box", "Capsule", "Circle", "ConvexHull", "Cylinder", "ExtrudedPolygon", "Polygon",
+                    "Rectangle", "Sphere")));
+            Assert.That(factories.Targets.Types, Is.EqualTo(Names("ByName", "Position", "Self")));
+            Assert.That(factories.WeightFunctions.Types,
+                Is.EqualTo(Names("Constant", "Boolean", "String", "FloatSequence", "Curve")));
+        });
+    }
+
+    [Test]
+    public void AnswersTheFactoryOfEachConceptualAbstraction()
+    {
+        FactorySet factories = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(factories.Factory(ConceptualAbstraction.Actions), Is.SameAs(factories.Actions));
+            Assert.That(factories.Factory(ConceptualAbstraction.Considerations), Is.SameAs(factories.Considerations));
+            Assert.That(factories.Factory(ConceptualAbstraction.Options), Is.SameAs(factories.Options));
+            Assert.That(factories.Factory(ConceptualAbstraction.Reasoners), Is.SameAs(factories.Reasoners));
+            Assert.That(factories.Factory(ConceptualAbstraction.Regions), Is.SameAs(factories.Regions));
+            Assert.That(factories.Factory(ConceptualAbstraction.Targets), Is.SameAs(factories.Targets));
+            Assert.That(factories.Factory(ConceptualAbstraction.WeightFunctions), Is.SameAs(factories.WeightFunctions));
+        });
+    }
+
+    [Test]
+    public void DescribesTheRootAsABrainHoldingOneReasonerAtMost()
+    {
+        FactorySet factories = new();
+
+        ComponentDescription root = factories.Root;
+        SlotDescription reasoner = root.Slots[0];
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(root.Abstraction, Is.Null, "no factory builds a brain");
+            Assert.That(root.Attributes, Is.Empty);
+            Assert.That(root.Slots, Has.Count.EqualTo(1));
+            Assert.That(reasoner.Spelling, Is.EqualTo("Reasoner"));
+            Assert.That(reasoner.Abstraction, Is.EqualTo(ConceptualAbstraction.Reasoners));
+            Assert.That(reasoner.MinCount, Is.EqualTo(0), "a Brain with no Reasoner loads");
+            Assert.That(reasoner.MaxCount, Is.EqualTo(1), "a second Reasoner is refused");
+        });
+    }
 
     [Test]
     public void BuildsEveryBuiltInWeightFunctionByItsTypeName()
@@ -347,6 +410,22 @@ public class FactorySetSpec
                     }), $"{typeName} {missingAttribute}");
             }
         });
+    }
+
+    /// <summary>
+    ///     The given texts as the names a factory lists, so an expected order compares by identity rather than by
+    ///     spelling.
+    /// </summary>
+    private static AiString[] Names(params string[] texts)
+    {
+        AiString[] names = new AiString[texts.Length];
+
+        for (int index = 0; index < texts.Length; index++)
+        {
+            names[index] = texts[index];
+        }
+
+        return names;
     }
 
     /// <summary>Builds the smallest loadable snippet for a Subreasoner action.</summary>

@@ -15,6 +15,15 @@ internal sealed class RecordAction : ActionBase
 {
     private static readonly AiString DoneAttribute = "Done";
 
+    /// <summary>Describes the action for a spec that registers it, the Name every action reads and the optional Done.</summary>
+    internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Actions,
+        "Records each lifecycle call it receives.", new[]
+        {
+            NameDescription,
+            AttributeDescription.Optional(DoneAttribute, "Done", AttributeKind.Bool, "true",
+                "Whether the action is done as soon as it is selected."),
+        }, Array.Empty<SlotDescription>());
+
     private readonly List<string> _log;
     private bool _isDone;
 

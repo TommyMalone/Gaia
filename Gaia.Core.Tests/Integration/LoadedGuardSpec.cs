@@ -36,7 +36,7 @@ public class LoadedGuardSpec
         _guard = new Actor { Name = "Guard" };
 
         FactorySet factories = new();
-        factories.Actions.Register("Record", () => new RecordAction(_executed));
+        factories.Actions.Register("Record", () => new RecordAction(_executed), RecordAction.Description);
 
         string configurationText = File.ReadAllText(ConfigurationPath);
 

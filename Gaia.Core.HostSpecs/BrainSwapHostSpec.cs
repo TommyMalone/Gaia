@@ -30,7 +30,7 @@ public class BrainSwapHostSpec
         Actor sniper = new() { Name = "Sniper", Position = new Vector3(0f, 10f, 0f) };
 
         FactorySet factories = new();
-        factories.Actions.Register("Record", () => new HostRecordAction(selections));
+        factories.Actions.Register("Record", () => new HostRecordAction(selections), HostRecordAction.Description);
 
         GaiaLoader loader = new(factories, timeSource, logSink: logSink);
 

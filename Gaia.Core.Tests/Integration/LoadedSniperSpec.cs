@@ -60,7 +60,7 @@ public class LoadedSniperSpec
         string configurationText = File.ReadAllText(ConfigurationPath);
 
         FactorySet factories = new();
-        factories.Actions.Register("Record", () => new RecordAction(_executed));
+        factories.Actions.Register("Record", () => new RecordAction(_executed), RecordAction.Description);
 
         // The cooldown roll is scripted through the brain's own source. The loader's master source only seeds
         // streams for brains that bring none, so the fixture hands its fixed rolls to the load itself.

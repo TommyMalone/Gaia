@@ -29,6 +29,16 @@ namespace Gaia.Core.WeightFunctions
         private static readonly AiString ThresholdMaxAttribute = "ThresholdMax";
         private static readonly AiString ThresholdMinAttribute = "ThresholdMin";
 
+        private static readonly SlotDescription DefaultSlot = new(DefaultElement, "Default", WeightValues.Description,
+            0, 1);
+
+        private static readonly SlotDescription EntrySlot = new(EntryElement, "Entry", DescribeEntry(), 0,
+            SlotDescription.Unbounded);
+
+        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.WeightFunctions,
+            "Divides the inputs into bands by threshold and reports a set of weight values for each band.",
+            Array.Empty<AttributeDescription>(), new[] { EntrySlot, DefaultSlot });
+
         private readonly List<FloatSequenceEntry> _entries = new();
 
         /// <summary>Creates a function with no entries that reports Neutral for every input until a configuration loads.</summary>
@@ -153,6 +163,26 @@ namespace Gaia.Core.WeightFunctions
                     entry.RollThreshold(RandomSource);
                 }
             }
+        }
+
+        /// <summary>Describes an Entry element, its threshold in either form and the weight values it reports.</summary>
+        private static ComponentDescription DescribeEntry()
+        {
+            List<AttributeDescription> attributes = new()
+            {
+                AttributeDescription.Optional(ThresholdAttribute, "Threshold", AttributeKind.Float, null,
+                    "The highest input this band covers. Given alone, or ThresholdMin and ThresholdMax are given instead."),
+                AttributeDescription.Optional(ThresholdMinAttribute, "ThresholdMin", AttributeKind.Float, null,
+                    "The lowest value a rolled threshold can take, given with ThresholdMax in place of Threshold."),
+                AttributeDescription.Optional(ThresholdMaxAttribute, "ThresholdMax", AttributeKind.Float, null,
+                    "The highest value a rolled threshold can take, given with ThresholdMin in place of Threshold."),
+                AttributeDescription.Optional(RerollOnSelectAttribute, "RerollOnSelect", AttributeKind.Bool, "true",
+                    "Whether a rolled threshold is rolled again each time the option is selected."),
+            };
+            attributes.AddRange(WeightValues.Attributes);
+
+            return new ComponentDescription("One band of inputs and the weight values it reports.", attributes,
+                Array.Empty<SlotDescription>());
         }
 
         /// <summary>Loads one entry from an Entry element, in either its fixed or its rolled threshold form.</summary>

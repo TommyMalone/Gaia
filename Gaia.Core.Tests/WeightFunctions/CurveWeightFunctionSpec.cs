@@ -163,6 +163,50 @@ public class CurveWeightFunctionSpec
     }
 
     [Test]
+    public void LoadsEveryAttributeItsDescriptionNames()
+    {
+        // The snippet spells every name as the description spells it, so it loads only if OnInit reads by the same
+        // names the description holds, at the positions it holds them.
+        ComponentDescription description = CurveWeightFunction.Description;
+        string rank = description.Attributes[0].Spelling;
+        SlotDescription addendCurve = description.Slots[0];
+        SlotDescription multiplierCurve = description.Slots[1];
+        string linear = addendCurve.Inline!.Attributes[0].Spelling;
+        SlotDescription keyframe = addendCurve.Inline.Slots[0];
+        string input = keyframe.Inline!.Attributes[0].Spelling;
+        string value = keyframe.Inline.Attributes[1].Spelling;
+        string inTangent = keyframe.Inline.Attributes[2].Spelling;
+        string outTangent = keyframe.Inline.Attributes[3].Spelling;
+
+        string snippet = $"""
+                          <WeightFunction Type="Curve" {rank}="5">
+                              <{addendCurve.Spelling}>
+                                  <{keyframe.Spelling} {input}="0" {value}="0" {outTangent}="1"/>
+                                  <{keyframe.Spelling} {input}="10" {value}="4" {inTangent}="2"/>
+                              </{addendCurve.Spelling}>
+                              <{multiplierCurve.Spelling} {linear}="true">
+                                  <{keyframe.Spelling} {input}="0" {value}="1"/>
+                                  <{keyframe.Spelling} {input}="10" {value}="0"/>
+                              </{multiplierCurve.Spelling}>
+                          </WeightFunction>
+                          """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        CurveWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(_logSink.Entries, Is.Empty);
+            Assert.That(loaded.Rank, Is.EqualTo(5f));
+            Assert.That(loaded.AddendCurve!.Keyframes[0].OutTangent, Is.EqualTo(1f));
+            Assert.That(loaded.AddendCurve.Keyframes[1].InTangent, Is.EqualTo(2f));
+            Assert.That(loaded.CalculateFloat(5f).Multiplier, Is.EqualTo(0.5f).Within(Tolerance),
+                "the multiplier curve is straight, so it passes through the midpoint");
+        });
+    }
+
+    [Test]
     public void StraightensACurveMarkedLinear()
     {
         const string snippet = """

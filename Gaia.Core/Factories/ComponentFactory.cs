@@ -12,7 +12,9 @@ namespace Gaia.Core.Factories
     /// <remarks>
     ///     <para>
     ///         Registering a type that is already registered replaces it. A game adds its own components by registering new
-    ///         names, and replaces a built-in by registering that name again, so the last registration is the one kept.
+    ///         names, and replaces a built-in by registering that name again, so the last registration is the one kept. Every
+    ///         registration carries a <see cref="ComponentDescription" />, which is what a tool reads to learn what the
+    ///         component's element may hold, and <see cref="Types" /> lists the registered names for it.
     ///     </para>
     ///     <para>
     ///         The factory constructs and initializes, it does not inject. A component's Init pulls whatever services and
@@ -22,16 +24,35 @@ namespace Gaia.Core.Factories
     /// </remarks>
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>
     /// <typeparam name="TBase">The conceptual abstraction every registered creator builds.</typeparam>
-    public sealed class ComponentFactory<TBase> where TBase : class, IAiComponent
+    public sealed class ComponentFactory<TBase> : IComponentFactory where TBase : class, IAiComponent
     {
         private readonly Dictionary<AiString, Func<TBase>> _creators = new();
+        private readonly Dictionary<AiString, ComponentDescription> _descriptions = new();
+        private readonly List<AiString> _types = new();
 
-        /// <summary>Registers a creator under a type name, replacing any creator that name already had.</summary>
+        /// <inheritdoc />
+        /// <remarks>A name registered again keeps its place, since only its creator and description change.</remarks>
+        public IReadOnlyList<AiString> Types => _types;
+
+        /// <inheritdoc />
+        public bool TryGetDescription(AiString type, out ComponentDescription? description)
+        {
+            return _descriptions.TryGetValue(type, out description);
+        }
+
+        /// <summary>Registers a creator and its description under a type name, replacing both if that name already had them.</summary>
         /// <param name="type">The Type attribute value that picks this creator.</param>
         /// <param name="creator">Constructs one uninitialized component. The factory runs Init afterward.</param>
-        public void Register(AiString type, Func<TBase> creator)
+        /// <param name="description">What the component's element may hold, for a tool that edits a document without loading it.</param>
+        public void Register(AiString type, Func<TBase> creator, ComponentDescription description)
         {
+            if (!_creators.ContainsKey(type))
+            {
+                _types.Add(type);
+            }
+
             _creators[type] = creator;
+            _descriptions[type] = description;
         }
 
         /// <summary>Builds and initializes the component the creation data's node describes.</summary>

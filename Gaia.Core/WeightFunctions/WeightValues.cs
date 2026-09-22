@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using Gaia.Core.Factories;
 using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
 
@@ -55,6 +57,51 @@ namespace Gaia.Core.WeightFunctions
         private static readonly AiString MultiplierAttribute = "Multiplier";
         private static readonly AiString RankAttribute = "Rank";
         private static readonly AiString VetoAttribute = "Veto";
+
+        /// <summary>
+        ///     Describes the four attributes TryRead reads over <see cref="Neutral" />, for a description whose element reads
+        ///     them.
+        /// </summary>
+        internal static readonly IReadOnlyList<AttributeDescription> Attributes = DescribeAttributes(Neutral);
+
+        /// <summary>
+        ///     Describes an element that is one set of weight values and nothing else, such as True, False, Missing or
+        ///     Default.
+        /// </summary>
+        internal static readonly ComponentDescription Description = new("One set of weight values.", Attributes,
+            Array.Empty<SlotDescription>());
+
+        /// <summary>
+        ///     Describes the four attributes TryRead reads over the given defaults, for an element whose identity is not
+        ///     Neutral.
+        /// </summary>
+        /// <remarks>
+        ///     The lowest rank is float.MinValue, which is no text a designer would write, so a rank at that value is
+        ///     described as having no default.
+        /// </remarks>
+        internal static IReadOnlyList<AttributeDescription> DescribeAttributes(WeightValues defaults)
+        {
+            string? rankText = defaults.Rank == float.MinValue ? null : Number(defaults.Rank);
+
+            return new[]
+            {
+                AttributeDescription.Optional(AddendAttribute, "Addend", AttributeKind.Float, Number(defaults.Addend),
+                    "How much the option is wanted. Summed with the option's other addends."),
+                AttributeDescription.Optional(MultiplierAttribute, "Multiplier", AttributeKind.Float,
+                    Number(defaults.Multiplier),
+                    "How much of what the addends asked for is allowed, 0 or more. Multiplied with the option's other multipliers."),
+                AttributeDescription.Optional(RankAttribute, "Rank", AttributeKind.Float, rankText,
+                    "The tier the option is put in, where a higher tier beats every lower one. Absent, the lowest tier."),
+                AttributeDescription.Optional(VetoAttribute, "Veto", AttributeKind.Bool, "false",
+                    "True to rule the option out whatever else is reported."),
+            };
+        }
+
+        /// <summary>Prints a default invariantly, so a decimal mark is always a point.</summary>
+        private static string Number(float value)
+        {
+            return FormattableString.Invariant($"{value}");
+        }
 
         /// <summary>Reads the optional Addend, Multiplier, Rank and Veto attributes of an element as one set of weight values.</summary>
         /// <remarks>

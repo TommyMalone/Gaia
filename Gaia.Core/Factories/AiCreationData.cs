@@ -27,6 +27,13 @@ namespace Gaia.Core.Factories
         private static readonly AiString WorldStoreName = "World";
 
         /// <summary>
+        ///     Describes the Store attribute <see cref="TryReadStore" /> reads, for the description of every component that
+        ///     reads one.
+        /// </summary>
+        internal static readonly AttributeDescription StoreDescription = AttributeDescription.Optional(StoreAttribute,
+            "Store", AttributeKind.String, "Brain", "Which blackboard holds the value, Brain or World.");
+
+        /// <summary>
         ///     Creates the creation data a load starts from, which <see cref="ForChild" /> then copies for every component
         ///     beneath it.
         /// </summary>

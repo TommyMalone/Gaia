@@ -22,6 +22,13 @@ namespace Gaia.Core.Considerations
         internal static readonly AiString WeightFunctionElement = "WeightFunction";
 
         /// <summary>
+        ///     Describes the one WeightFunction child a weighted consideration needs, for a derived consideration's
+        ///     description to include.
+        /// </summary>
+        internal static readonly SlotDescription WeightFunctionSlot = new(WeightFunctionElement, "WeightFunction",
+            ConceptualAbstraction.WeightFunctions, 1, 1);
+
+        /// <summary>
         ///     The weight function this consideration hands its query result to. A consideration with none reports neutral
         ///     values.
         /// </summary>

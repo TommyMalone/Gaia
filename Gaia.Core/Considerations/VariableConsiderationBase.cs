@@ -24,6 +24,10 @@ namespace Gaia.Core.Considerations
         private static readonly AiString MissingElement = "Missing";
         private static readonly AiString VariableAttribute = "Variable";
 
+        /// <summary>Describes the optional Missing child, one set of weight values.</summary>
+        private static readonly SlotDescription MissingSlot = new(MissingElement, "Missing", WeightValues.Description,
+            0, 1);
+
         private bool _missingConfigured;
 
         private bool _missingVariableReported;
@@ -160,6 +164,23 @@ namespace Gaia.Core.Considerations
         /// <param name="dataStore">The configured store, never null.</param>
         /// <returns>The weight values this consideration reports this cycle.</returns>
         protected abstract WeightValues CalculateWeights(WeightFunctionBase weightFunction, DataStoreBase dataStore);
+
+        /// <summary>
+        ///     Describes a variable consideration whose variable is read as the given kind, which is the Variable and Store
+        ///     attributes and the Missing and WeightFunction children every one shares.
+        /// </summary>
+        internal static ComponentDescription Describe(string summary, DataStoreValueType variableKind)
+        {
+            AttributeDescription[] attributes =
+            {
+                AttributeDescription.VariableName(VariableAttribute, "Variable", variableKind,
+                    "The name of the value to read."),
+                AiCreationData.StoreDescription,
+            };
+            SlotDescription[] slots = { MissingSlot, WeightFunctionSlot };
+
+            return new ComponentDescription(ConceptualAbstraction.Considerations, summary, attributes, slots);
+        }
 
         /// <summary>Reads the optional Store attribute through the creation data, which owns the blackboards.</summary>
         private bool TryReadStore(SpecificationNode node, AiCreationData creationData)

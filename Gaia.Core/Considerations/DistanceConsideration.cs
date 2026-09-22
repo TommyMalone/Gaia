@@ -21,6 +21,21 @@ namespace Gaia.Core.Considerations
         private static readonly AiString MissingElement = "Missing";
         private static readonly AiString ToElement = "To";
 
+        private static readonly SlotDescription
+            FromSlot = new(FromElement, "From", ConceptualAbstraction.Targets, 1, 1);
+
+        private static readonly SlotDescription MissingSlot = new(MissingElement, "Missing", WeightValues.Description,
+            0, 1);
+
+        private static readonly SlotDescription ToSlot = new(ToElement, "To", ConceptualAbstraction.Targets, 1, 1);
+
+        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Considerations,
+            "Measures the distance between two targets.", new[]
+            {
+                AttributeDescription.Optional(IgnoreHeightAttribute, "IgnoreHeight", AttributeKind.Bool, "false",
+                    "True to measure along the ground rather than through the air."),
+            }, new[] { FromSlot, ToSlot, WeightFunctionSlot, MissingSlot });
+
         /// <summary>Creates a consideration that a configuration fills.</summary>
         internal DistanceConsideration()
         {

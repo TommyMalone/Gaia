@@ -39,6 +39,20 @@ namespace Gaia.Core.Considerations
         private static readonly AiString SinceLastRunElement = "SinceLastRun";
         private static readonly AiString WhileRunningElement = "WhileRunning";
 
+        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Considerations,
+            "Weighs the option by whether it is running, has finished, has run before or has never run.", new[]
+            {
+                AttributeDescription.Optional(RankRetentionFactorAttribute, "RankRetentionFactor", AttributeKind.Float,
+                    "0",
+                    "How much of the rank the option was selected at is kept while it runs, from 0 for none to 1 for all."),
+            }, new[]
+            {
+                RoleSlot(WhileRunningElement, "WhileRunning"),
+                RoleSlot(FinishedElement, "Finished"),
+                RoleSlot(NeverRunElement, "NeverRun"),
+                RoleSlot(SinceLastRunElement, "SinceLastRun"),
+            });
+
         /// <summary>The time the option was most recently deselected, meaningful once _hasRun is true.</summary>
         private Seconds _deselectedTime;
 
@@ -256,6 +270,12 @@ namespace Gaia.Core.Considerations
             // Weight functions convert floats. Considerations measure elapsed times on scales of seconds to minutes,
             // which sit far inside float precision, so the narrowing loses nothing a curve could see.
             return weightFunction?.CalculateFloat((float)elapsedTime.Value) ?? WeightValues.Neutral;
+        }
+
+        /// <summary>Describes one of the four role elements, each an optional weight function of the WeightFunctions abstraction.</summary>
+        private static SlotDescription RoleSlot(AiString name, string spelling)
+        {
+            return new SlotDescription(name, spelling, ConceptualAbstraction.WeightFunctions, 0, 1);
         }
 
         /// <summary>Builds one of the four role weight functions from its role-named element.</summary>

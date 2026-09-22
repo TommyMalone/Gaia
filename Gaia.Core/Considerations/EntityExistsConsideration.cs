@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Gaia.Core.DataStores;
 using Gaia.Core.Entities;
+using Gaia.Core.Factories;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Considerations
@@ -22,6 +23,10 @@ namespace Gaia.Core.Considerations
     /// <seealso>"Modular AI", Section 8.5.1</seealso>
     public sealed class EntityExistsConsideration : VariableConsiderationBase
     {
+        internal static readonly ComponentDescription Description =
+            Describe("Reads a list of entities from a blackboard and answers whether any of them still exists.",
+                DataStoreValueType.EntityList);
+
         /// <summary>Creates a consideration that a configuration fills.</summary>
         internal EntityExistsConsideration()
         {

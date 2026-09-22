@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Gaia.Core.Curves;
 using Gaia.Core.Factories;
 using Gaia.Core.Specifications;
@@ -23,6 +24,11 @@ namespace Gaia.Core.WeightFunctions
     ///         curve's output is clamped at 0. A keyframe authored below 0 draws a loading warning, and a segment that
     ///         overshoots below 0 between keyframes clamps the same way at evaluation.
     ///     </para>
+    ///     <para>
+    ///         OnInit takes every name it reads by from <see cref="Description" />, by position, rather than from the name
+    ///         fields the description is built from, so an attribute or element the description leaves out is one loading
+    ///         cannot read.
+    ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.2</seealso>
     public sealed class CurveWeightFunction : WeightFunctionBase
@@ -36,6 +42,42 @@ namespace Gaia.Core.WeightFunctions
         private static readonly AiString OutTangentAttribute = "OutTangent";
         private static readonly AiString RankAttribute = "Rank";
         private static readonly AiString ValueAttribute = "Value";
+
+        private static readonly ComponentDescription KeyframeDescription = new(
+            "One point on the curve, with the slope into it and out of it.", new[]
+            {
+                AttributeDescription.Required(InputAttribute, "Input", AttributeKind.Float,
+                    "The input this point is at."),
+                AttributeDescription.Required(ValueAttribute, "Value", AttributeKind.Float,
+                    "The output at this input."),
+                AttributeDescription.Optional(InTangentAttribute, "InTangent", AttributeKind.Float, "0",
+                    "The slope arriving at the point."),
+                AttributeDescription.Optional(OutTangentAttribute, "OutTangent", AttributeKind.Float, "0",
+                    "The slope leaving the point."),
+            }, Array.Empty<SlotDescription>());
+
+        private static readonly SlotDescription KeyframeSlot = new(KeyframeElement, "Keyframe", KeyframeDescription, 1,
+            SlotDescription.Unbounded);
+
+        private static readonly ComponentDescription CurveDescription = new("A curve through its keyframes.", new[]
+        {
+            AttributeDescription.Optional(LinearAttribute, "Linear", AttributeKind.Bool, "false",
+                "True to join the keyframes with straight lines in place of their slopes."),
+        }, new[] { KeyframeSlot });
+
+        private static readonly SlotDescription AddendCurveSlot = new(AddendCurveElement, "AddendCurve",
+            CurveDescription, 0, 1);
+
+        private static readonly SlotDescription MultiplierCurveSlot = new(MultiplierCurveElement, "MultiplierCurve",
+            CurveDescription, 0, 1);
+
+        /// <summary>Describes this function. Its attributes and slots are in the positions OnInit reads them from.</summary>
+        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.WeightFunctions,
+            "Maps the input through one curve for the addend and another for the multiplier.", new[]
+            {
+                AttributeDescription.Optional(RankAttribute, "Rank", AttributeKind.Float, null,
+                    "The tier the option is put in, whatever the input. Absent, the lowest tier."),
+            }, new[] { AddendCurveSlot, MultiplierCurveSlot });
 
         /// <summary>Creates a function that a configuration fills.</summary>
         internal CurveWeightFunction()
@@ -59,37 +101,41 @@ namespace Gaia.Core.WeightFunctions
         {
             SpecificationNode node = creationData.Node;
 
-            if (node.HasAttribute(RankAttribute))
+            AttributeDescription rank = Description.Attributes[0];
+            SlotDescription addendCurve = Description.Slots[0];
+            SlotDescription multiplierCurve = Description.Slots[1];
+
+            if (node.HasAttribute(rank.Name))
             {
-                if (!node.ReadFloat(RankAttribute, out float rank))
+                if (!node.ReadFloat(rank.Name, out float configuredRank))
                 {
                     return false;
                 }
 
-                Rank = rank;
+                Rank = configuredRank;
             }
 
             foreach (SpecificationNode child in node.Children)
             {
-                if (child.Name == AddendCurveElement)
+                if (child.Name == addendCurve.Name)
                 {
-                    if (!TryLoadCurve(child, creationData, out Curve? addendCurve))
+                    if (!TryLoadCurve(child, addendCurve.Inline!, creationData, out Curve? loadedAddendCurve))
                     {
                         return false;
                     }
 
-                    AddendCurve = addendCurve;
+                    AddendCurve = loadedAddendCurve;
                 }
-                else if (child.Name == MultiplierCurveElement)
+                else if (child.Name == multiplierCurve.Name)
                 {
-                    if (!TryLoadCurve(child, creationData, out Curve? multiplierCurve))
+                    if (!TryLoadCurve(child, multiplierCurve.Inline!, creationData, out Curve? loadedMultiplierCurve))
                     {
                         return false;
                     }
 
-                    WarnAboutNegativeKeyframes(child, multiplierCurve!, creationData);
+                    WarnAboutNegativeKeyframes(child, loadedMultiplierCurve!, creationData);
 
-                    MultiplierCurve = multiplierCurve;
+                    MultiplierCurve = loadedMultiplierCurve;
                 }
                 else
                 {
@@ -135,31 +181,43 @@ namespace Gaia.Core.WeightFunctions
             }
         }
 
-        /// <summary>Loads one curve from a curve element's Keyframe children.</summary>
+        /// <summary>Loads one curve from a curve element's Keyframe children, reading by the names the curve's description holds.</summary>
         /// <remarks>
         ///     A keyframe's tangents default to 0, which flattens the curve at the keyframe. A curve element carrying
         ///     Linear="true" replaces every tangent with the slope of its neighboring segment once its keyframes are loaded, so
         ///     explicit tangents and Linear do not combine. A curve with no keyframes evaluates to 0 for every input, which would
         ///     silently veto through a multiplier, so an empty curve element is refused instead.
         /// </remarks>
-        private static bool TryLoadCurve(SpecificationNode curveNode, AiCreationData creationData, out Curve? curve)
+        private static bool TryLoadCurve(
+            SpecificationNode curveNode,
+            ComponentDescription curveDescription,
+            AiCreationData creationData,
+            out Curve? curve)
         {
             curve = null;
+
+            AttributeDescription linearAttribute = curveDescription.Attributes[0];
+            SlotDescription keyframeSlot = curveDescription.Slots[0];
+            ComponentDescription keyframeDescription = keyframeSlot.Inline!;
+            AttributeDescription inputAttribute = keyframeDescription.Attributes[0];
+            AttributeDescription valueAttribute = keyframeDescription.Attributes[1];
+            AttributeDescription inTangentAttribute = keyframeDescription.Attributes[2];
+            AttributeDescription outTangentAttribute = keyframeDescription.Attributes[3];
 
             Curve loaded = new();
             Dictionary<float, int> linesByInput = new();
 
             foreach (SpecificationNode child in curveNode.Children)
             {
-                if (child.Name != KeyframeElement)
+                if (child.Name != keyframeSlot.Name)
                 {
                     creationData.ReportError(
                         $"Line {child.LineNumber}, the {curveNode.Name.Text} element does not take {child.Name.Text} elements");
                     return false;
                 }
 
-                if (!child.ReadFloat(InputAttribute, out float input) ||
-                    !child.ReadFloat(ValueAttribute, out float value))
+                if (!child.ReadFloat(inputAttribute.Name, out float input) ||
+                    !child.ReadFloat(valueAttribute.Name, out float value))
                 {
                     return false;
                 }
@@ -167,12 +225,14 @@ namespace Gaia.Core.WeightFunctions
                 float inTangent = 0f;
                 float outTangent = 0f;
 
-                if (child.HasAttribute(InTangentAttribute) && !child.ReadFloat(InTangentAttribute, out inTangent))
+                if (child.HasAttribute(inTangentAttribute.Name) &&
+                    !child.ReadFloat(inTangentAttribute.Name, out inTangent))
                 {
                     return false;
                 }
 
-                if (child.HasAttribute(OutTangentAttribute) && !child.ReadFloat(OutTangentAttribute, out outTangent))
+                if (child.HasAttribute(outTangentAttribute.Name) &&
+                    !child.ReadFloat(outTangentAttribute.Name, out outTangent))
                 {
                     return false;
                 }
@@ -198,7 +258,7 @@ namespace Gaia.Core.WeightFunctions
 
             bool linear = false;
 
-            if (curveNode.HasAttribute(LinearAttribute) && !curveNode.ReadBool(LinearAttribute, out linear))
+            if (curveNode.HasAttribute(linearAttribute.Name) && !curveNode.ReadBool(linearAttribute.Name, out linear))
             {
                 return false;
             }
