@@ -7,8 +7,8 @@ using Gaia.Core.WeightFunctions;
 namespace Gaia.Core.Tests.Considerations;
 
 /// <summary>
-///     Covers how a <see cref="ConsiderationSetConsideration" /> combines what it groups and passes the lifecycle
-///     down.
+///     Covers how a <see cref="ConsiderationSetConsideration" /> combines what it groups, passes the lifecycle down
+///     and reports the considerations it groups.
 /// </summary>
 /// <remarks>
 ///     The grouped considerations are stubs, so combining is asserted on values set by hand, and selection is
@@ -138,5 +138,32 @@ public class ConsiderationSetConsiderationSpec
                 "the addends sum and the highest rank is taken");
             Assert.That(_logSink.Entries, Is.Empty);
         });
+    }
+
+    [Test]
+    public void ReportsTheConsiderationsItGroupsInTheOrderTheyWereLoaded()
+    {
+        // Each child's addend is its place in the document, so the addends read back show the order the considerations
+        // are reported in.
+        const string snippet = """
+                               <Consideration Type="ConsiderationSet">
+                                   <Consideration Type="Tuning" Addend="1"/>
+                                   <Consideration Type="Tuning" Addend="2"/>
+                               </Consideration>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        ConsiderationSetConsideration loaded = new();
+
+        Assert.That(loaded.Init(creationData), Is.True);
+
+        List<float> addends = new();
+
+        foreach (ConsiderationBase consideration in loaded.Considerations)
+        {
+            addends.Add(consideration.Weights.Addend);
+        }
+
+        Assert.That(addends, Is.EqualTo(new[] { 1f, 2f }));
     }
 }

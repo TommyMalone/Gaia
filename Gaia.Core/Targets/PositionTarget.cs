@@ -29,12 +29,8 @@ namespace Gaia.Core.Targets
         {
             SpecificationNode node = creationData.Node;
 
-            if (node.Children.Count > 0)
+            if (!creationData.RefuseChildren())
             {
-                SpecificationNode child = node.Children[0];
-
-                creationData.ReportError(
-                    $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
                 return false;
             }
 

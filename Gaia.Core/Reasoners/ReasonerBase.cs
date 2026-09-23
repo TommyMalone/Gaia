@@ -27,17 +27,20 @@ namespace Gaia.Core.Reasoners
             SlotDescription.Unbounded);
 
         /// <summary>The options this reasoner chooses among, in the order they were added.</summary>
-        protected IReadOnlyList<OptionBase> Options => OptionList;
+        /// <remarks>
+        ///     A read-only view of the same list MutableOptions holds, so a reader outside the library reaches a loaded
+        ///     reasoner's options without reaching the list itself.
+        /// </remarks>
+        public IReadOnlyList<OptionBase> Options => MutableOptions;
 
         /// <summary>The same options as their concrete list, for the loops that run every cycle.</summary>
         /// <remarks>
         ///     Iterating a List through IReadOnlyList boxes its enumerator, one small heap allocation per loop, which a
         ///     decision cycle runs several of. Iterating the concrete list keeps the enumerator on the stack, so per-cycle code
-        ///     loops over this and everything else reads Options. It is protected so a game's own reasoner loops the same way, and
-        ///     internal as well because the monitors read it and cannot reach Options, which is protected alone. Neither tier puts
-        ///     a reasoner's options on the public surface.
+        ///     loops over this and everything else reads Options. It is protected so a game's own reasoner can loop the concrete
+        ///     list too, and internal as well so the monitors, which record inside the cycle, loop it rather than Options.
         /// </remarks>
-        protected internal List<OptionBase> OptionList { get; } = new();
+        protected internal List<OptionBase> MutableOptions { get; } = new();
 
         /// <summary>The monitor recording this reasoner's decisions, or null when nothing is watching.</summary>
         /// <remarks>
@@ -156,14 +159,15 @@ namespace Gaia.Core.Reasoners
         /// </remarks>
         private void WarnWhenTwoOptionsShareAName()
         {
-            for (int first = 0; first < OptionList.Count; first++)
+            for (int first = 0; first < MutableOptions.Count; first++)
             {
-                for (int second = first + 1; second < OptionList.Count; second++)
+                for (int second = first + 1; second < MutableOptions.Count; second++)
                 {
-                    if (OptionList[first].Name == OptionList[second].Name && LogSink.IsEnabled(LogSeverity.Warning))
+                    if (MutableOptions[first].Name == MutableOptions[second].Name &&
+                        LogSink.IsEnabled(LogSeverity.Warning))
                     {
                         LogSink.LogWarning(LogChannel,
-                            $"two options share the name {OptionList[first].Name.Text}, their log lines and records cannot be told apart");
+                            $"two options share the name {MutableOptions[first].Name.Text}, their log lines and records cannot be told apart");
                     }
                 }
             }
@@ -173,13 +177,13 @@ namespace Gaia.Core.Reasoners
         /// <param name="option">The option to add.</param>
         public void AddOption(OptionBase option)
         {
-            OptionList.Add(option);
+            MutableOptions.Add(option);
         }
 
         /// <summary>Clears the current set of options.</summary>
         public void Clear()
         {
-            OptionList.Clear();
+            MutableOptions.Clear();
         }
 
         /// <summary>Enables the reasoner. Called by <see cref="SubreasonerAction.Select" /> and <see cref="Brain.Enable" />.</summary>
@@ -190,7 +194,7 @@ namespace Gaia.Core.Reasoners
             // Loading supplies each option's default tuning consideration from Init. An option assembled in code never
             // runs Init, and by the time its reasoner is enabled the assembler has added the considerations it means
             // to, so the default is supplied here instead. An option that already has one is left alone.
-            foreach (OptionBase option in OptionList)
+            foreach (OptionBase option in MutableOptions)
             {
                 option.EnsureTuningConsideration();
             }
@@ -228,7 +232,7 @@ namespace Gaia.Core.Reasoners
                 return;
             }
 
-            Debug.Assert(option == null || OptionList.Contains(option),
+            Debug.Assert(option == null || MutableOptions.Contains(option),
                 "The option is not one of this reasoner's options.");
 
             if (SelectedOption != null && LogSink.IsEnabled(LogSeverity.Message))
@@ -284,7 +288,7 @@ namespace Gaia.Core.Reasoners
         /// <summary>Calls Calculate on every option in Options.</summary>
         private void EvaluateOptions()
         {
-            foreach (OptionBase option in OptionList)
+            foreach (OptionBase option in MutableOptions)
             {
                 option.Calculate();
             }

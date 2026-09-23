@@ -72,6 +72,20 @@ namespace Gaia.Core.DataStores
         /// <summary>What mismatch reports are filed under, usually the owning character.</summary>
         public AiString LogChannel { get; set; } = AiString.Empty;
 
+        /// <summary>Every name the store holds, each with the kind of value it was written as.</summary>
+        /// <remarks>
+        ///     <para>
+        ///         A view over the index of names and kinds the store already keeps for <see cref="Contains" /> and
+        ///         <see cref="Remove" />, so enumerating tracks nothing further and a foreach allocates nothing. A store that
+        ///         holds no names enumerates nothing, since the index is allocated when a name is first written.
+        ///     </para>
+        ///     <para>
+        ///         The values are not enumerated. A reader that wants one calls the typed getter for the kind its entry reports,
+        ///         which is what keeps every value inside the table that knows what it is.
+        ///     </para>
+        /// </remarks>
+        public DataStoreEntryEnumerator Entries => new(_valueTypes);
+
         /// <summary>Reports whether a value has been written under the given name.</summary>
         public bool Contains(AiString name)
         {

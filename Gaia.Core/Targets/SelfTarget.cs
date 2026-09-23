@@ -1,7 +1,6 @@
 ﻿using Gaia.Core.Entities;
 using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
-using Gaia.Core.Specifications;
 
 namespace Gaia.Core.Targets
 {
@@ -31,14 +30,8 @@ namespace Gaia.Core.Targets
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            SpecificationNode node = creationData.Node;
-
-            if (node.Children.Count > 0)
+            if (!creationData.RefuseChildren())
             {
-                SpecificationNode child = node.Children[0];
-
-                creationData.ReportError(
-                    $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
                 return false;
             }
 

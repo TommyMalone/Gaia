@@ -71,7 +71,7 @@ namespace Gaia.Core.Services.Diagnostics
         {
             _cycleIndex++;
 
-            List<OptionBase> options = reasoner.OptionList;
+            List<OptionBase> options = reasoner.MutableOptions;
 
             if (!_truncationWarningIssued && options.Count > History.OptionCapacity)
             {
@@ -140,7 +140,7 @@ namespace Gaia.Core.Services.Diagnostics
         private void WarnAboutNothingSelected(ReasonerBase reasoner)
         {
             if (Settings.NothingEligibleForSelectionWarningWindow <= 0 || reasoner.SelectedOption != null ||
-                reasoner.OptionList.Count == 0 || reasoner.IsDone)
+                reasoner.MutableOptions.Count == 0 || reasoner.IsDone)
             {
                 _cyclesNothingSelected = 0;
                 return;

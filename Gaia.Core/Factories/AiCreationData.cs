@@ -142,6 +142,23 @@ namespace Gaia.Core.Factories
             return false;
         }
 
+        /// <summary>Refuses every child element of the node, for a component that reads none.</summary>
+        /// <remarks>Only the first child is reported, since the component's load fails at it.</remarks>
+        /// <returns>True when the node has no child elements. False after reporting the first one.</returns>
+        internal bool RefuseChildren()
+        {
+            if (Node.Children.Count == 0)
+            {
+                return true;
+            }
+
+            SpecificationNode child = Node.Children[0];
+
+            ReportError(
+                $"Line {child.LineNumber}, the {Node.Name.Text} element does not take {child.Name.Text} elements");
+            return false;
+        }
+
         /// <summary>Reports a loading error against the node, filed under the node's source document name.</summary>
         internal void ReportError(string message)
         {

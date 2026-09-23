@@ -45,9 +45,11 @@ namespace Gaia.Core.Considerations
 
         /// <summary>The considerations in the set, in the order they were added.</summary>
         /// <remarks>
-        ///     Internal, and opened for the load-time lint on <see cref="OptionBase" /> that judges whether an option's fixed
-        ///     values can ever select it. Nothing on the cycle path reads it, so the enumerator an IReadOnlyList boxes is paid
-        ///     once per option at load rather than every cycle.
+        ///     Internal, and read by the component that holds the set. <see cref="OptionBase" /> reads it for the load-time
+        ///     lint that judges whether an option's fixed values can ever select it, and <see cref="OptionBase.Considerations" />
+        ///     and <see cref="ConsiderationSetConsideration.Considerations" /> hand it to readers outside the library. Nothing on
+        ///     the cycle path reads it, so the enumerator an IReadOnlyList boxes is paid by the lint at load and by those readers,
+        ///     and not by a cycle.
         /// </remarks>
         internal IReadOnlyList<ConsiderationBase> Considerations => _considerations;
 

@@ -182,6 +182,22 @@ public class DataStoreBaseSpec
     }
 
     [Test]
+    public void EnumeratesEveryNameItHoldsWithTheKindItWasWrittenAs()
+    {
+        _dataStore.SetBool("IsOfficer", true);
+        _dataStore.SetFloat("Health", 0.5f);
+        _dataStore.SetString("Side", "Enemy");
+
+        Assert.That(ListEntries(), Is.EquivalentTo(new[] { "IsOfficer Bool", "Health Float", "Side String" }));
+    }
+
+    [Test]
+    public void EnumeratesNothingWhenNothingHasBeenWritten()
+    {
+        Assert.That(ListEntries(), Is.Empty);
+    }
+
+    [Test]
     public void ReportsAMismatchWhenANameIsReadAsTheWrongKind()
     {
         _dataStore.SetFloat("Health", 0.5f);
@@ -226,6 +242,17 @@ public class DataStoreBaseSpec
             // The name is gone rather than left behind holding a stale kind.
             Assert.That(_dataStore.TypeMismatches, Is.Empty);
         });
+    }
+
+    [Test]
+    public void StopsEnumeratingANameThatWasRemoved()
+    {
+        _dataStore.SetFloat("Health", 0.5f);
+        _dataStore.SetInt("AmmoCount", 7);
+
+        _dataStore.Remove("Health");
+
+        Assert.That(ListEntries(), Is.EqualTo(new[] { "AmmoCount Int" }));
     }
 
     [Test]
@@ -301,5 +328,22 @@ public class DataStoreBaseSpec
         {
             "Warning Guard the Ammo name was written as Int and used as Float",
         }));
+    }
+
+    /// <summary>Walks the fixture's store and describes each entry as its name and the kind it reports.</summary>
+    /// <remarks>
+    ///     A dictionary decides the order its names come out in, which the store does not promise, so the tests that hold
+    ///     several entries compare these as a set.
+    /// </remarks>
+    private List<string> ListEntries()
+    {
+        List<string> entries = new();
+
+        foreach (DataStoreEntry entry in _dataStore.Entries)
+        {
+            entries.Add($"{entry.Name.Text} {entry.ValueType}");
+        }
+
+        return entries;
     }
 }

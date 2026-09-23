@@ -41,8 +41,15 @@ namespace Gaia.Core.WeightFunctions
         }
 
         /// <summary>Loads the derived function's own configuration.</summary>
+        /// <remarks>
+        ///     The base refuses any child element and otherwise reports true, so a weight function with nothing of its own to
+        ///     load leaves this alone.
+        /// </remarks>
         /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
-        protected abstract bool OnInit(AiCreationData creationData);
+        protected virtual bool OnInit(AiCreationData creationData)
+        {
+            return creationData.RefuseChildren();
+        }
 
         /// <summary>Converts a bool.</summary>
         /// <exception cref="NotSupportedException">This function does not convert a bool.</exception>

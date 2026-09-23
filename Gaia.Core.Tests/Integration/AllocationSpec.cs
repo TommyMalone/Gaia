@@ -1,6 +1,7 @@
 ﻿using Gaia.Core.Actions;
 using Gaia.Core.Brains;
 using Gaia.Core.Considerations;
+using Gaia.Core.DataStores;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Diagnostics;
 using Gaia.Core.Services.Log;
@@ -13,7 +14,7 @@ namespace Gaia.Core.Tests.Integration;
 
 /// <summary>
 ///     Proves a steady-state decision cycle allocates nothing, which is what keeps hundreds of agents from producing
-///     collector work every cycle.
+///     collector work every cycle. A walk of a data store's entries is held to the same standard.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -40,6 +41,13 @@ namespace Gaia.Core.Tests.Integration;
 ///         under a sink that filters, since the shipped <see cref="TraceLogSink" /> enables every severity and builds the
 ///         strings.
 ///     </para>
+///     <para>
+///         The store case walks a store holding four entries of four kinds. A walk of a data store is not part of a
+///         decision cycle, and it is held to the same standard because a debug reader walking every store a host keeps
+///         would otherwise allocate once per walk. It runs the same warm-up and the same thousand measured passes, and
+///         counts the entries the measured passes read, so a walk that reads nothing cannot pass as one that allocates
+///         nothing.
+///     </para>
 /// </remarks>
 [TestFixture]
 public class AllocationSpec
@@ -64,6 +72,36 @@ public class AllocationSpec
         Brain brain = new(reasoner) { Monitor = new BrainMonitor(new MonitorSettings()) };
         brain.Enable();
         return brain;
+    }
+
+    /// <summary>Runs the warm-up, then measures the thread-local bytes a thousand further walks of a store allocate.</summary>
+    /// <param name="store">The store to walk.</param>
+    /// <param name="entriesRead">How many entries the measured walks read, which the failure message reports.</param>
+    private static long MeasureEntryWalks(DataStoreBase store, out int entriesRead)
+    {
+        entriesRead = 0;
+
+        for (int pass = 0; pass < WarmUpCycles; pass++)
+        {
+            foreach (DataStoreEntry entry in store.Entries)
+            {
+                entriesRead++;
+            }
+        }
+
+        long bytesBefore = GC.GetAllocatedBytesForCurrentThread();
+
+        entriesRead = 0;
+
+        for (int pass = 0; pass < MeasuredCycles; pass++)
+        {
+            foreach (DataStoreEntry entry in store.Entries)
+            {
+                entriesRead++;
+            }
+        }
+
+        return GC.GetAllocatedBytesForCurrentThread() - bytesBefore;
     }
 
     /// <summary>Runs the warm-up, then measures the thread-local bytes a thousand further cycles allocate.</summary>
@@ -136,5 +174,22 @@ public class AllocationSpec
 
         Assert.That(allocatedBytes, Is.EqualTo(0),
             "a transitioning cycle with a filtering sink must not feed the collector");
+    }
+
+    [Test]
+    public void WalksAWarmStoresEntriesWithoutAllocating()
+    {
+        const int entriesHeld = 4;
+
+        StubDataStore store = new();
+        store.SetBool("IsUnderFire", false);
+        store.SetFloat("Health", 0.5f);
+        store.SetInt("AmmoCount", 7);
+        store.SetString("Side", "Enemy");
+
+        long allocatedBytes = MeasureEntryWalks(store, out int entriesRead);
+
+        Assert.That(entriesRead, Is.EqualTo(entriesHeld * MeasuredCycles), "every measured walk reads every entry");
+        Assert.That(allocatedBytes, Is.EqualTo(0), $"walking {entriesRead} entries must not feed the collector");
     }
 }

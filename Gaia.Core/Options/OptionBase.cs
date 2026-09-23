@@ -84,8 +84,15 @@ namespace Gaia.Core.Options
         /// </summary>
         internal float WeightBeforeScreening => _considerations.Weight;
 
-        /// <summary>The actions that run while this option is selected, in the order they were added, for the monitor's walk.</summary>
-        internal IReadOnlyList<ActionBase> Actions => _actions;
+        /// <summary>The considerations that score this option, in the order they were added.</summary>
+        /// <remarks>
+        ///     The <see cref="ConsiderationSet" /> that holds them is an implementation detail of the option, so this is
+        ///     where a reader reaches them. Nothing on the cycle path reads it, since combining runs inside the set.
+        /// </remarks>
+        public IReadOnlyList<ConsiderationBase> Considerations => _considerations.Considerations;
+
+        /// <summary>The actions that run while this option is selected, in the order they were added.</summary>
+        public IReadOnlyList<ActionBase> Actions => _actions;
 
         /// <summary>True once every action on this option reports that it is done.</summary>
         public bool IsDone

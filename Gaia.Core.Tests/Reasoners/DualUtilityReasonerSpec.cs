@@ -1,5 +1,6 @@
 ﻿using Gaia.Core.Considerations;
 using Gaia.Core.Factories;
+using Gaia.Core.Options;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Diagnostics;
 using Gaia.Core.Services.Random;
@@ -18,7 +19,9 @@ namespace Gaia.Core.Tests.Reasoners;
 /// <remarks>
 ///     Each option's numbers come from a <see cref="StubConsideration" /> set by hand, and the random source is
 ///     fixed, so each test pins down one step. The exception is SelectsInProportionToWeightOverManyCycles, which samples
-///     the weighted pick over many cycles from a seeded source.
+///     the weighted pick over many cycles from a seeded source. ReportsTheOptionsItChoosesAmongInTheOrderTheyWereAdded
+///     covers the read-only list every reasoner reports its options through, which the fixture's two added options are
+///     enough to pin.
 /// </remarks>
 [TestFixture]
 public class DualUtilityReasonerSpec
@@ -82,6 +85,12 @@ public class DualUtilityReasonerSpec
 
     private WeightValues _highRankButLight;
     private WeightValues _lowRankButHeavy;
+
+    [Test]
+    public void ReportsTheOptionsItChoosesAmongInTheOrderTheyWereAdded()
+    {
+        Assert.That(_dualUtilityReasoner.Options, Is.EqualTo(new OptionBase[] { _firstOption, _secondOption }));
+    }
 
     [Test]
     public void SkipsOptionsThatAreVetoed()

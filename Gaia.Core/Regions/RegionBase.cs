@@ -51,8 +51,15 @@ namespace Gaia.Core.Regions
         }
 
         /// <summary>Loads the derived region's own configuration.</summary>
+        /// <remarks>
+        ///     The base refuses any child element and otherwise reports true, so a region with nothing of its own to load
+        ///     leaves this alone.
+        /// </remarks>
         /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
-        protected abstract bool OnInit(AiCreationData creationData);
+        protected virtual bool OnInit(AiCreationData creationData)
+        {
+            return creationData.RefuseChildren();
+        }
 
         /// <summary>Loads the node's OriginTarget child, if it has one, for the shapes that can follow a target.</summary>
         /// <remarks>
