@@ -29,8 +29,16 @@ namespace Gaia.Core.Targets
     /// <seealso>"Modular AI", Section 8.5.5</seealso>
     public sealed class ByNameTarget : TargetBase
     {
-        private static readonly AiString EntityAttribute = "Entity";
-        private static readonly AiString ListAttribute = "List";
+        private static readonly DescriptionBuilder Builder = new(ConceptualAbstraction.Targets,
+            "An entity found by name in a list on a blackboard.");
+
+        private static readonly AttributeDescription ListAttribute = Builder.Required("List", AttributeKind.String,
+            "The name of the entity list to search.");
+
+        private static readonly AttributeDescription EntityAttribute = Builder.Required("Entity", AttributeKind.String,
+            "The name of the entity to find in the list.");
+
+        internal static readonly ComponentDescription Description = Builder.Add(AiCreationData.StoreAttribute).Build();
 
         /// <summary>The store holding the list to search.</summary>
         public DataStoreBase? DataStore { get; set; }
@@ -64,8 +72,8 @@ namespace Gaia.Core.Targets
                 return false;
             }
 
-            if (!node.ReadString(ListAttribute, out string listName) ||
-                !node.ReadString(EntityAttribute, out string entityName))
+            if (!node.ReadString(ListAttribute.Name, out string listName) ||
+                !node.ReadString(EntityAttribute.Name, out string entityName))
             {
                 return false;
             }

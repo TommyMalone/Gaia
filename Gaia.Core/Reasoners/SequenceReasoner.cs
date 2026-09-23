@@ -1,5 +1,4 @@
-﻿using System;
-using Gaia.Core.Factories;
+﻿using Gaia.Core.Factories;
 using Gaia.Core.Options;
 
 namespace Gaia.Core.Reasoners
@@ -17,9 +16,9 @@ namespace Gaia.Core.Reasoners
     /// <seealso>"Modular AI", Section 8.5.3</seealso>
     public class SequenceReasoner : ReasonerBase
     {
-        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Reasoners,
-            "Runs its options one after another, each until it is done.", Array.Empty<AttributeDescription>(),
-            new[] { OptionSlot });
+        internal static readonly ComponentDescription Description = new DescriptionBuilder(
+                ConceptualAbstraction.Reasoners, "Runs its options one after another, each until it is done.")
+            .Add(OptionSlot).Build();
 
         /// <summary>The position in the sequence, the index of the running option or of the next one to start.</summary>
         private int _currentIndex;

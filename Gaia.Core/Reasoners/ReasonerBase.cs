@@ -18,11 +18,13 @@ namespace Gaia.Core.Reasoners
     /// <seealso>"Modular AI", Section 8.5.3, Listing 8.3</seealso>
     public abstract class ReasonerBase : IAiComponent
     {
-        private static readonly AiString OptionElement = "Option";
-
-        /// <summary>Describes the Option children Init loads on every reasoner, for a derived reasoner's description to include.</summary>
-        internal static readonly SlotDescription OptionSlot = new(OptionElement, "Option",
-            ConceptualAbstraction.Options, 0, SlotDescription.Unbounded);
+        /// <summary>Describes the Option children Init reads by on every reasoner, for a derived reasoner's description to add.</summary>
+        /// <remarks>
+        ///     Public so that a reasoner a game writes adds the piece its base reads rather than restating the element name
+        ///     in a description of its own.
+        /// </remarks>
+        public static readonly SlotDescription OptionSlot = new("Option", "Option", ConceptualAbstraction.Options, 0,
+            SlotDescription.Unbounded);
 
         /// <summary>The options this reasoner chooses among, in the order they were added.</summary>
         protected IReadOnlyList<OptionBase> Options => OptionList;
@@ -127,7 +129,7 @@ namespace Gaia.Core.Reasoners
 
             foreach (SpecificationNode child in node.Children)
             {
-                if (child.Name != OptionElement)
+                if (child.Name != OptionSlot.Name)
                 {
                     creationData.ReportError(
                         $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");

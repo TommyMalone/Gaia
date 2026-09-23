@@ -7,23 +7,21 @@ namespace Gaia.Core.HostSpecs;
 
 /// <summary>A game-defined action built against the public surface alone, recording each selection it receives.</summary>
 /// <remarks>
-///     This project has no InternalsVisibleTo grant, so the ActionBase hooks, the creation data, the node accessors
-///     and the description builders this type reaches are the surface a host gets. The description names Name itself,
-///     since the base's own description of it is internal.
+///     This project has no InternalsVisibleTo grant, so the ActionBase hooks, the creation data, the node accessors,
+///     the <see cref="DescriptionBuilder" /> and <see cref="ActionBase.NameAttribute" /> this type reaches are the surface
+///     a host gets. The description adds the base's Name attribute rather than restating its spelling.
 /// </remarks>
 internal sealed class HostRecordAction : ActionBase
 {
-    private static readonly AiString DoneAttribute = "Done";
+    private static readonly DescriptionBuilder Builder = new DescriptionBuilder(ConceptualAbstraction.Actions,
+        "Records each selection it receives.").Add(NameAttribute);
+
+    /// <summary>Describes the optional Done attribute OnInit reads by.</summary>
+    private static readonly AttributeDescription DoneAttribute = Builder.Optional("Done", AttributeKind.Bool, "true",
+        "Whether the action is done as soon as it is selected.");
 
     /// <summary>Describes the action for the host specs that register it.</summary>
-    internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Actions,
-        "Records each selection it receives.", new[]
-        {
-            AttributeDescription.Required("Name", "Name", AttributeKind.String,
-                "What the action is called in the log."),
-            AttributeDescription.Optional(DoneAttribute, "Done", AttributeKind.Bool, "true",
-                "Whether the action is done as soon as it is selected."),
-        }, Array.Empty<SlotDescription>());
+    internal static readonly ComponentDescription Description = Builder.Build();
 
     private readonly List<string> _selections;
 
@@ -50,9 +48,9 @@ internal sealed class HostRecordAction : ActionBase
     {
         SpecificationNode node = creationData.Node;
 
-        if (node.HasAttribute(DoneAttribute))
+        if (node.HasAttribute(DoneAttribute.Name))
         {
-            if (!node.ReadBool(DoneAttribute, out bool isDone))
+            if (!node.ReadBool(DoneAttribute.Name, out bool isDone))
             {
                 return false;
             }

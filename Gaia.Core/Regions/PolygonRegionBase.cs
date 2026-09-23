@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
 using Gaia.Core.Specifications;
-using Gaia.Core.Strings;
 
 namespace Gaia.Core.Regions
 {
@@ -30,8 +29,15 @@ namespace Gaia.Core.Regions
         /// <summary>The fewest corners that enclose any area at all.</summary>
         private const int MinCornerCount = 3;
 
-        private static readonly AiString CornerElement = "Corner";
-        private static readonly AiString PositionAttribute = "Position";
+        private static readonly DescriptionBuilder CornerBuilder = new("One corner of the footprint.");
+
+        /// <summary>Describes the Position attribute <see cref="LoadFootprint" /> reads a corner by.</summary>
+        private static readonly AttributeDescription PositionAttribute = CornerBuilder.Required("Position",
+            AttributeKind.Vector2, "Where the corner is in the shape's plane, measured from Origin.");
+
+        /// <summary>Describes the Corner children <see cref="LoadFootprint" /> reads by.</summary>
+        private static readonly SlotDescription CornerSlot = new("Corner", "Corner", CornerBuilder.Build(),
+            MinCornerCount, SlotDescription.Unbounded);
 
         private readonly List<Vector2> _corners = new();
         private Vector2 _boundsMax;
@@ -54,14 +60,14 @@ namespace Gaia.Core.Regions
 
             foreach (SpecificationNode child in node.Children)
             {
-                if (child.Name != CornerElement)
+                if (child.Name != CornerSlot.Name)
                 {
                     creationData.ReportError(
                         $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
                     return false;
                 }
 
-                if (!child.ReadVector2(PositionAttribute, out Vector2 corner))
+                if (!child.ReadVector2(PositionAttribute.Name, out Vector2 corner))
                 {
                     return false;
                 }
@@ -93,6 +99,16 @@ namespace Gaia.Core.Regions
             }
 
             _corners.Add(corner);
+        }
+
+        /// <summary>
+        ///     Starts the description of a footprint shape, carrying the Corner children <see cref="LoadFootprint" /> reads
+        ///     by on top of the flat shape's attributes, so a shape adds what it reads of its own and nothing else.
+        /// </summary>
+        /// <param name="summary">One line saying what the shape is, in a designer's words.</param>
+        protected static DescriptionBuilder DescribeFootprint(string summary)
+        {
+            return DescribeFlatShape(summary).Add(CornerSlot);
         }
 
         /// <summary>Tests whether a point of the plane is inside the footprint.</summary>

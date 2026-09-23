@@ -20,14 +20,13 @@ namespace Gaia.Core.Brains
     /// <seealso>"Modular AI", Section 8.3.1</seealso>
     public class Brain
     {
-        private static readonly AiString ReasonerElement = "Reasoner";
+        private static readonly DescriptionBuilder Builder = new("The decisions of one character.");
 
-        private static readonly SlotDescription ReasonerSlot = new(ReasonerElement, "Reasoner",
-            ConceptualAbstraction.Reasoners, 0, 1);
+        private static readonly SlotDescription ReasonerSlot =
+            Builder.Slot("Reasoner", ConceptualAbstraction.Reasoners, 0, 1);
 
         /// <summary>Describes the Brain element, which <see cref="FactorySet.Root" /> reports, since no factory builds a brain.</summary>
-        internal static readonly ComponentDescription Description = new("The decisions of one character.",
-            Array.Empty<AttributeDescription>(), new[] { ReasonerSlot });
+        internal static readonly ComponentDescription Description = Builder.Build();
 
         private BrainMonitor? _monitor;
 
@@ -128,7 +127,7 @@ namespace Gaia.Core.Brains
 
             foreach (SpecificationNode child in node.Children)
             {
-                if (child.Name != ReasonerElement)
+                if (child.Name != ReasonerSlot.Name)
                 {
                     creationData.ReportError(
                         $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");

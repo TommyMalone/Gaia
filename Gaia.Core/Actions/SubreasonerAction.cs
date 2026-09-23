@@ -3,7 +3,6 @@ using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Diagnostics;
 using Gaia.Core.Specifications;
-using Gaia.Core.Strings;
 
 namespace Gaia.Core.Actions
 {
@@ -19,23 +18,21 @@ namespace Gaia.Core.Actions
     /// <seealso>"Modular AI", Section 8.5.4</seealso>
     public sealed class SubreasonerAction : ActionBase
     {
-        private static readonly AiString DoneWhenAttribute = "DoneWhen";
-        private static readonly AiString NothingEligibleCycleLimitAttribute = "NothingEligibleCycleLimit";
-        private static readonly AiString ReasonerElement = "Reasoner";
+        private static readonly DescriptionBuilder Builder = new DescriptionBuilder(ConceptualAbstraction.Actions,
+            "Runs a reasoner of its own while selected, which nests one decision inside another.").Add(NameAttribute);
 
-        private static readonly SlotDescription ReasonerSlot = new(ReasonerElement, "Reasoner",
-            ConceptualAbstraction.Reasoners, 1, 1);
+        private static readonly AttributeDescription DoneWhenAttribute =
+            Builder.Enumeration<SubreasonerCompletion>("DoneWhen", nameof(SubreasonerCompletion.SelectedOptionDone),
+                "When the action reports done.");
 
-        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Actions,
-            "Runs a reasoner of its own while selected, which nests one decision inside another.", new[]
-            {
-                NameDescription,
-                AttributeDescription.Enumeration<SubreasonerCompletion>(DoneWhenAttribute, "DoneWhen",
-                    nameof(SubreasonerCompletion.SelectedOptionDone), "When the action reports done."),
-                AttributeDescription.Optional(NothingEligibleCycleLimitAttribute, "NothingEligibleCycleLimit",
-                    AttributeKind.Int, "1",
-                    "How many cycles in a row with nothing eligible end the action, under the NothingEligible rule alone."),
-            }, new[] { ReasonerSlot });
+        private static readonly AttributeDescription NothingEligibleCycleLimitAttribute = Builder.Optional(
+            "NothingEligibleCycleLimit", AttributeKind.Int, "1",
+            "How many cycles in a row with nothing eligible end the action, under the NothingEligible rule alone.");
+
+        private static readonly SlotDescription ReasonerSlot =
+            Builder.Slot("Reasoner", ConceptualAbstraction.Reasoners, 1, 1);
+
+        internal static readonly ComponentDescription Description = Builder.Build();
 
         /// <summary>Counted for the NothingEligible rule, and restarted by any cycle that selects something.</summary>
         private int _consecutiveCyclesNothingHasBeenEligible;
@@ -108,12 +105,13 @@ namespace Gaia.Core.Actions
         {
             SpecificationNode node = creationData.Node;
 
-            if (node.TryGetString(DoneWhenAttribute, out string doneWhenText) && !TryReadDoneWhen(node, doneWhenText))
+            if (node.TryGetString(DoneWhenAttribute.Name, out string doneWhenText) &&
+                !TryReadDoneWhen(node, doneWhenText))
             {
                 return false;
             }
 
-            if (node.HasAttribute(NothingEligibleCycleLimitAttribute))
+            if (node.HasAttribute(NothingEligibleCycleLimitAttribute.Name))
             {
                 if (DoneWhen != SubreasonerCompletion.NothingEligible)
                 {
@@ -122,15 +120,16 @@ namespace Gaia.Core.Actions
                     return false;
                 }
 
-                if (!node.ReadInt(NothingEligibleCycleLimitAttribute, out int nothingEligibleCycleLimit))
+                if (!node.ReadInt(NothingEligibleCycleLimitAttribute.Name, out int nothingEligibleCycleLimit))
                 {
                     return false;
                 }
 
                 if (nothingEligibleCycleLimit < 1)
                 {
-                    node.TryGetString(NothingEligibleCycleLimitAttribute, out string nothingEligibleCycleLimitText);
-                    node.ReportMalformed(NothingEligibleCycleLimitAttribute, nothingEligibleCycleLimitText,
+                    node.TryGetString(NothingEligibleCycleLimitAttribute.Name,
+                        out string nothingEligibleCycleLimitText);
+                    node.ReportMalformed(NothingEligibleCycleLimitAttribute.Name, nothingEligibleCycleLimitText,
                         "1 or more");
                     return false;
                 }
@@ -140,7 +139,7 @@ namespace Gaia.Core.Actions
 
             foreach (SpecificationNode child in node.Children)
             {
-                if (child.Name != ReasonerElement)
+                if (child.Name != ReasonerSlot.Name)
                 {
                     creationData.ReportError(
                         $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
@@ -218,7 +217,7 @@ namespace Gaia.Core.Actions
                 return true;
             }
 
-            node.ReportMalformed(DoneWhenAttribute, text, "SelectedOptionDone, NothingEligible or ReasonerDone");
+            node.ReportMalformed(DoneWhenAttribute.Name, text, "SelectedOptionDone, NothingEligible or ReasonerDone");
             return false;
         }
     }

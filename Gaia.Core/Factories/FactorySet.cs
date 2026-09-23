@@ -1,5 +1,4 @@
-﻿using System;
-using Gaia.Core.Actions;
+﻿using Gaia.Core.Actions;
 using Gaia.Core.Brains;
 using Gaia.Core.Considerations;
 using Gaia.Core.Options;
@@ -31,8 +30,7 @@ namespace Gaia.Core.Factories
             Considerations.Register("BooleanVariable", () => new BooleanVariableConsideration(),
                 BooleanVariableConsideration.Description);
             Considerations.Register("ConsiderationSet", () => new ConsiderationSetConsideration(),
-                Pending(ConceptualAbstraction.Considerations,
-                    "Groups considerations and reports their combined values as one."));
+                ConsiderationSetConsideration.Description);
             Considerations.Register("Distance", () => new DistanceConsideration(), DistanceConsideration.Description);
             Considerations.Register("EntityExists", () => new EntityExistsConsideration(),
                 EntityExistsConsideration.Description);
@@ -41,9 +39,9 @@ namespace Gaia.Core.Factories
             Considerations.Register("FloatVariable", () => new FloatVariableConsideration(),
                 FloatVariableConsideration.Description);
             Considerations.Register("IntVariable", () => new IntVariableConsideration(),
-                Pending(ConceptualAbstraction.Considerations, "Reads a whole number from a blackboard."));
+                IntVariableConsideration.Description);
             Considerations.Register("StringVariable", () => new StringVariableConsideration(),
-                Pending(ConceptualAbstraction.Considerations, "Reads a piece of text from a blackboard."));
+                StringVariableConsideration.Description);
             Considerations.Register("Tuning", () => new TuningConsideration(), TuningConsideration.Description);
 
             Options.Register("ConsiderationAndAction", () => new ConsiderationAndActionOption(),
@@ -53,36 +51,24 @@ namespace Gaia.Core.Factories
             Reasoners.Register("RuleBased", () => new RuleBasedReasoner(), RuleBasedReasoner.Description);
             Reasoners.Register("Sequence", () => new SequenceReasoner(), SequenceReasoner.Description);
 
-            Regions.Register("Box", () => new BoxRegion(),
-                Pending(ConceptualAbstraction.Regions, "A box aligned with the world's axes."));
-            Regions.Register("Capsule", () => new CapsuleRegion(),
-                Pending(ConceptualAbstraction.Regions, "A cylinder with a rounded top and bottom."));
-            Regions.Register("Circle", () => new CircleRegion(),
-                Pending(ConceptualAbstraction.Regions, "A disc on the ground, which ignores height."));
-            Regions.Register("ConvexHull", () => new ConvexHullRegion(),
-                Pending(ConceptualAbstraction.Regions, "A volume bounded by planes."));
-            Regions.Register("Cylinder", () => new CylinderRegion(),
-                Pending(ConceptualAbstraction.Regions, "A cylinder standing on the ground."));
-            Regions.Register("ExtrudedPolygon", () => new ExtrudedPolygonRegion(),
-                Pending(ConceptualAbstraction.Regions, "A footprint of any shape given a height."));
-            Regions.Register("Polygon", () => new PolygonRegion(),
-                Pending(ConceptualAbstraction.Regions,
-                    "A footprint of any shape on the ground, which ignores height."));
-            Regions.Register("Rectangle", () => new RectangleRegion(),
-                Pending(ConceptualAbstraction.Regions, "A rectangle on the ground, which ignores height."));
-            Regions.Register("Sphere", () => new SphereRegion(), Pending(ConceptualAbstraction.Regions, "A ball."));
+            Regions.Register("Box", () => new BoxRegion(), BoxRegion.Description);
+            Regions.Register("Capsule", () => new CapsuleRegion(), CapsuleRegion.Description);
+            Regions.Register("Circle", () => new CircleRegion(), CircleRegion.Description);
+            Regions.Register("ConvexHull", () => new ConvexHullRegion(), ConvexHullRegion.Description);
+            Regions.Register("Cylinder", () => new CylinderRegion(), CylinderRegion.Description);
+            Regions.Register("ExtrudedPolygon", () => new ExtrudedPolygonRegion(), ExtrudedPolygonRegion.Description);
+            Regions.Register("Polygon", () => new PolygonRegion(), PolygonRegion.Description);
+            Regions.Register("Rectangle", () => new RectangleRegion(), RectangleRegion.Description);
+            Regions.Register("Sphere", () => new SphereRegion(), SphereRegion.Description);
 
-            Targets.Register("ByName", () => new ByNameTarget(),
-                Pending(ConceptualAbstraction.Targets, "An entity found by name in a list on a blackboard."));
+            Targets.Register("ByName", () => new ByNameTarget(), ByNameTarget.Description);
             Targets.Register("Position", () => new PositionTarget(), PositionTarget.Description);
             Targets.Register("Self", () => new SelfTarget(), SelfTarget.Description);
 
             WeightFunctions.Register("Constant", () => new ConstantWeightFunction(),
                 ConstantWeightFunction.Description);
             WeightFunctions.Register("Boolean", () => new BooleanWeightFunction(), BooleanWeightFunction.Description);
-            WeightFunctions.Register("String", () => new StringWeightFunction(),
-                Pending(ConceptualAbstraction.WeightFunctions,
-                    "Matches the input against pieces of text and reports the weight values of the one it matches."));
+            WeightFunctions.Register("String", () => new StringWeightFunction(), StringWeightFunction.Description);
             WeightFunctions.Register("FloatSequence", () => new FloatSequenceWeightFunction(),
                 FloatSequenceWeightFunction.Description);
             WeightFunctions.Register("Curve", () => new CurveWeightFunction(), CurveWeightFunction.Description);
@@ -138,16 +124,6 @@ namespace Gaia.Core.Factories
                 default:
                     return WeightFunctions;
             }
-        }
-
-        /// <summary>
-        ///     The description of a component whose attributes and slots are not presently described beside its name fields,
-        ///     which carries its conceptual abstraction and summary alone.
-        /// </summary>
-        private static ComponentDescription Pending(ConceptualAbstraction abstraction, string summary)
-        {
-            return new ComponentDescription(abstraction, summary, Array.Empty<AttributeDescription>(),
-                Array.Empty<SlotDescription>());
         }
     }
 }

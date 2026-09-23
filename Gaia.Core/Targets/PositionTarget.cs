@@ -1,8 +1,6 @@
-﻿using System;
-using Gaia.Core.Factories;
+﻿using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
 using Gaia.Core.Specifications;
-using Gaia.Core.Strings;
 
 namespace Gaia.Core.Targets
 {
@@ -15,14 +13,13 @@ namespace Gaia.Core.Targets
     /// <seealso>"Modular AI", Section 8.5.5</seealso>
     public sealed class PositionTarget : TargetBase
     {
-        private static readonly AiString PositionAttribute = "Position";
+        private static readonly DescriptionBuilder Builder = new(ConceptualAbstraction.Targets,
+            "A fixed position in the world.");
 
-        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Targets,
-            "A fixed position in the world.", new[]
-            {
-                AttributeDescription.Required(PositionAttribute, "Position", AttributeKind.Vector3,
-                    "Where the target is, as (x, y, z)."),
-            }, Array.Empty<SlotDescription>());
+        private static readonly AttributeDescription PositionAttribute = Builder.Required("Position",
+            AttributeKind.Vector3, "Where the target is, as (x, y, z).");
+
+        internal static readonly ComponentDescription Description = Builder.Build();
 
         /// <summary>Where this target is.</summary>
         public Vector3 Position { get; set; }
@@ -41,7 +38,7 @@ namespace Gaia.Core.Targets
                 return false;
             }
 
-            if (!node.ReadVector3(PositionAttribute, out Vector3 position))
+            if (!node.ReadVector3(PositionAttribute.Name, out Vector3 position))
             {
                 return false;
             }

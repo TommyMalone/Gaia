@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Gaia.Core.Factories;
 using Gaia.Core.Options;
 using Gaia.Core.Specifications;
-using Gaia.Core.Strings;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Considerations
@@ -12,7 +11,12 @@ namespace Gaia.Core.Considerations
     /// <seealso>"Modular AI", Section 8.6.2.4, Listing 8.10</seealso>
     public sealed class ConsiderationSet
     {
-        private static readonly AiString ConsiderationElement = "Consideration";
+        /// <summary>
+        ///     Describes the Consideration children <see cref="Init" /> reads by, for the description of the component whose
+        ///     children it loads.
+        /// </summary>
+        internal static readonly SlotDescription ConsiderationSlot = new("Consideration", "Consideration",
+            ConceptualAbstraction.Considerations, 0, SlotDescription.Unbounded);
 
         private readonly List<ConsiderationBase> _considerations = new();
 
@@ -55,7 +59,7 @@ namespace Gaia.Core.Considerations
 
             foreach (SpecificationNode child in node.Children)
             {
-                if (child.Name != ConsiderationElement)
+                if (child.Name != ConsiderationSlot.Name)
                 {
                     creationData.ReportError(
                         $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");

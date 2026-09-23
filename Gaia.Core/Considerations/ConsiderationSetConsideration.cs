@@ -16,6 +16,11 @@ namespace Gaia.Core.Considerations
     /// <seealso>"Modular AI", Section 8.6.2.4</seealso>
     public sealed class ConsiderationSetConsideration : ConsiderationBase
     {
+        internal static readonly ComponentDescription Description =
+            new DescriptionBuilder(ConceptualAbstraction.Considerations,
+                    "Groups considerations and reports their combined values as one.")
+                .Add(ConsiderationSet.ConsiderationSlot).Build();
+
         private readonly ConsiderationSet _set = new();
 
         /// <summary>Creates a consideration whose contained set starts empty until a configuration loads.</summary>

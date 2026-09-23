@@ -1,6 +1,5 @@
 ﻿using Gaia.Core.Factories;
 using Gaia.Core.Specifications;
-using Gaia.Core.Strings;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Considerations
@@ -18,14 +17,11 @@ namespace Gaia.Core.Considerations
     /// <seealso>"Modular AI", Section 8.5.2</seealso>
     public abstract class WeightedConsiderationBase : ConsiderationBase
     {
-        /// <summary>The name of the child element a weight function is configured under.</summary>
-        internal static readonly AiString WeightFunctionElement = "WeightFunction";
-
         /// <summary>
-        ///     Describes the one WeightFunction child a weighted consideration needs, for a derived consideration's
-        ///     description to include.
+        ///     Describes the one WeightFunction child a weighted consideration needs and reads by, for a derived
+        ///     consideration's description to add.
         /// </summary>
-        internal static readonly SlotDescription WeightFunctionSlot = new(WeightFunctionElement, "WeightFunction",
+        internal static readonly SlotDescription WeightFunctionSlot = new("WeightFunction", "WeightFunction",
             ConceptualAbstraction.WeightFunctions, 1, 1);
 
         /// <summary>

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Gaia.Core.Factories;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Specifications;
-using Gaia.Core.Strings;
 
 namespace Gaia.Core.WeightFunctions
 {
@@ -22,22 +21,33 @@ namespace Gaia.Core.WeightFunctions
     /// <seealso>"Modular AI", Section 8.5.2</seealso>
     public sealed class FloatSequenceWeightFunction : WeightFunctionBase
     {
-        private static readonly AiString DefaultElement = "Default";
-        private static readonly AiString EntryElement = "Entry";
-        private static readonly AiString RerollOnSelectAttribute = "RerollOnSelect";
-        private static readonly AiString ThresholdAttribute = "Threshold";
-        private static readonly AiString ThresholdMaxAttribute = "ThresholdMax";
-        private static readonly AiString ThresholdMinAttribute = "ThresholdMin";
+        private static readonly DescriptionBuilder EntryBuilder =
+            new("One band of inputs and the weight values it reports.");
 
-        private static readonly SlotDescription DefaultSlot = new(DefaultElement, "Default", WeightValues.Description,
-            0, 1);
+        private static readonly AttributeDescription ThresholdAttribute = EntryBuilder.Optional("Threshold",
+            AttributeKind.Float, null,
+            "The highest input this band covers. Given alone, or ThresholdMin and ThresholdMax are given instead.");
 
-        private static readonly SlotDescription EntrySlot = new(EntryElement, "Entry", DescribeEntry(), 0,
-            SlotDescription.Unbounded);
+        private static readonly AttributeDescription ThresholdMinAttribute = EntryBuilder.Optional("ThresholdMin",
+            AttributeKind.Float, null,
+            "The lowest value a rolled threshold can take, given with ThresholdMax in place of Threshold.");
 
-        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.WeightFunctions,
-            "Divides the inputs into bands by threshold and reports a set of weight values for each band.",
-            Array.Empty<AttributeDescription>(), new[] { EntrySlot, DefaultSlot });
+        private static readonly AttributeDescription ThresholdMaxAttribute = EntryBuilder.Optional("ThresholdMax",
+            AttributeKind.Float, null,
+            "The highest value a rolled threshold can take, given with ThresholdMin in place of Threshold.");
+
+        private static readonly AttributeDescription RerollOnSelectAttribute = EntryBuilder.Optional("RerollOnSelect",
+            AttributeKind.Bool, "true", "Whether a rolled threshold is rolled again each time the option is selected.");
+
+        private static readonly DescriptionBuilder Builder = new(ConceptualAbstraction.WeightFunctions,
+            "Divides the inputs into bands by threshold and reports a set of weight values for each band.");
+
+        private static readonly SlotDescription EntrySlot = Builder.Slot("Entry",
+            EntryBuilder.Add(WeightValues.Attributes).Build(), 0, SlotDescription.Unbounded);
+
+        private static readonly SlotDescription DefaultSlot = Builder.Slot("Default", WeightValues.Description, 0, 1);
+
+        internal static readonly ComponentDescription Description = Builder.Build();
 
         private readonly List<FloatSequenceEntry> _entries = new();
 
@@ -73,7 +83,7 @@ namespace Gaia.Core.WeightFunctions
 
             foreach (SpecificationNode child in node.Children)
             {
-                if (child.Name == DefaultElement)
+                if (child.Name == DefaultSlot.Name)
                 {
                     if (!WeightValues.TryRead(child, out WeightValues defaultWeights))
                     {
@@ -82,7 +92,7 @@ namespace Gaia.Core.WeightFunctions
 
                     DefaultWeights = defaultWeights;
                 }
-                else if (child.Name == EntryElement)
+                else if (child.Name == EntrySlot.Name)
                 {
                     if (!TryLoadEntry(child, creationData))
                     {
@@ -165,26 +175,6 @@ namespace Gaia.Core.WeightFunctions
             }
         }
 
-        /// <summary>Describes an Entry element, its threshold in either form and the weight values it reports.</summary>
-        private static ComponentDescription DescribeEntry()
-        {
-            List<AttributeDescription> attributes = new()
-            {
-                AttributeDescription.Optional(ThresholdAttribute, "Threshold", AttributeKind.Float, null,
-                    "The highest input this band covers. Given alone, or ThresholdMin and ThresholdMax are given instead."),
-                AttributeDescription.Optional(ThresholdMinAttribute, "ThresholdMin", AttributeKind.Float, null,
-                    "The lowest value a rolled threshold can take, given with ThresholdMax in place of Threshold."),
-                AttributeDescription.Optional(ThresholdMaxAttribute, "ThresholdMax", AttributeKind.Float, null,
-                    "The highest value a rolled threshold can take, given with ThresholdMin in place of Threshold."),
-                AttributeDescription.Optional(RerollOnSelectAttribute, "RerollOnSelect", AttributeKind.Bool, "true",
-                    "Whether a rolled threshold is rolled again each time the option is selected."),
-            };
-            attributes.AddRange(WeightValues.Attributes);
-
-            return new ComponentDescription("One band of inputs and the weight values it reports.", attributes,
-                Array.Empty<SlotDescription>());
-        }
-
         /// <summary>Loads one entry from an Entry element, in either its fixed or its rolled threshold form.</summary>
         /// <remarks>
         ///     The checks <see cref="AddEntry" /> and the entry's constructor enforce with exceptions are made here first and
@@ -196,10 +186,10 @@ namespace Gaia.Core.WeightFunctions
             float thresholdMin;
             float thresholdMax;
 
-            bool hasRange = entryNode.HasAttribute(ThresholdMinAttribute) ||
-                            entryNode.HasAttribute(ThresholdMaxAttribute);
+            bool hasRange = entryNode.HasAttribute(ThresholdMinAttribute.Name) ||
+                            entryNode.HasAttribute(ThresholdMaxAttribute.Name);
 
-            if (hasRange && entryNode.HasAttribute(ThresholdAttribute))
+            if (hasRange && entryNode.HasAttribute(ThresholdAttribute.Name))
             {
                 creationData.ReportError(
                     $"Line {entryNode.LineNumber}, the {entryNode.Name.Text} element mixes Threshold with ThresholdMin and ThresholdMax");
@@ -208,8 +198,8 @@ namespace Gaia.Core.WeightFunctions
 
             if (hasRange)
             {
-                if (!entryNode.ReadFloat(ThresholdMinAttribute, out thresholdMin) ||
-                    !entryNode.ReadFloat(ThresholdMaxAttribute, out thresholdMax))
+                if (!entryNode.ReadFloat(ThresholdMinAttribute.Name, out thresholdMin) ||
+                    !entryNode.ReadFloat(ThresholdMaxAttribute.Name, out thresholdMax))
                 {
                     return false;
                 }
@@ -223,7 +213,7 @@ namespace Gaia.Core.WeightFunctions
             }
             else
             {
-                if (!entryNode.ReadFloat(ThresholdAttribute, out float threshold))
+                if (!entryNode.ReadFloat(ThresholdAttribute.Name, out float threshold))
                 {
                     return false;
                 }
@@ -246,7 +236,7 @@ namespace Gaia.Core.WeightFunctions
 
             bool rerollOnSelect = true;
 
-            if (entryNode.HasAttribute(RerollOnSelectAttribute))
+            if (entryNode.HasAttribute(RerollOnSelectAttribute.Name))
             {
                 if (thresholdMax <= thresholdMin)
                 {
@@ -255,7 +245,7 @@ namespace Gaia.Core.WeightFunctions
                     return false;
                 }
 
-                if (!entryNode.ReadBool(RerollOnSelectAttribute, out rerollOnSelect))
+                if (!entryNode.ReadBool(RerollOnSelectAttribute.Name, out rerollOnSelect))
                 {
                     return false;
                 }

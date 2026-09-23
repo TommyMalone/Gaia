@@ -8,6 +8,9 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class PolygonRegion : PolygonRegionBase
     {
+        internal static readonly ComponentDescription Description =
+            DescribeFootprint("A footprint of any shape on the ground, which ignores height.").Build();
+
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {

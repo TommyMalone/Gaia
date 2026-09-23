@@ -1,7 +1,6 @@
 ﻿using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
 using Gaia.Core.Specifications;
-using Gaia.Core.Strings;
 
 namespace Gaia.Core.Regions
 {
@@ -13,8 +12,16 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class BoxRegion : RegionBase
     {
-        private static readonly AiString MaxAttribute = "Max";
-        private static readonly AiString MinAttribute = "Min";
+        private static readonly DescriptionBuilder Builder = new(ConceptualAbstraction.Regions,
+            "A box aligned with the world's axes.");
+
+        private static readonly AttributeDescription MinAttribute = Builder.Required("Min", AttributeKind.Vector3,
+            "The corner with the smallest X, Y and Z.");
+
+        private static readonly AttributeDescription MaxAttribute = Builder.Required("Max", AttributeKind.Vector3,
+            "The corner with the largest X, Y and Z.");
+
+        internal static readonly ComponentDescription Description = Builder.Build();
 
         /// <summary>Creates a box whose corners are set through Min and Max.</summary>
         public BoxRegion()
@@ -50,7 +57,8 @@ namespace Gaia.Core.Regions
                 return false;
             }
 
-            if (!node.ReadVector3(MinAttribute, out Vector3 min) || !node.ReadVector3(MaxAttribute, out Vector3 max))
+            if (!node.ReadVector3(MinAttribute.Name, out Vector3 min) ||
+                !node.ReadVector3(MaxAttribute.Name, out Vector3 max))
             {
                 return false;
             }

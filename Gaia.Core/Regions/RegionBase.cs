@@ -3,7 +3,6 @@ using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Spatial;
 using Gaia.Core.Specifications;
-using Gaia.Core.Strings;
 using Gaia.Core.Targets;
 
 namespace Gaia.Core.Regions
@@ -28,7 +27,16 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6, Listing 8.6</seealso>
     public abstract class RegionBase : IAiComponent
     {
-        private static readonly AiString OriginTargetElement = "OriginTarget";
+        /// <summary>
+        ///     Describes the optional OriginTarget child <see cref="LoadOriginTarget" /> reads by, for the description of
+        ///     every shape that calls it.
+        /// </summary>
+        /// <remarks>
+        ///     Three of the shipped shapes call LoadOriginTarget and the other six refuse every child, so this piece is added
+        ///     by the shape that reads it rather than handed out with a builder the way the frame's attributes are.
+        /// </remarks>
+        protected static readonly SlotDescription OriginTargetSlot = new("OriginTarget", "OriginTarget",
+            ConceptualAbstraction.Targets, 0, 1);
 
         /// <summary>Where the region draws the numbers that pick a random position.</summary>
         public IRandomSource RandomSource { get; set; } = new Xoshiro128RandomSource();
@@ -62,7 +70,7 @@ namespace Gaia.Core.Regions
 
             foreach (SpecificationNode child in node.Children)
             {
-                if (child.Name != OriginTargetElement)
+                if (child.Name != OriginTargetSlot.Name)
                 {
                     creationData.ReportError(
                         $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");

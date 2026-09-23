@@ -23,15 +23,14 @@ namespace Gaia.Core.Factories
     public sealed class AiCreationData
     {
         private static readonly AiString BrainStoreName = "Brain";
-        private static readonly AiString StoreAttribute = "Store";
         private static readonly AiString WorldStoreName = "World";
 
         /// <summary>
-        ///     Describes the Store attribute <see cref="TryReadStore" /> reads, for the description of every component that
-        ///     reads one.
+        ///     Describes the Store attribute <see cref="TryReadStore" /> reads by, for the description of every component
+        ///     that reads one.
         /// </summary>
-        internal static readonly AttributeDescription StoreDescription = AttributeDescription.Optional(StoreAttribute,
-            "Store", AttributeKind.String, "Brain", "Which blackboard holds the value, Brain or World.");
+        internal static readonly AttributeDescription StoreAttribute = AttributeDescription.Optional("Store", "Store",
+            AttributeKind.String, "Brain", "Which blackboard holds the value, Brain or World.");
 
         /// <summary>
         ///     Creates the creation data a load starts from, which <see cref="ForChild" /> then copies for every component
@@ -113,7 +112,7 @@ namespace Gaia.Core.Factories
         {
             store = BrainBlackboard;
 
-            if (!node.TryGetString(StoreAttribute, out string text))
+            if (!node.TryGetString(StoreAttribute.Name, out string text))
             {
                 return true;
             }

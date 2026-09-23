@@ -15,11 +15,13 @@ namespace Gaia.Core.Options
     /// <seealso>"Modular AI", Section 8.3.1, Listing 8.11</seealso>
     public abstract class OptionBase : IAiComponent
     {
-        private static readonly AiString NameAttribute = "Name";
-
-        /// <summary>Describes the Name attribute Init reads on every option, for a derived option's description to include.</summary>
-        internal static readonly AttributeDescription NameDescription = AttributeDescription.Required(NameAttribute,
-            "Name", AttributeKind.String, "What the option is called in decisions and the log.");
+        /// <summary>Describes the Name attribute Init reads by on every option, for a derived option's description to add.</summary>
+        /// <remarks>
+        ///     Public so that an option a game writes adds the piece its base reads rather than restating the spelling in a
+        ///     description of its own.
+        /// </remarks>
+        public static readonly AttributeDescription NameAttribute = AttributeDescription.Required("Name", "Name",
+            AttributeKind.String, "What the option is called in decisions and the log.");
 
         private readonly List<ActionBase> _actions = new();
         private readonly ConsiderationSet _considerations = new();
@@ -106,7 +108,7 @@ namespace Gaia.Core.Options
         /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         public bool Init(AiCreationData creationData)
         {
-            if (!creationData.Node.ReadString(NameAttribute, out string name))
+            if (!creationData.Node.ReadString(NameAttribute.Name, out string name))
             {
                 return false;
             }

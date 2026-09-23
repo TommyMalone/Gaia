@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Gaia.Core.Strings;
 
 namespace Gaia.Core.Factories
 {
@@ -10,9 +9,10 @@ namespace Gaia.Core.Factories
     /// <remarks>
     ///     <para>
     ///         Every registered component carries one, passed to <see cref="ComponentFactory{TBase}.Register" />, and a
-    ///         shipped component declares it as a static beside the <see cref="AiString" /> name fields its Init reads by,
-    ///         built from those same fields. A structural element an owner parses itself, such as a Keyframe, is described the
-    ///         same way, inline on the slot that holds it, and belongs to no conceptual abstraction.
+    ///         shipped component declares it as a static built by a <see cref="DescriptionBuilder" />, which is also what
+    ///         makes the <see cref="AttributeDescription" /> and <see cref="SlotDescription" /> fields its Init reads by. A
+    ///         structural element an owner parses itself, such as a Keyframe, is described the same way, inline on the slot
+    ///         that holds it, and belongs to no conceptual abstraction.
     ///     </para>
     ///     <para>The attributes are in the order a tool lists them, and the slots in the order a document writes them.</para>
     /// </remarks>

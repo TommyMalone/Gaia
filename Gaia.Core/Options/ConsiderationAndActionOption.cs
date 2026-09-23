@@ -15,18 +15,17 @@ namespace Gaia.Core.Options
     /// <seealso>"Modular AI", Listing 8.11</seealso>
     public sealed class ConsiderationAndActionOption : OptionBase
     {
-        private static readonly AiString ActionElement = "Action";
-        private static readonly AiString ConsiderationElement = "Consideration";
+        private static readonly DescriptionBuilder Builder = new DescriptionBuilder(ConceptualAbstraction.Options,
+                "One thing the character could do, scored by its considerations and carried out by its actions.")
+            .Add(NameAttribute);
 
-        private static readonly SlotDescription ActionSlot = new(ActionElement, "Action", ConceptualAbstraction.Actions,
-            0, SlotDescription.Unbounded);
-
-        private static readonly SlotDescription ConsiderationSlot = new(ConsiderationElement, "Consideration",
+        private static readonly SlotDescription ConsiderationSlot = Builder.Slot("Consideration",
             ConceptualAbstraction.Considerations, 0, SlotDescription.Unbounded);
 
-        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Options,
-            "One thing the character could do, scored by its considerations and carried out by its actions.",
-            new[] { NameDescription }, new[] { ConsiderationSlot, ActionSlot });
+        private static readonly SlotDescription ActionSlot = Builder.Slot("Action", ConceptualAbstraction.Actions, 0,
+            SlotDescription.Unbounded);
+
+        internal static readonly ComponentDescription Description = Builder.Build();
 
         /// <summary>Creates an option for the factories to build. Init loads its name and children.</summary>
         internal ConsiderationAndActionOption()
@@ -50,7 +49,7 @@ namespace Gaia.Core.Options
 
             foreach (SpecificationNode child in node.Children)
             {
-                if (child.Name == ConsiderationElement)
+                if (child.Name == ConsiderationSlot.Name)
                 {
                     if (!creationData.Factories.Considerations.TryCreate(creationData.ForChild(child),
                             out ConsiderationBase? consideration))
@@ -60,7 +59,7 @@ namespace Gaia.Core.Options
 
                     AddConsideration(consideration!);
                 }
-                else if (child.Name == ActionElement)
+                else if (child.Name == ActionSlot.Name)
                 {
                     if (!creationData.Factories.Actions.TryCreate(creationData.ForChild(child), out ActionBase? action))
                     {

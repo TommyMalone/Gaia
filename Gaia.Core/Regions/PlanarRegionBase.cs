@@ -1,7 +1,6 @@
 ﻿using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
 using Gaia.Core.Specifications;
-using Gaia.Core.Strings;
 using Gaia.Core.Targets;
 
 namespace Gaia.Core.Regions
@@ -22,8 +21,14 @@ namespace Gaia.Core.Regions
     /// </remarks>
     public abstract class PlanarRegionBase : RegionBase
     {
-        private static readonly AiString OriginAttribute = "Origin";
-        private static readonly AiString RotationAttribute = "Rotation";
+        /// <summary>Describes the optional Origin attribute <see cref="LoadFrame" /> reads by.</summary>
+        private static readonly AttributeDescription OriginAttribute = AttributeDescription.Optional("Origin", "Origin",
+            AttributeKind.Vector3, "(0, 0, 0)", "Where the shape's (0, 0) sits in the world.");
+
+        /// <summary>Describes the optional Rotation attribute <see cref="LoadFrame" /> reads by.</summary>
+        private static readonly AttributeDescription RotationAttribute = AttributeDescription.Optional("Rotation",
+            "Rotation", AttributeKind.Rotation, "(0, 0, 0)",
+            "How far the shape's plane is turned from the ground, as pitch, yaw and roll in degrees.");
 
         private RegionFrame _frame = RegionFrame.Identity;
 
@@ -53,18 +58,29 @@ namespace Gaia.Core.Regions
             Vector3 origin = Vector3.Zero;
             Rotation rotation = Rotation.Identity;
 
-            if (node.HasAttribute(OriginAttribute) && !node.ReadVector3(OriginAttribute, out origin))
+            if (node.HasAttribute(OriginAttribute.Name) && !node.ReadVector3(OriginAttribute.Name, out origin))
             {
                 return false;
             }
 
-            if (node.HasAttribute(RotationAttribute) && !node.ReadRotation(RotationAttribute, out rotation))
+            if (node.HasAttribute(RotationAttribute.Name) && !node.ReadRotation(RotationAttribute.Name, out rotation))
             {
                 return false;
             }
 
             _frame = new RegionFrame(origin, rotation);
             return true;
+        }
+
+        /// <summary>
+        ///     Starts the description of a flat shape, carrying the Origin and Rotation attributes <see cref="LoadFrame" />
+        ///     reads by, so a shape adds what it reads of its own and nothing else.
+        /// </summary>
+        /// <param name="summary">One line saying what the shape is, in a designer's words.</param>
+        protected static DescriptionBuilder DescribeFlatShape(string summary)
+        {
+            return new DescriptionBuilder(ConceptualAbstraction.Regions, summary).Add(OriginAttribute)
+                .Add(RotationAttribute);
         }
 
         /// <summary>

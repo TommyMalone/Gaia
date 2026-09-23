@@ -2,7 +2,6 @@
 using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
 using Gaia.Core.Specifications;
-using Gaia.Core.Strings;
 
 namespace Gaia.Core.Regions
 {
@@ -22,9 +21,19 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class CapsuleRegion : RegionBase
     {
-        private static readonly AiString HalfHeightAttribute = "HalfHeight";
-        private static readonly AiString OriginAttribute = "Origin";
-        private static readonly AiString RadiusAttribute = "Radius";
+        private static readonly DescriptionBuilder Builder = new(ConceptualAbstraction.Regions,
+            "A cylinder with a rounded top and bottom.");
+
+        private static readonly AttributeDescription OriginAttribute = Builder.Optional("Origin", AttributeKind.Vector3,
+            "(0, 0, 0)", "Where the middle of the swept segment is.");
+
+        private static readonly AttributeDescription RadiusAttribute = Builder.Required("Radius", AttributeKind.Float,
+            "How far the region reaches from the segment.");
+
+        private static readonly AttributeDescription HalfHeightAttribute = Builder.Required("HalfHeight",
+            AttributeKind.Float, "How far the segment reaches above and below Origin.");
+
+        internal static readonly ComponentDescription Description = Builder.Build();
 
         private float _radius;
         private float _radiusSquared;
@@ -62,9 +71,9 @@ namespace Gaia.Core.Regions
                 return false;
             }
 
-            if (node.HasAttribute(OriginAttribute))
+            if (node.HasAttribute(OriginAttribute.Name))
             {
-                if (!node.ReadVector3(OriginAttribute, out Vector3 origin))
+                if (!node.ReadVector3(OriginAttribute.Name, out Vector3 origin))
                 {
                     return false;
                 }
@@ -72,8 +81,8 @@ namespace Gaia.Core.Regions
                 Origin = origin;
             }
 
-            if (!node.ReadFloat(RadiusAttribute, out float radius) ||
-                !node.ReadFloat(HalfHeightAttribute, out float halfHeight))
+            if (!node.ReadFloat(RadiusAttribute.Name, out float radius) ||
+                !node.ReadFloat(HalfHeightAttribute.Name, out float halfHeight))
             {
                 return false;
             }

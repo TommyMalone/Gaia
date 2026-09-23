@@ -1,7 +1,6 @@
 ﻿using System;
 using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
-using Gaia.Core.Strings;
 
 namespace Gaia.Core.Regions
 {
@@ -17,7 +16,13 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class ExtrudedPolygonRegion : PolygonRegionBase
     {
-        private static readonly AiString HalfHeightAttribute = "HalfHeight";
+        private static readonly DescriptionBuilder Builder =
+            DescribeFootprint("A footprint of any shape given a height.");
+
+        private static readonly AttributeDescription HalfHeightAttribute = Builder.Required("HalfHeight",
+            AttributeKind.Float, "How far the shape reaches either side of its plane.");
+
+        internal static readonly ComponentDescription Description = Builder.Build();
 
         /// <summary>How far the region reaches either side of its plane.</summary>
         public float HalfHeight { get; set; }
@@ -25,7 +30,8 @@ namespace Gaia.Core.Regions
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            if (!LoadFrame(creationData) || !creationData.Node.ReadFloat(HalfHeightAttribute, out float halfHeight))
+            if (!LoadFrame(creationData) ||
+                !creationData.Node.ReadFloat(HalfHeightAttribute.Name, out float halfHeight))
             {
                 return false;
             }

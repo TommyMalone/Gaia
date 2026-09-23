@@ -21,12 +21,16 @@ namespace Gaia.Core.Considerations
     /// <seealso>"Modular AI", Section 8.6.2.3, Listing 8.9</seealso>
     public abstract class VariableConsiderationBase : WeightedConsiderationBase
     {
-        private static readonly AiString MissingElement = "Missing";
-        private static readonly AiString VariableAttribute = "Variable";
+        /// <summary>Describes the optional Missing child OnInit reads by, one set of weight values.</summary>
+        private static readonly SlotDescription MissingSlot = new("Missing", "Missing", WeightValues.Description, 0, 1);
 
-        /// <summary>Describes the optional Missing child, one set of weight values.</summary>
-        private static readonly SlotDescription MissingSlot = new(MissingElement, "Missing", WeightValues.Description,
-            0, 1);
+        /// <summary>Describes the Variable attribute OnInit reads by, which it reads as the text of a name.</summary>
+        /// <remarks>
+        ///     Each derived consideration reads the value that name stands for as a kind of its own, so
+        ///     <see cref="Describe" /> restates the attribute with that kind and takes the spelling and the summary from here.
+        /// </remarks>
+        private static readonly AttributeDescription VariableAttribute = AttributeDescription.Required("Variable",
+            "Variable", AttributeKind.String, "The name of the value to read.");
 
         private bool _missingConfigured;
 
@@ -62,7 +66,7 @@ namespace Gaia.Core.Considerations
         {
             SpecificationNode node = creationData.Node;
 
-            if (!node.ReadString(VariableAttribute, out string variableName))
+            if (!node.ReadString(VariableAttribute.Name, out string variableName))
             {
                 return false;
             }
@@ -78,7 +82,7 @@ namespace Gaia.Core.Considerations
 
             foreach (SpecificationNode child in node.Children)
             {
-                if (child.Name == MissingElement)
+                if (child.Name == MissingSlot.Name)
                 {
                     if (!WeightValues.TryRead(child, out WeightValues missingWeights))
                     {
@@ -88,7 +92,7 @@ namespace Gaia.Core.Considerations
                     MissingVariableWeights = missingWeights;
                     _missingConfigured = true;
                 }
-                else if (child.Name == WeightFunctionElement)
+                else if (child.Name == WeightFunctionSlot.Name)
                 {
                     if (!TryLoadWeightFunction(child, creationData))
                     {
@@ -171,15 +175,14 @@ namespace Gaia.Core.Considerations
         /// </summary>
         internal static ComponentDescription Describe(string summary, DataStoreValueType variableKind)
         {
-            AttributeDescription[] attributes =
-            {
-                AttributeDescription.VariableName(VariableAttribute, "Variable", variableKind,
-                    "The name of the value to read."),
-                AiCreationData.StoreDescription,
-            };
-            SlotDescription[] slots = { MissingSlot, WeightFunctionSlot };
+            DescriptionBuilder builder = new(ConceptualAbstraction.Considerations, summary);
 
-            return new ComponentDescription(ConceptualAbstraction.Considerations, summary, attributes, slots);
+            builder.VariableName(VariableAttribute.Spelling, variableKind, VariableAttribute.Summary);
+            builder.Add(AiCreationData.StoreAttribute);
+            builder.Add(MissingSlot);
+            builder.Add(WeightFunctionSlot);
+
+            return builder.Build();
         }
 
         /// <summary>Reads the optional Store attribute through the creation data, which owns the blackboards.</summary>

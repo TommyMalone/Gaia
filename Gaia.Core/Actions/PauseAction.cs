@@ -1,8 +1,6 @@
-﻿using System;
-using Gaia.Core.Factories;
+﻿using Gaia.Core.Factories;
 using Gaia.Core.Services.Time;
 using Gaia.Core.Specifications;
-using Gaia.Core.Strings;
 
 namespace Gaia.Core.Actions
 {
@@ -10,15 +8,14 @@ namespace Gaia.Core.Actions
     /// <seealso>"Modular AI", Section 8.5.4</seealso>
     public sealed class PauseAction : ActionBase
     {
-        private static readonly AiString DurationAttribute = "Duration";
+        private static readonly DescriptionBuilder Builder =
+            new DescriptionBuilder(ConceptualAbstraction.Actions, "Waits for a set time, then reports done.").Add(
+                NameAttribute);
 
-        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Actions,
-            "Waits for a set time, then reports done.", new[]
-            {
-                NameDescription,
-                AttributeDescription.Required(DurationAttribute, "Duration", AttributeKind.Float,
-                    "How long to wait, in seconds."),
-            }, Array.Empty<SlotDescription>());
+        private static readonly AttributeDescription DurationAttribute = Builder.Required("Duration",
+            AttributeKind.Float, "How long to wait, in seconds.");
+
+        internal static readonly ComponentDescription Description = Builder.Build();
 
         /// <summary>True while the action is selected.</summary>
         private bool _isRunning;
@@ -74,7 +71,7 @@ namespace Gaia.Core.Actions
                 return false;
             }
 
-            if (!node.ReadFloat(DurationAttribute, out float duration))
+            if (!node.ReadFloat(DurationAttribute.Name, out float duration))
             {
                 return false;
             }

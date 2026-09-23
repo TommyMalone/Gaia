@@ -2,7 +2,6 @@
 using Gaia.Core.Options;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Specifications;
-using Gaia.Core.Strings;
 
 namespace Gaia.Core.Reasoners
 {
@@ -14,15 +13,14 @@ namespace Gaia.Core.Reasoners
     /// <seealso>Kevin Dill, "Dual-Utility Reasoning", Game AI Pro 2, CRC Press, 2015</seealso>
     public class DualUtilityReasoner : ReasonerBase
     {
-        private static readonly AiString WeightScreeningFactorAttribute = "WeightScreeningFactor";
+        private static readonly DescriptionBuilder Builder = new(ConceptualAbstraction.Reasoners,
+            "Picks among the options of the highest rank at random, in proportion to their weights.");
 
-        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Reasoners,
-            "Picks among the options of the highest rank at random, in proportion to their weights.", new[]
-            {
-                AttributeDescription.Optional(WeightScreeningFactorAttribute, "WeightScreeningFactor",
-                    AttributeKind.Float, "0",
-                    "How close to the best weight an option must come to stay in the pick, from 0 for no screening to 1 for the best alone."),
-            }, new[] { OptionSlot });
+        private static readonly AttributeDescription WeightScreeningFactorAttribute = Builder.Optional(
+            "WeightScreeningFactor", AttributeKind.Float, "0",
+            "How close to the best weight an option must come to stay in the pick, from 0 for no screening to 1 for the best alone.");
+
+        internal static readonly ComponentDescription Description = Builder.Add(OptionSlot).Build();
 
         /// <summary>Where the reasoner draws the roll that picks among the surviving options.</summary>
         public IRandomSource RandomSource { get; set; } = new Xoshiro128RandomSource();
@@ -49,17 +47,17 @@ namespace Gaia.Core.Reasoners
 
             RandomSource = creationData.RandomSource;
 
-            if (node.HasAttribute(WeightScreeningFactorAttribute))
+            if (node.HasAttribute(WeightScreeningFactorAttribute.Name))
             {
-                if (!node.ReadFloat(WeightScreeningFactorAttribute, out float weightScreeningFactor))
+                if (!node.ReadFloat(WeightScreeningFactorAttribute.Name, out float weightScreeningFactor))
                 {
                     return false;
                 }
 
                 if (weightScreeningFactor < 0f || weightScreeningFactor > 1f)
                 {
-                    node.TryGetString(WeightScreeningFactorAttribute, out string factorText);
-                    node.ReportMalformed(WeightScreeningFactorAttribute, factorText, "between 0 and 1");
+                    node.TryGetString(WeightScreeningFactorAttribute.Name, out string factorText);
+                    node.ReportMalformed(WeightScreeningFactorAttribute.Name, factorText, "between 0 and 1");
                     return false;
                 }
 

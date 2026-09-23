@@ -1,7 +1,6 @@
 ﻿using Gaia.Core.Actions;
 using Gaia.Core.Factories;
 using Gaia.Core.Specifications;
-using Gaia.Core.Strings;
 
 namespace Gaia.Core.Tests.Helpers;
 
@@ -13,16 +12,15 @@ namespace Gaia.Core.Tests.Helpers;
 /// <remarks>Specs that compare whole logs write the expected entries grouped a cycle per line.</remarks>
 internal sealed class RecordAction : ActionBase
 {
-    private static readonly AiString DoneAttribute = "Done";
+    private static readonly DescriptionBuilder Builder = new DescriptionBuilder(ConceptualAbstraction.Actions,
+        "Records each lifecycle call it receives.").Add(NameAttribute);
+
+    /// <summary>Describes the optional Done attribute OnInit reads by.</summary>
+    private static readonly AttributeDescription DoneAttribute = Builder.Optional("Done", AttributeKind.Bool, "true",
+        "Whether the action is done as soon as it is selected.");
 
     /// <summary>Describes the action for a spec that registers it, the Name every action reads and the optional Done.</summary>
-    internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Actions,
-        "Records each lifecycle call it receives.", new[]
-        {
-            NameDescription,
-            AttributeDescription.Optional(DoneAttribute, "Done", AttributeKind.Bool, "true",
-                "Whether the action is done as soon as it is selected."),
-        }, Array.Empty<SlotDescription>());
+    internal static readonly ComponentDescription Description = Builder.Build();
 
     private readonly List<string> _log;
     private bool _isDone;
@@ -61,9 +59,9 @@ internal sealed class RecordAction : ActionBase
     {
         SpecificationNode node = creationData.Node;
 
-        if (node.HasAttribute(DoneAttribute))
+        if (node.HasAttribute(DoneAttribute.Name))
         {
-            if (!node.ReadBool(DoneAttribute, out bool isDone))
+            if (!node.ReadBool(DoneAttribute.Name, out bool isDone))
             {
                 return false;
             }

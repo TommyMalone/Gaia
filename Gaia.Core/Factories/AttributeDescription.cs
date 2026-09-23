@@ -74,6 +74,18 @@ namespace Gaia.Core.Factories
         /// <summary>The kind of stored value a VariableName attribute is read as, or null for every other kind.</summary>
         public DataStoreValueType? VariableKind { get; }
 
+        /// <summary>The same attribute described with another default, for an element that reads it over other identity values.</summary>
+        /// <remarks>
+        ///     Everything else is carried over, the name, the spelling, the kind, whether it is required, the summary, an
+        ///     enumeration's choices and the kind a variable name is read as, so a copy says what the original said of every field
+        ///     but the default.
+        /// </remarks>
+        public AttributeDescription WithDefault(string? defaultText)
+        {
+            return new AttributeDescription(Name, Spelling, Kind, IsRequired, defaultText, Summary, Choices,
+                VariableKind);
+        }
+
         /// <summary>Describes a required attribute of one of the seven typed kinds.</summary>
         /// <exception cref="ArgumentException">The spelling does not spell the name.</exception>
         public static AttributeDescription Required(AiString name, string spelling, AttributeKind kind, string summary)

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Gaia.Core.Factories;
 using Gaia.Core.Specifications;
-using Gaia.Core.Strings;
 
 namespace Gaia.Core.WeightFunctions
 {
@@ -53,16 +52,28 @@ namespace Gaia.Core.WeightFunctions
         /// <summary>Vetoes the option, whatever the rest of its considerations report.</summary>
         public static readonly WeightValues Vetoed = new(0f, 0f, float.MinValue);
 
-        private static readonly AiString AddendAttribute = "Addend";
-        private static readonly AiString MultiplierAttribute = "Multiplier";
-        private static readonly AiString RankAttribute = "Rank";
-        private static readonly AiString VetoAttribute = "Veto";
+        private static readonly AttributeDescription AddendAttribute = AttributeDescription.Optional("Addend", "Addend",
+            AttributeKind.Float, Number(Neutral.Addend),
+            "How much the option is wanted. Summed with the option's other addends.");
+
+        private static readonly AttributeDescription MultiplierAttribute = AttributeDescription.Optional("Multiplier",
+            "Multiplier", AttributeKind.Float, Number(Neutral.Multiplier),
+            "How much of what the addends asked for is allowed, 0 or more. Multiplied with the option's other multipliers.");
+
+        private static readonly AttributeDescription RankAttribute = AttributeDescription.Optional("Rank", "Rank",
+            AttributeKind.Float, null,
+            "The tier the option is put in, where a higher tier beats every lower one. Absent, the lowest tier.");
+
+        private static readonly AttributeDescription VetoAttribute = AttributeDescription.Optional("Veto", "Veto",
+            AttributeKind.Bool, "false", "True to rule the option out whatever else is reported.");
 
         /// <summary>
         ///     Describes the four attributes TryRead reads over <see cref="Neutral" />, for a description whose element reads
         ///     them.
         /// </summary>
-        internal static readonly IReadOnlyList<AttributeDescription> Attributes = DescribeAttributes(Neutral);
+        /// <remarks>These are the attributes TryRead reads by, so an element reads exactly what this list names.</remarks>
+        internal static readonly IReadOnlyList<AttributeDescription> Attributes = new[]
+            { AddendAttribute, MultiplierAttribute, RankAttribute, VetoAttribute };
 
         /// <summary>
         ///     Describes an element that is one set of weight values and nothing else, such as True, False, Missing or
@@ -85,15 +96,9 @@ namespace Gaia.Core.WeightFunctions
 
             return new[]
             {
-                AttributeDescription.Optional(AddendAttribute, "Addend", AttributeKind.Float, Number(defaults.Addend),
-                    "How much the option is wanted. Summed with the option's other addends."),
-                AttributeDescription.Optional(MultiplierAttribute, "Multiplier", AttributeKind.Float,
-                    Number(defaults.Multiplier),
-                    "How much of what the addends asked for is allowed, 0 or more. Multiplied with the option's other multipliers."),
-                AttributeDescription.Optional(RankAttribute, "Rank", AttributeKind.Float, rankText,
-                    "The tier the option is put in, where a higher tier beats every lower one. Absent, the lowest tier."),
-                AttributeDescription.Optional(VetoAttribute, "Veto", AttributeKind.Bool, "false",
-                    "True to rule the option out whatever else is reported."),
+                AddendAttribute.WithDefault(Number(defaults.Addend)),
+                MultiplierAttribute.WithDefault(Number(defaults.Multiplier)), RankAttribute.WithDefault(rankText),
+                VetoAttribute,
             };
         }
 
@@ -128,34 +133,34 @@ namespace Gaia.Core.WeightFunctions
             float multiplier = defaults.Multiplier;
             float rank = defaults.Rank;
 
-            if (node.HasAttribute(AddendAttribute) && !node.ReadFloat(AddendAttribute, out addend))
+            if (node.HasAttribute(AddendAttribute.Name) && !node.ReadFloat(AddendAttribute.Name, out addend))
             {
                 return false;
             }
 
-            if (node.HasAttribute(MultiplierAttribute))
+            if (node.HasAttribute(MultiplierAttribute.Name))
             {
-                if (!node.ReadFloat(MultiplierAttribute, out multiplier))
+                if (!node.ReadFloat(MultiplierAttribute.Name, out multiplier))
                 {
                     return false;
                 }
 
                 if (multiplier < 0f)
                 {
-                    node.TryGetString(MultiplierAttribute, out string multiplierText);
-                    node.ReportMalformed(MultiplierAttribute, multiplierText, "0 or above");
+                    node.TryGetString(MultiplierAttribute.Name, out string multiplierText);
+                    node.ReportMalformed(MultiplierAttribute.Name, multiplierText, "0 or above");
                     return false;
                 }
             }
 
-            if (node.HasAttribute(RankAttribute) && !node.ReadFloat(RankAttribute, out rank))
+            if (node.HasAttribute(RankAttribute.Name) && !node.ReadFloat(RankAttribute.Name, out rank))
             {
                 return false;
             }
 
-            if (node.HasAttribute(VetoAttribute))
+            if (node.HasAttribute(VetoAttribute.Name))
             {
-                if (!node.ReadBool(VetoAttribute, out bool veto))
+                if (!node.ReadBool(VetoAttribute.Name, out bool veto))
                 {
                     return false;
                 }
@@ -164,9 +169,9 @@ namespace Gaia.Core.WeightFunctions
                 {
                     // An author who vetoes an option and provides a multiplier has two opinions about the same number.
                     // The reader should not pick one.
-                    if (node.HasAttribute(MultiplierAttribute))
+                    if (node.HasAttribute(MultiplierAttribute.Name))
                     {
-                        node.ReportConflict(VetoAttribute, MultiplierAttribute);
+                        node.ReportConflict(VetoAttribute.Name, MultiplierAttribute.Name);
                         return false;
                     }
 

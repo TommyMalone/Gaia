@@ -1,4 +1,5 @@
 ﻿using Gaia.Core.DataStores;
+using Gaia.Core.Factories;
 using Gaia.Core.Strings;
 using Gaia.Core.WeightFunctions;
 
@@ -7,6 +8,9 @@ namespace Gaia.Core.Considerations
     /// <summary>Reads a string out of a data store.</summary>
     public sealed class StringVariableConsideration : VariableConsiderationBase
     {
+        internal static readonly ComponentDescription Description =
+            Describe("Reads a piece of text from a blackboard.", DataStoreValueType.String);
+
         /// <summary>Creates a consideration that a configuration fills.</summary>
         internal StringVariableConsideration()
         {

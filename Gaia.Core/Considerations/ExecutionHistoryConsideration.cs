@@ -2,7 +2,6 @@
 using Gaia.Core.Options;
 using Gaia.Core.Services.Time;
 using Gaia.Core.Specifications;
-using Gaia.Core.Strings;
 using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Considerations
@@ -33,25 +32,19 @@ namespace Gaia.Core.Considerations
     /// <seealso>"Modular AI", Section 8.5.2</seealso>
     public sealed class ExecutionHistoryConsideration : ConsiderationBase
     {
-        private static readonly AiString FinishedElement = "Finished";
-        private static readonly AiString NeverRunElement = "NeverRun";
-        private static readonly AiString RankRetentionFactorAttribute = "RankRetentionFactor";
-        private static readonly AiString SinceLastRunElement = "SinceLastRun";
-        private static readonly AiString WhileRunningElement = "WhileRunning";
+        private static readonly DescriptionBuilder Builder = new(ConceptualAbstraction.Considerations,
+            "Weighs the option by whether it is running, has finished, has run before or has never run.");
 
-        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Considerations,
-            "Weighs the option by whether it is running, has finished, has run before or has never run.", new[]
-            {
-                AttributeDescription.Optional(RankRetentionFactorAttribute, "RankRetentionFactor", AttributeKind.Float,
-                    "0",
-                    "How much of the rank the option was selected at is kept while it runs, from 0 for none to 1 for all."),
-            }, new[]
-            {
-                RoleSlot(WhileRunningElement, "WhileRunning"),
-                RoleSlot(FinishedElement, "Finished"),
-                RoleSlot(NeverRunElement, "NeverRun"),
-                RoleSlot(SinceLastRunElement, "SinceLastRun"),
-            });
+        private static readonly AttributeDescription RankRetentionFactorAttribute = Builder.Optional(
+            "RankRetentionFactor", AttributeKind.Float, "0",
+            "How much of the rank the option was selected at is kept while it runs, from 0 for none to 1 for all.");
+
+        private static readonly SlotDescription WhileRunningSlot = RoleSlot("WhileRunning");
+        private static readonly SlotDescription FinishedSlot = RoleSlot("Finished");
+        private static readonly SlotDescription NeverRunSlot = RoleSlot("NeverRun");
+        private static readonly SlotDescription SinceLastRunSlot = RoleSlot("SinceLastRun");
+
+        internal static readonly ComponentDescription Description = Builder.Build();
 
         /// <summary>The time the option was most recently deselected, meaningful once _hasRun is true.</summary>
         private Seconds _deselectedTime;
@@ -122,17 +115,17 @@ namespace Gaia.Core.Considerations
 
             TimeSource = creationData.TimeSource;
 
-            if (node.HasAttribute(RankRetentionFactorAttribute))
+            if (node.HasAttribute(RankRetentionFactorAttribute.Name))
             {
-                if (!node.ReadFloat(RankRetentionFactorAttribute, out float rankRetentionFactor))
+                if (!node.ReadFloat(RankRetentionFactorAttribute.Name, out float rankRetentionFactor))
                 {
                     return false;
                 }
 
                 if (rankRetentionFactor < 0f || rankRetentionFactor > 1f)
                 {
-                    node.TryGetString(RankRetentionFactorAttribute, out string factorText);
-                    node.ReportMalformed(RankRetentionFactorAttribute, factorText, "between 0 and 1");
+                    node.TryGetString(RankRetentionFactorAttribute.Name, out string factorText);
+                    node.ReportMalformed(RankRetentionFactorAttribute.Name, factorText, "between 0 and 1");
                     return false;
                 }
 
@@ -143,7 +136,7 @@ namespace Gaia.Core.Considerations
             {
                 WeightFunctionBase? weightFunction;
 
-                if (child.Name == WhileRunningElement)
+                if (child.Name == WhileRunningSlot.Name)
                 {
                     if (!TryLoadRoleWeightFunction(child, creationData, out weightFunction))
                     {
@@ -152,7 +145,7 @@ namespace Gaia.Core.Considerations
 
                     WhileRunningWeightFunction = weightFunction;
                 }
-                else if (child.Name == FinishedElement)
+                else if (child.Name == FinishedSlot.Name)
                 {
                     if (!TryLoadRoleWeightFunction(child, creationData, out weightFunction))
                     {
@@ -161,7 +154,7 @@ namespace Gaia.Core.Considerations
 
                     FinishedWeightFunction = weightFunction;
                 }
-                else if (child.Name == NeverRunElement)
+                else if (child.Name == NeverRunSlot.Name)
                 {
                     if (!TryLoadRoleWeightFunction(child, creationData, out weightFunction))
                     {
@@ -170,7 +163,7 @@ namespace Gaia.Core.Considerations
 
                     NeverRunWeightFunction = weightFunction;
                 }
-                else if (child.Name == SinceLastRunElement)
+                else if (child.Name == SinceLastRunSlot.Name)
                 {
                     if (!TryLoadRoleWeightFunction(child, creationData, out weightFunction))
                     {
@@ -272,10 +265,10 @@ namespace Gaia.Core.Considerations
             return weightFunction?.CalculateFloat((float)elapsedTime.Value) ?? WeightValues.Neutral;
         }
 
-        /// <summary>Describes one of the four role elements, each an optional weight function of the WeightFunctions abstraction.</summary>
-        private static SlotDescription RoleSlot(AiString name, string spelling)
+        /// <summary>Describes and records one of the four role elements, each an optional weight function.</summary>
+        private static SlotDescription RoleSlot(string spelling)
         {
-            return new SlotDescription(name, spelling, ConceptualAbstraction.WeightFunctions, 0, 1);
+            return Builder.Slot(spelling, ConceptualAbstraction.WeightFunctions, 0, 1);
         }
 
         /// <summary>Builds one of the four role weight functions from its role-named element.</summary>

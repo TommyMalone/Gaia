@@ -18,11 +18,13 @@ namespace Gaia.Core.Actions
     /// <seealso>"Modular AI", Section 8.5.4, Listing 8.4</seealso>
     public abstract class ActionBase : IAiComponent
     {
-        private static readonly AiString NameAttribute = "Name";
-
-        /// <summary>Describes the Name attribute Init reads on every action, for a derived action's description to include.</summary>
-        internal static readonly AttributeDescription NameDescription = AttributeDescription.Required(NameAttribute,
-            "Name", AttributeKind.String, "What the action is called in the log.");
+        /// <summary>Describes the Name attribute Init reads by on every action, for a derived action's description to add.</summary>
+        /// <remarks>
+        ///     Public so that an action a game writes adds the piece its base reads rather than restating the spelling in a
+        ///     description of its own.
+        /// </remarks>
+        public static readonly AttributeDescription NameAttribute = AttributeDescription.Required("Name", "Name",
+            AttributeKind.String, "What the action is called in the log.");
 
         /// <summary>What this action is called, which is how its entries are recognized in the log.</summary>
         public AiString Name { get; protected internal set; } = AiString.Empty;
@@ -51,7 +53,7 @@ namespace Gaia.Core.Actions
         /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         public bool Init(AiCreationData creationData)
         {
-            if (!creationData.Node.ReadString(NameAttribute, out string name))
+            if (!creationData.Node.ReadString(NameAttribute.Name, out string name))
             {
                 return false;
             }

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
 using Gaia.Core.Specifications;
-using Gaia.Core.Strings;
 
 namespace Gaia.Core.Regions
 {
@@ -43,9 +42,21 @@ namespace Gaia.Core.Regions
         /// </summary>
         private const float ParallelTolerance = 0.000001f;
 
-        private static readonly AiString DistanceAttribute = "Distance";
-        private static readonly AiString NormalAttribute = "Normal";
-        private static readonly AiString PlaneElement = "Plane";
+        private static readonly DescriptionBuilder PlaneBuilder = new("One plane bounding the volume.");
+
+        private static readonly AttributeDescription NormalAttribute = PlaneBuilder.Required("Normal",
+            AttributeKind.Vector3, "Which way the plane faces, pointing out of the volume.");
+
+        private static readonly AttributeDescription DistanceAttribute = PlaneBuilder.Required("Distance",
+            AttributeKind.Float, "How far along its normal the plane sits from the world's origin.");
+
+        private static readonly DescriptionBuilder Builder = new(ConceptualAbstraction.Regions,
+            "A volume bounded by planes.");
+
+        private static readonly SlotDescription PlaneSlot = Builder.Slot("Plane", PlaneBuilder.Build(), MinPlaneCount,
+            SlotDescription.Unbounded);
+
+        internal static readonly ComponentDescription Description = Builder.Build();
 
         private readonly List<Plane> _planes = new();
 
@@ -68,15 +79,15 @@ namespace Gaia.Core.Regions
 
             foreach (SpecificationNode child in node.Children)
             {
-                if (child.Name != PlaneElement)
+                if (child.Name != PlaneSlot.Name)
                 {
                     creationData.ReportError(
                         $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
                     return false;
                 }
 
-                if (!child.ReadVector3(NormalAttribute, out Vector3 normal) ||
-                    !child.ReadFloat(DistanceAttribute, out float distance))
+                if (!child.ReadVector3(NormalAttribute.Name, out Vector3 normal) ||
+                    !child.ReadFloat(DistanceAttribute.Name, out float distance))
                 {
                     return false;
                 }

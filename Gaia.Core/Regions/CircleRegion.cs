@@ -1,6 +1,5 @@
 ﻿using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
-using Gaia.Core.Strings;
 using Gaia.Core.Targets;
 
 namespace Gaia.Core.Regions
@@ -14,7 +13,13 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class CircleRegion : PlanarRegionBase
     {
-        private static readonly AiString RadiusAttribute = "Radius";
+        private static readonly DescriptionBuilder Builder =
+            DescribeFlatShape("A disc on the ground, which ignores height.");
+
+        private static readonly AttributeDescription RadiusAttribute = Builder.Required("Radius", AttributeKind.Float,
+            "How far the disc reaches from its middle.");
+
+        internal static readonly ComponentDescription Description = Builder.Add(OriginTargetSlot).Build();
 
         private float _radius;
         private float _radiusSquared;
@@ -45,7 +50,7 @@ namespace Gaia.Core.Regions
 
             OriginTarget = originTarget;
 
-            if (!LoadFrame(creationData) || !creationData.Node.ReadFloat(RadiusAttribute, out float radius))
+            if (!LoadFrame(creationData) || !creationData.Node.ReadFloat(RadiusAttribute.Name, out float radius))
             {
                 return false;
             }

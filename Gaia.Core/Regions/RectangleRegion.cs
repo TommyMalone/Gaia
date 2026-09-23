@@ -1,7 +1,6 @@
 ﻿using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
 using Gaia.Core.Specifications;
-using Gaia.Core.Strings;
 
 namespace Gaia.Core.Regions
 {
@@ -14,8 +13,16 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class RectangleRegion : PlanarRegionBase
     {
-        private static readonly AiString MaxAttribute = "Max";
-        private static readonly AiString MinAttribute = "Min";
+        private static readonly DescriptionBuilder Builder =
+            DescribeFlatShape("A rectangle on the ground, which ignores height.");
+
+        private static readonly AttributeDescription MinAttribute = Builder.Required("Min", AttributeKind.Vector2,
+            "The corner with the smallest X and Y in the shape's plane, measured from Origin.");
+
+        private static readonly AttributeDescription MaxAttribute = Builder.Required("Max", AttributeKind.Vector2,
+            "The corner with the largest X and Y in the shape's plane, measured from Origin.");
+
+        internal static readonly ComponentDescription Description = Builder.Build();
 
         /// <summary>The corner with the smallest X and Y, measured from Origin.</summary>
         public Vector2 Min { get; set; }
@@ -37,8 +44,8 @@ namespace Gaia.Core.Regions
                 return false;
             }
 
-            if (!LoadFrame(creationData) || !node.ReadVector2(MinAttribute, out Vector2 min) ||
-                !node.ReadVector2(MaxAttribute, out Vector2 max))
+            if (!LoadFrame(creationData) || !node.ReadVector2(MinAttribute.Name, out Vector2 min) ||
+                !node.ReadVector2(MaxAttribute.Name, out Vector2 max))
             {
                 return false;
             }

@@ -1,5 +1,4 @@
-﻿using System;
-using Gaia.Core.Entities;
+﻿using Gaia.Core.Entities;
 using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
 using Gaia.Core.Specifications;
@@ -14,8 +13,8 @@ namespace Gaia.Core.Targets
     /// <seealso>"Modular AI", Section 8.5.5</seealso>
     public sealed class SelfTarget : TargetBase
     {
-        internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Targets,
-            "The character itself.", Array.Empty<AttributeDescription>(), Array.Empty<SlotDescription>());
+        internal static readonly ComponentDescription Description =
+            new DescriptionBuilder(ConceptualAbstraction.Targets, "The character itself.").Build();
 
         /// <summary>The actor this AI controls.</summary>
         public Actor? Self { get; set; }
