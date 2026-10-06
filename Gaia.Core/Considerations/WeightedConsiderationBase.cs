@@ -21,7 +21,12 @@ namespace Gaia.Core.Considerations
         ///     Describes the one WeightFunction child a weighted consideration needs and reads by, for a derived
         ///     consideration's description to add.
         /// </summary>
-        internal static readonly SlotDescription WeightFunctionSlot = new("WeightFunction", "WeightFunction",
+        /// <remarks>
+        ///     Public so that a weighted consideration a game writes adds the piece its base reads rather than restating the
+        ///     element name in a description of its own. The slot's minimum of one is the factory's to hold once the
+        ///     consideration's Init returns.
+        /// </remarks>
+        public static readonly SlotDescription WeightFunctionSlot = new("WeightFunction", "WeightFunction",
             ConceptualAbstraction.WeightFunctions, 1, 1);
 
         /// <summary>
@@ -57,7 +62,7 @@ namespace Gaia.Core.Considerations
             if (!CanConvert(weightFunction!))
             {
                 creationData.ReportError(
-                    $"Line {child.LineNumber}, the WeightFunction element's type {child.Type.Text} does not convert {QueryPhrase}");
+                    $"Line {child.LineNumber}, the {child.NameSpelling} element's type {child.TypeSpelling} does not convert {QueryPhrase}");
                 return false;
             }
 

@@ -47,6 +47,8 @@ namespace Gaia.Core.Options
         {
             SpecificationNode node = creationData.Node;
 
+            // Every child is a Consideration or an Action, since the factory refused anything else against the
+            // description.
             foreach (SpecificationNode child in node.Children)
             {
                 if (child.Name == ConsiderationSlot.Name)
@@ -67,12 +69,6 @@ namespace Gaia.Core.Options
                     }
 
                     AddAction(action!);
-                }
-                else
-                {
-                    creationData.ReportError(
-                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
-                    return false;
                 }
             }
 

@@ -40,7 +40,9 @@ namespace Gaia.Core.Considerations
         /// <summary>The considerations this one groups, in the order they were added.</summary>
         /// <remarks>
         ///     The <see cref="ConsiderationSet" /> that holds them is an implementation detail of this consideration, so this
-        ///     is where a reader reaches them. Nothing on the cycle path reads it, since combining runs inside the set.
+        ///     is where a reader reaches them. Nothing on the cycle path reads it, since combining runs inside the set. A foreach
+        ///     over this list allocates a boxed enumerator each time it runs and an indexed for does not, so a host that reads it
+        ///     every tick loops by index.
         /// </remarks>
         public IReadOnlyList<ConsiderationBase> Considerations => _set.Considerations;
 

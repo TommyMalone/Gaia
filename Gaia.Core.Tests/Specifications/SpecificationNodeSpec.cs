@@ -1,5 +1,6 @@
 ﻿using Gaia.Core.Spatial;
 using Gaia.Core.Specifications;
+using Gaia.Core.Strings;
 using Gaia.Core.Tests.Helpers;
 
 namespace Gaia.Core.Tests.Specifications;
@@ -86,6 +87,32 @@ public class SpecificationNodeSpec
                 "Error guard.xml Line 1, the Region element has no Sheltered attribute",
                 "Error guard.xml Line 1, the Region element has no Label attribute",
                 "Error guard.xml Line 1, the Region element has no Waypoint attribute",
+            }));
+        });
+    }
+
+    [Test]
+    public void NamesTheElementAsTheDocumentSpellsIt()
+    {
+        // AiStringTable keeps the casing it met first, so the name is planted in one casing before the document is
+        // parsed in another. Each of the three reports then shows which spelling it prints.
+        AiString planted = new("Gizmo");
+
+        XmlSpecificationReader reader = new(_logSink);
+        reader.TryRead("""<gIZMO Armed="yes" Rank="1" Veto="true"/>""", SourceName, out SpecificationNode? root);
+
+        root!.ReadBool("Armed", out _);
+        root.ReadFloat("Height", out _);
+        root.ReportConflict("Veto", "Rank");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(planted.Text, Is.EqualTo("Gizmo"), "the table met the name in the planted casing first");
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the gIZMO element's Armed is not true or false, it reads \"yes\"",
+                "Error guard.xml Line 1, the gIZMO element has no Height attribute",
+                "Error guard.xml Line 1, the gIZMO element mixes Veto with Rank",
             }));
         });
     }

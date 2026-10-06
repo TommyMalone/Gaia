@@ -300,6 +300,64 @@ public class BrainSpec
     }
 
     [Test]
+    public void RefusesAnAttributeOnTheBrainElement()
+    {
+        const string snippet = """
+                               <Brain Name="Guard">
+                                   <Reasoner Type="RuleBased"/>
+                               </Brain>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        Brain loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(loaded.RootReasoner, Is.Null, "the refusal comes before any child is built");
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Brain element does not take the Name attribute",
+            }));
+        });
+    }
+
+    [Test]
+    public void RefusesATypeOnTheBrainElement()
+    {
+        // No factory picks a brain by a Type, so a Type on the root is a stray, refused as any other attribute the
+        // description does not name.
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad("""<Brain Type="Guard"/>""", _logSink);
+
+        Brain loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Brain element does not take the Type attribute",
+            }));
+        });
+    }
+
+    [Test]
+    public void LoadsABrainElementWithNoReasoner()
+    {
+        // The root's Reasoner slot has a MinCount of 0, so the check after the children load refuses nothing.
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad("<Brain/>", _logSink);
+
+        Brain loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.RootReasoner, Is.Null);
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
     public void RefusesASecondReasoner()
     {
         const string snippet = """

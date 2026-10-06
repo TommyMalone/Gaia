@@ -35,11 +35,6 @@ namespace Gaia.Core.Regions
         {
             SpecificationNode node = creationData.Node;
 
-            if (!creationData.RefuseChildren())
-            {
-                return false;
-            }
-
             if (!LoadFrame(creationData) || !node.ReadVector2(MinAttribute.Name, out Vector2 min) ||
                 !node.ReadVector2(MaxAttribute.Name, out Vector2 max))
             {

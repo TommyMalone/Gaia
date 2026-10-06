@@ -116,7 +116,7 @@ namespace Gaia.Core.Actions
                 if (DoneWhen != SubreasonerCompletion.NothingEligible)
                 {
                     creationData.ReportError(
-                        $"Line {node.LineNumber}, the {node.Name.Text} element sets NothingEligibleCycleLimit under the {DoneWhen} rule");
+                        $"Line {node.LineNumber}, the {node.NameSpelling} element sets NothingEligibleCycleLimit under the {DoneWhen} rule");
                     return false;
                 }
 
@@ -137,15 +137,10 @@ namespace Gaia.Core.Actions
                 NothingEligibleCycleLimit = nothingEligibleCycleLimit;
             }
 
+            // Every child is the one Reasoner, since the factory refused anything else against the description, and
+            // the factory refuses an element with none once this returns.
             foreach (SpecificationNode child in node.Children)
             {
-                if (child.Name != ReasonerSlot.Name)
-                {
-                    creationData.ReportError(
-                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
-                    return false;
-                }
-
                 if (!creationData.Factories.Reasoners.TryCreate(creationData.ForChild(child),
                         out ReasonerBase? reasoner))
                 {
@@ -153,13 +148,6 @@ namespace Gaia.Core.Actions
                 }
 
                 Reasoner = reasoner;
-            }
-
-            if (Reasoner == null)
-            {
-                creationData.ReportError(
-                    $"Line {node.LineNumber}, the {node.Name.Text} element has no Reasoner element");
-                return false;
             }
 
             return true;

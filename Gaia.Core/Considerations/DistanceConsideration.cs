@@ -70,6 +70,7 @@ namespace Gaia.Core.Considerations
                 IgnoreHeight = ignoreHeight;
             }
 
+            // Every child is one of the four slots, since the factory refused anything else against the description.
             foreach (SpecificationNode child in node.Children)
             {
                 if (child.Name == FromSlot.Name)
@@ -106,25 +107,14 @@ namespace Gaia.Core.Considerations
                         return false;
                     }
                 }
-                else
-                {
-                    creationData.ReportError(
-                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
-                    return false;
-                }
             }
 
+            // The two ends are refused together in one sentence, which the factory's count of each slot alone cannot
+            // say. The WeightFunction slot's minimum is the factory's to hold once this returns.
             if (FromTarget == null || ToTarget == null)
             {
                 creationData.ReportError(
-                    $"Line {node.LineNumber}, the {node.Name.Text} element needs both a From and a To element");
-                return false;
-            }
-
-            if (WeightFunction == null)
-            {
-                creationData.ReportError(
-                    $"Line {node.LineNumber}, the {node.Name.Text} element has no WeightFunction element");
+                    $"Line {node.LineNumber}, the {node.NameSpelling} element needs both a From and a To element");
                 return false;
             }
 

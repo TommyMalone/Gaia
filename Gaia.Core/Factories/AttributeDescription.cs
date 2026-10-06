@@ -15,8 +15,8 @@ namespace Gaia.Core.Factories
     public sealed class AttributeDescription
     {
         /// <summary>
-        ///     Keeps what the four static builders share, the check on the spelling. The builders are the only way to
-        ///     describe an attribute, so each kind's choices or variable kind arrive as the kind needs them.
+        ///     Keeps what the five static builders share, the check on the spelling. It stores what it is given and checks
+        ///     nothing about the kind against the other arguments.
         /// </summary>
         /// <exception cref="ArgumentException">The spelling does not spell the name.</exception>
         private AttributeDescription(
@@ -75,25 +75,27 @@ namespace Gaia.Core.Factories
         public DataStoreValueType? VariableKind { get; }
 
         /// <summary>The same attribute described with another default, for an element that reads it over other identity values.</summary>
-        /// <remarks>
-        ///     Everything else is carried over, the name, the spelling, the kind, whether it is required, the summary, an
-        ///     enumeration's choices and the kind a variable name is read as, so a copy says what the original said of every field
-        ///     but the default.
-        /// </remarks>
+        /// <remarks>Public so that a game's component can describe a shared attribute under a default of its own.</remarks>
         public AttributeDescription WithDefault(string? defaultText)
         {
             return new AttributeDescription(Name, Spelling, Kind, IsRequired, defaultText, Summary, Choices,
                 VariableKind);
         }
 
-        /// <summary>Describes a required attribute of one of the seven typed kinds.</summary>
+        /// <summary>
+        ///     Describes a required attribute of the given kind. An Enumeration and a VariableName have builders of their own
+        ///     that carry what those kinds need, and this one does not check the kind.
+        /// </summary>
         /// <exception cref="ArgumentException">The spelling does not spell the name.</exception>
         public static AttributeDescription Required(AiString name, string spelling, AttributeKind kind, string summary)
         {
             return new AttributeDescription(name, spelling, kind, true, null, summary);
         }
 
-        /// <summary>Describes an optional attribute of one of the seven typed kinds, with its default as text or null.</summary>
+        /// <summary>
+        ///     Describes an optional attribute of the given kind, with its default as text or null. An Enumeration and a
+        ///     VariableName have builders of their own that carry what those kinds need, and this one does not check the kind.
+        /// </summary>
         /// <exception cref="ArgumentException">The spelling does not spell the name.</exception>
         public static AttributeDescription Optional(
             AiString name,
@@ -115,6 +117,23 @@ namespace Gaia.Core.Factories
         {
             return new AttributeDescription(name, spelling, AttributeKind.Enumeration, false, defaultText, summary,
                 Enum.GetNames(typeof(TEnum)));
+        }
+
+        /// <summary>Describes an optional attribute read as one of the given names, for choices no enumeration type lists.</summary>
+        /// <remarks>
+        ///     The choices are kept in the order given. The default is not checked against them, so the caller passes one of
+        ///     the choices.
+        /// </remarks>
+        /// <exception cref="ArgumentException">The spelling does not spell the name.</exception>
+        public static AttributeDescription Enumeration(
+            AiString name,
+            string spelling,
+            IReadOnlyList<string> choices,
+            string defaultText,
+            string summary)
+        {
+            return new AttributeDescription(name, spelling, AttributeKind.Enumeration, false, defaultText, summary,
+                choices);
         }
 
         /// <summary>Describes a required attribute naming a stored value that is read as the given kind.</summary>

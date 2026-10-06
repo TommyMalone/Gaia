@@ -32,8 +32,8 @@ namespace Gaia.Core.Targets
         private static readonly DescriptionBuilder Builder = new(ConceptualAbstraction.Targets,
             "An entity found by name in a list on a blackboard.");
 
-        private static readonly AttributeDescription ListAttribute = Builder.Required("List", AttributeKind.String,
-            "The name of the entity list to search.");
+        private static readonly AttributeDescription ListAttribute = Builder.VariableName("List",
+            DataStoreValueType.EntityList, "The name of the entity list to search.");
 
         private static readonly AttributeDescription EntityAttribute = Builder.Required("Entity", AttributeKind.String,
             "The name of the entity to find in the list.");
@@ -62,11 +62,6 @@ namespace Gaia.Core.Targets
         protected override bool OnInit(AiCreationData creationData)
         {
             SpecificationNode node = creationData.Node;
-
-            if (!creationData.RefuseChildren())
-            {
-                return false;
-            }
 
             if (!node.ReadString(ListAttribute.Name, out string listName) ||
                 !node.ReadString(EntityAttribute.Name, out string entityName))

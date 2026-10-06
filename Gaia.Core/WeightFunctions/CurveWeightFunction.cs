@@ -100,6 +100,8 @@ namespace Gaia.Core.WeightFunctions
                 Rank = configuredRank;
             }
 
+            // Every child is an AddendCurve or a MultiplierCurve, since the factory refused anything else against the
+            // description.
             foreach (SpecificationNode child in node.Children)
             {
                 if (child.Name == AddendCurveSlot.Name)
@@ -121,12 +123,6 @@ namespace Gaia.Core.WeightFunctions
                     WarnAboutNegativeKeyframes(child, loadedMultiplierCurve!, creationData);
 
                     MultiplierCurve = loadedMultiplierCurve;
-                }
-                else
-                {
-                    creationData.ReportError(
-                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
-                    return false;
                 }
             }
 
@@ -160,7 +156,7 @@ namespace Gaia.Core.WeightFunctions
                 if (keyframe.Value < 0f)
                 {
                     creationData.ReportWarning(
-                        $"Line {curveNode.LineNumber}, the {curveNode.Name.Text} element dips below 0 and will be clamped to 0");
+                        $"Line {curveNode.LineNumber}, the {curveNode.NameSpelling} element dips below 0 and will be clamped to 0");
                     return;
                 }
             }
@@ -170,8 +166,8 @@ namespace Gaia.Core.WeightFunctions
         /// <remarks>
         ///     A keyframe's tangents default to 0, which flattens the curve at the keyframe. A curve element carrying
         ///     Linear="true" replaces every tangent with the slope of its neighboring segment once its keyframes are loaded, so
-        ///     explicit tangents and Linear do not combine. A curve with no keyframes evaluates to 0 for every input, which would
-        ///     silently veto through a multiplier, so an empty curve element is refused instead.
+        ///     explicit tangents and Linear do not combine. The factory refuses an empty curve element against the Keyframe slot's
+        ///     minimum once Init returns, so this method does not check for one.
         /// </remarks>
         private static bool TryLoadCurve(SpecificationNode curveNode, AiCreationData creationData, out Curve? curve)
         {
@@ -180,15 +176,9 @@ namespace Gaia.Core.WeightFunctions
             Curve loaded = new();
             Dictionary<float, int> linesByInput = new();
 
+            // Every child is a Keyframe, since the factory refused anything else against the curve's description.
             foreach (SpecificationNode child in curveNode.Children)
             {
-                if (child.Name != KeyframeSlot.Name)
-                {
-                    creationData.ReportError(
-                        $"Line {child.LineNumber}, the {curveNode.Name.Text} element does not take {child.Name.Text} elements");
-                    return false;
-                }
-
                 if (!child.ReadFloat(InputAttribute.Name, out float input) ||
                     !child.ReadFloat(ValueAttribute.Name, out float value))
                 {
@@ -213,20 +203,13 @@ namespace Gaia.Core.WeightFunctions
                 if (linesByInput.TryGetValue(input, out int firstLine))
                 {
                     creationData.ReportError(
-                        $"Line {child.LineNumber}, the {child.Name.Text} element repeats the input {input} of the {child.Name.Text} on line {firstLine}");
+                        $"Line {child.LineNumber}, the {child.NameSpelling} element repeats the input {input} of the {child.NameSpelling} on line {firstLine}");
                     return false;
                 }
 
                 linesByInput[input] = child.LineNumber;
 
                 loaded.AddKeyframe(new CurveKeyframe(input, value, inTangent, outTangent));
-            }
-
-            if (loaded.Keyframes.Count == 0)
-            {
-                creationData.ReportError(
-                    $"Line {curveNode.LineNumber}, the {curveNode.Name.Text} element has no Keyframe elements");
-                return false;
             }
 
             bool linear = false;

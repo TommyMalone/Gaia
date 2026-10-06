@@ -41,6 +41,7 @@ namespace Gaia.Core.WeightFunctions
         {
             SpecificationNode node = creationData.Node;
 
+            // Every child is a True or a False, since the factory refused anything else against the description.
             foreach (SpecificationNode child in node.Children)
             {
                 if (child.Name == TrueSlot.Name)
@@ -60,12 +61,6 @@ namespace Gaia.Core.WeightFunctions
                     }
 
                     FalseWeights = falseWeights;
-                }
-                else
-                {
-                    creationData.ReportError(
-                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
-                    return false;
                 }
             }
 

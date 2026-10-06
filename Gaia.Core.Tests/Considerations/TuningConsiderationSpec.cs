@@ -75,11 +75,14 @@ public class TuningConsiderationSpec
                                """;
         AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
-        TuningConsideration loaded = new();
+        // The factory refuses the child before Init runs, so the test loads through the factory rather than calling
+        // Init.
+        bool wasCreated = creationData.Factories.Considerations.TryCreate(creationData, out ConsiderationBase? loaded);
 
         Assert.Multiple(() =>
         {
-            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(wasCreated, Is.False);
+            Assert.That(loaded, Is.Null);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 2, the Consideration element does not take Extra elements",

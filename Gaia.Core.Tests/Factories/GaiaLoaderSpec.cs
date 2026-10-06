@@ -188,6 +188,47 @@ public class GaiaLoaderSpec
     }
 
     [Test]
+    public void RefusesARootThatIsNotABrain()
+    {
+        const string snippet = """
+                               <Brian>
+                                   <Reasoner Type="RuleBased"/>
+                               </Brian>
+                               """;
+
+        bool loaded = _loader.TryLoadBrain(snippet, SourceName, out Brain? brain);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded, Is.False);
+            Assert.That(brain, Is.Null);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Brian element is not a Brain element, which a document's root is",
+            }));
+        });
+    }
+
+    [Test]
+    public void TakesTheRootNameInAnyCasing()
+    {
+        const string snippet = """
+                               <brain>
+                                   <Reasoner Type="RuleBased"/>
+                               </brain>
+                               """;
+
+        bool loaded = _loader.TryLoadBrain(snippet, SourceName, out Brain? brain);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded, Is.True, "names match in any casing");
+            Assert.That(brain!.RootReasoner, Is.InstanceOf<RuleBasedReasoner>());
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
     public void LoadsManyBrainsFromOneParsedTree()
     {
         const string snippet = """

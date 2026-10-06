@@ -1,12 +1,15 @@
 ﻿using Gaia.Core.Actions;
+using Gaia.Core.Blackboards;
 using Gaia.Core.Considerations;
 using Gaia.Core.DataStores;
 using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Regions;
+using Gaia.Core.Services.Random;
 using Gaia.Core.Spatial;
 using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
+using Gaia.Core.Targets;
 using Gaia.Core.Tests.Helpers;
 using Gaia.Core.WeightFunctions;
 
@@ -33,13 +36,11 @@ public class DescriptionSpec
         _factories = new FactorySet();
     }
 
-    /// <summary>The seven conceptual abstractions, so that a walk reaches every factory on the set.</summary>
-    private static readonly ConceptualAbstraction[] Abstractions =
-    {
-        ConceptualAbstraction.Actions, ConceptualAbstraction.Considerations, ConceptualAbstraction.Options,
-        ConceptualAbstraction.Reasoners, ConceptualAbstraction.Regions, ConceptualAbstraction.Targets,
-        ConceptualAbstraction.WeightFunctions,
-    };
+    /// <summary>
+    ///     Every conceptual abstraction, read from the enumeration itself, so that a walk reaches every factory on the
+    ///     set and an abstraction added later is walked without this spec naming it.
+    /// </summary>
+    private static readonly ConceptualAbstraction[] Abstractions = Enum.GetValues<ConceptualAbstraction>();
 
     private FactorySet _factories;
 
@@ -181,12 +182,29 @@ public class DescriptionSpec
             AttributeOf(DescriptionOf(ConceptualAbstraction.Considerations, "FloatVariable")!, "Variable")!;
         AttributeDescription entityList =
             AttributeOf(DescriptionOf(ConceptualAbstraction.Considerations, "EntityExists")!, "Variable")!;
+        AttributeDescription byNameList = AttributeOf(DescriptionOf(ConceptualAbstraction.Targets, "ByName")!, "List")!;
 
         Assert.Multiple(() =>
         {
             Assert.That(floatVariable.Kind, Is.EqualTo(AttributeKind.VariableName));
             Assert.That(floatVariable.VariableKind, Is.EqualTo(DataStoreValueType.Float));
             Assert.That(entityList.VariableKind, Is.EqualTo(DataStoreValueType.EntityList));
+            Assert.That(byNameList.Kind, Is.EqualTo(AttributeKind.VariableName),
+                "the list a ByName target searches is a stored name, as the list EntityExists reads is");
+            Assert.That(byNameList.VariableKind, Is.EqualTo(DataStoreValueType.EntityList));
+        });
+    }
+
+    [Test]
+    public void ListsBrainAndWorldAsTheStoreChoices()
+    {
+        AttributeDescription store = AttributeOf(DescriptionOf(ConceptualAbstraction.Targets, "ByName")!, "Store")!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(store.Kind, Is.EqualTo(AttributeKind.Enumeration));
+            Assert.That(store.Choices, Is.EqualTo(new[] { "Brain", "World" }));
+            Assert.That(store.DefaultText, Is.EqualTo("Brain"));
         });
     }
 
@@ -239,6 +257,17 @@ public class DescriptionSpec
         SphereRegion sphere = new();
         CapsuleRegion capsule = new();
         CircleRegion circle = new();
+        ByNameTarget byName = new();
+        DistanceConsideration distance = new();
+        FloatSequenceWeightFunction floatSequence = new();
+
+        // Both blackboards are supplied, so the store a component loaded can be matched back to the Store name that
+        // picked it.
+        BrainBlackboard brainBlackboard = new();
+        WorldBlackboard worldBlackboard = new();
+
+        // The slope of the CurveSnippet's one segment, which Linear="true" would give the first keyframe's tangent.
+        const float linearSlope = 0.4f;
 
         Assert.Multiple(() =>
         {
@@ -269,8 +298,46 @@ public class DescriptionSpec
                 "<Region Type=\"Circle\" Radius=\"1\"/>", loaded => loaded.Origin);
             AssertAssignsItsDefault(ConceptualAbstraction.Regions, "Circle", "Rotation", circle,
                 "<Region Type=\"Circle\" Radius=\"1\"/>", loaded => loaded.Rotation);
+            AssertAssignsItsDefault(ConceptualAbstraction.Targets, "ByName", "Store", byName,
+                "<Target Type=\"ByName\" List=\"Contacts\" Entity=\"Wolf\"/>",
+                loaded => ReferenceEquals(loaded.DataStore, brainBlackboard) ? "Brain" : "World", creationData =>
+                {
+                    creationData.BrainBlackboard = brainBlackboard;
+                    creationData.WorldBlackboard = worldBlackboard;
+                });
+            AssertAssignsItsDefault(ConceptualAbstraction.Actions, "Subreasoner", "DoneWhen", subreasoner,
+                "<Action Type=\"Subreasoner\" Name=\"Nest\"><Reasoner Type=\"RuleBased\"/></Action>",
+                loaded => loaded.DoneWhen.ToString());
+            AssertAssignsItsDefault(ConceptualAbstraction.Considerations, "Distance", "IgnoreHeight", distance,
+                DistanceSnippet, loaded => loaded.IgnoreHeight);
+            AssertAssignsItsDefault(ConceptualAbstraction.WeightFunctions, "Curve", "Linear", curve, CurveSnippet,
+                loaded => loaded.AddendCurve!.Keyframes[0].OutTangent == linearSlope);
+            AssertAssignsItsDefault(ConceptualAbstraction.WeightFunctions, "FloatSequence", "RerollOnSelect",
+                floatSequence, RolledEntrySnippet, loaded => RerollsOnSelect(loaded),
+                creationData => creationData.RandomSource = new FixedRandomSource(0f));
+            AssertAssignsItsDefault(ConceptualAbstraction.WeightFunctions, "Constant", "Veto", constant,
+                "<WeightFunction Type=\"Constant\"/>", loaded => loaded.Weights.Multiplier == 0f);
         });
     }
+
+    /// <summary>A distance between two fixed positions, with IgnoreHeight left unwritten.</summary>
+    private const string DistanceSnippet = """
+                                           <Consideration Type="Distance">
+                                               <From Type="Position" Position="(0, 0, 0)"/>
+                                               <To Type="Position" Position="(0, 0, 10)"/>
+                                               <WeightFunction Type="Constant"/>
+                                           </Consideration>
+                                           """;
+
+    /// <summary>
+    ///     One entry whose threshold rolls between 0 and 100, with RerollOnSelect left unwritten, and an addend of 7 so
+    ///     that the entry's values differ from the neutral default.
+    /// </summary>
+    private const string RolledEntrySnippet = """
+                                              <WeightFunction Type="FloatSequence">
+                                                  <Entry ThresholdMin="0" ThresholdMax="100" Addend="7"/>
+                                              </WeightFunction>
+                                              """;
 
     /// <summary>A curve of two keyframes with no tangents written, so both tangents take their described defaults.</summary>
     private const string CurveSnippet = """
@@ -327,13 +394,15 @@ public class DescriptionSpec
     /// <param name="component">The component the snippet loads into.</param>
     /// <param name="snippet">The configuration to load, writing whatever else the component requires.</param>
     /// <param name="read">What the loaded component holds for the attribute.</param>
+    /// <param name="prepare">What to set on the creation data before the load, or null where the defaults serve.</param>
     private void AssertAssignsItsDefault<TComponent>(
         ConceptualAbstraction abstraction,
         AiString type,
         string spelling,
         TComponent component,
         string snippet,
-        Func<TComponent, object> read) where TComponent : IAiComponent
+        Func<TComponent, object> read,
+        Action<AiCreationData>? prepare = null) where TComponent : IAiComponent
     {
         AttributeDescription? described = AttributeAnywhere(DescriptionOf(abstraction, type)!, spelling);
 
@@ -346,6 +415,7 @@ public class DescriptionSpec
 
         RecordingLogSink logSink = new();
         AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        prepare?.Invoke(creationData);
 
         Assert.That(component.Init(creationData), Is.True, $"the {type.Text} snippet loads");
         Assert.That(read(component), Is.EqualTo(ReadDefault(described)),
@@ -409,11 +479,38 @@ public class DescriptionSpec
                 probe.ReadRotation(attribute.Name, out Rotation rotation);
 
                 return rotation;
+            case AttributeKind.Bool:
+                probe.ReadBool(attribute.Name, out bool flag);
+
+                return flag;
+            case AttributeKind.String:
+                probe.ReadString(attribute.Name, out string text);
+
+                return text;
+            case AttributeKind.Enumeration:
+                return attribute.DefaultText!;
             default:
                 Assert.Fail($"{attribute.Spelling} is a {attribute.Kind}, whose default this spec does not read");
 
                 return 0f;
         }
+    }
+
+    /// <summary>
+    ///     Asks whether a loaded function's rolled entry takes a fresh threshold when the function is selected, which is
+    ///     what RerollOnSelect holds.
+    /// </summary>
+    /// <remarks>
+    ///     The row loads the function over a source fixed at 0, so the entry's threshold sits at its minimum and an input
+    ///     of 50 reads the default. A source fixed at 1 then rolls the threshold to the maximum on Select if the entry
+    ///     rerolls, and the same input reads the entry's own values.
+    /// </remarks>
+    private static bool RerollsOnSelect(FloatSequenceWeightFunction loaded)
+    {
+        loaded.RandomSource = new FixedRandomSource(1f);
+        loaded.Select();
+
+        return loaded.CalculateFloat(50f).Addend == 7f;
     }
 
     /// <summary>The description registered under the type name in the abstraction's factory, or null.</summary>

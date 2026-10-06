@@ -32,8 +32,9 @@ namespace Gaia.Core.Regions
         ///     every shape that calls it.
         /// </summary>
         /// <remarks>
-        ///     Three of the shipped shapes call LoadOriginTarget and the other six refuse every child, so this piece is added
-        ///     by the shape that reads it rather than handed out with a builder the way the frame's attributes are.
+        ///     Circle, Cylinder and Sphere read this child and the other six shapes do not. Two of the three are flat and the
+        ///     third is not, so the slot cannot ride DescribeFlatShape, which gives every flat shape its Origin and Rotation
+        ///     attributes, and each shape that reads it adds the slot to its own description.
         /// </remarks>
         protected static readonly SlotDescription OriginTargetSlot = new("OriginTarget", "OriginTarget",
             ConceptualAbstraction.Targets, 0, 1);
@@ -52,19 +53,19 @@ namespace Gaia.Core.Regions
 
         /// <summary>Loads the derived region's own configuration.</summary>
         /// <remarks>
-        ///     The base refuses any child element and otherwise reports true, so a region with nothing of its own to load
-        ///     leaves this alone.
+        ///     The factory has already refused whatever the description does not name, and the default returns true, so a
+        ///     region with nothing of its own to load leaves this alone.
         /// </remarks>
         /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         protected virtual bool OnInit(AiCreationData creationData)
         {
-            return creationData.RefuseChildren();
+            return true;
         }
 
         /// <summary>Loads the node's OriginTarget child, if it has one, for the shapes that can follow a target.</summary>
         /// <remarks>
-        ///     Any other child is refused, and so is a second OriginTarget, since silently keeping one of two would ship half
-        ///     of what was written.
+        ///     The factory has already refused any other child and a second OriginTarget against the shape's description, so
+        ///     every child met here is the one OriginTarget.
         /// </remarks>
         /// <param name="creationData">The creation data whose node carries the OriginTarget child, and whose factories build it.</param>
         /// <param name="originTarget">The loaded target, or null when the node has no OriginTarget child.</param>
@@ -77,20 +78,6 @@ namespace Gaia.Core.Regions
 
             foreach (SpecificationNode child in node.Children)
             {
-                if (child.Name != OriginTargetSlot.Name)
-                {
-                    creationData.ReportError(
-                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
-                    return false;
-                }
-
-                if (originTarget != null)
-                {
-                    creationData.ReportError(
-                        $"Line {child.LineNumber}, the {node.Name.Text} element takes only one OriginTarget element");
-                    return false;
-                }
-
                 if (!creationData.Factories.Targets.TryCreate(creationData.ForChild(child), out originTarget))
                 {
                     return false;

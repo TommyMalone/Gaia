@@ -77,15 +77,9 @@ namespace Gaia.Core.Regions
         {
             SpecificationNode node = creationData.Node;
 
+            // Every child is a Plane, since the factory refused anything else against the description.
             foreach (SpecificationNode child in node.Children)
             {
-                if (child.Name != PlaneSlot.Name)
-                {
-                    creationData.ReportError(
-                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
-                    return false;
-                }
-
                 if (!child.ReadVector3(NormalAttribute.Name, out Vector3 normal) ||
                     !child.ReadFloat(DistanceAttribute.Name, out float distance))
                 {
@@ -95,17 +89,19 @@ namespace Gaia.Core.Regions
                 if (normal.SquaredMagnitude == 0f)
                 {
                     creationData.ReportError(
-                        $"Line {child.LineNumber}, the {child.Name.Text} element's Normal has no length");
+                        $"Line {child.LineNumber}, the {child.NameSpelling} element's Normal has no length");
                     return false;
                 }
 
                 AddPlane(new Plane(normal, distance));
             }
 
+            // Refused here rather than left to the factory's count of the slot, since the sentence gives the reason
+            // for the minimum, which a count alone cannot.
             if (_planes.Count < MinPlaneCount)
             {
                 creationData.ReportError(
-                    $"Line {node.LineNumber}, the {node.Name.Text} element has fewer than {MinPlaneCount} Plane elements, too few to close a volume");
+                    $"Line {node.LineNumber}, the {node.NameSpelling} element has fewer than {MinPlaneCount} Plane elements, too few to close a volume");
                 return false;
             }
 

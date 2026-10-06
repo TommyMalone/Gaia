@@ -23,15 +23,16 @@ namespace Gaia.Core.Specifications
     ///     <para>
     ///         The reader takes text rather than a file, so whatever owns files does its own reading and passes the name it
     ///         wants errors filed under. Text that is not well formed XML is reported as one error through
-    ///         <see cref="LogSink" /> and yields no tree rather than an exception.
+    ///         <see cref="LogSink" /> and yields no tree rather than an exception. A document that declares a document type is
+    ///         refused as well, at the declaration's line, since a definition can declare an attribute default the text never
+    ///         writes.
     ///     </para>
     ///     <para>
     ///         A well formed document can still describe a tree a node refuses to hold, and each such place is reported as
-    ///         an error naming its line and element, after which the read fails and yields no tree. An element that carries
-    ///         one name twice is refused, which XML itself refuses only when both are spelled alike, so this is two spellings
-    ///         that differ in casing, Type included. A namespace declaration, an element in a namespace other than the default
-    ///         one, and an attribute in a namespace are refused, because Gaia reads no XML namespace and dropping the prefix
-    ///         would take one name for another.
+    ///         an error. An element that carries Type or any other name in two casings is refused, since a node matches names
+    ///         in any casing. A namespace declaration, an element in a namespace other than the default one, and an attribute
+    ///         in a namespace are refused, because Gaia reads no XML namespace and dropping the prefix would take one name for
+    ///         another.
     ///     </para>
     /// </remarks>
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>
@@ -62,6 +63,16 @@ namespace Gaia.Core.Specifications
             {
                 LogSink.LogError(sourceDocumentName,
                     $"Line {exception.LineNumber}, the document could not be parsed. {exception.Message}");
+                return false;
+            }
+
+            // XDocument.Parse reads a document type definition and applies its defaults. An XmlReader set to prohibit
+            // one throws with no line number instead, so the parse is allowed to finish and the declaration is refused
+            // here, at its own line, before anything it declared is read.
+            if (document.DocumentType != null)
+            {
+                LogSink.LogError(sourceDocumentName,
+                    $"Line {LineOf(document.DocumentType)}, the document declares a document type, and Gaia reads no document type definition");
                 return false;
             }
 

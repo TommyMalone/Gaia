@@ -91,6 +91,36 @@ public class LoadedGuardSpec
     }
 
     [Test]
+    public void RefusesARankSpelledWrongOnATrueElement()
+    {
+        // The True element on line 11 carries the Fight option's rank. Misspelled, the rank would load as nothing
+        // and the guard would patrol past a known threat, so the load refuses it at that line.
+        string misspelled = File.ReadAllText(ConfigurationPath).Replace("<True Rank=\"10\"/>", "<True Ranck=\"10\"/>");
+
+        FactorySet factories = new();
+        factories.Actions.Register("Record", () => new RecordAction(_executed), RecordAction.Description);
+
+        RecordingLogSink logSink = new();
+        GaiaLoader loader = new(factories, _timeSource, new Xoshiro128RandomSource(1), logSink);
+
+        bool loaded = loader.TryLoadBrain(misspelled, "guard.xml", out Brain? brain, self: _guard);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(misspelled, Does.Contain("Ranck"), "the file's line 11 is the one rewritten");
+            Assert.That(loaded, Is.False);
+            Assert.That(brain, Is.Null);
+            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 11, the True element does not take the Ranck attribute",
+                "Error guard.xml Line 9, the Consideration element's type EntityExists failed to initialize",
+                "Error guard.xml Line 6, the Option element's type ConsiderationAndAction failed to initialize",
+                "Error guard.xml Line 2, the Reasoner element's type DualUtility failed to initialize",
+            }), "the refusal, then one line per enclosing component, the weight function being the element refused");
+        });
+    }
+
+    [Test]
     public void KeepsWalkingAfterTheNoiseFadesOnItsAuthoredRetention()
     {
         // The Inertia pattern, straight from the file. Six tenths of rank 5 is 3, which still beats patrolling

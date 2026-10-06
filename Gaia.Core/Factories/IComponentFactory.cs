@@ -13,6 +13,16 @@ namespace Gaia.Core.Factories
         /// <summary>The registered type names, in the order they were first registered.</summary>
         IReadOnlyList<AiString> Types { get; }
 
+        /// <summary>
+        ///     The registered type names in the order of <see cref="Types" />, as each was spelled at its latest
+        ///     registration.
+        /// </summary>
+        /// <remarks>
+        ///     An <see cref="AiString" /> keeps no spelling of its own. Its Text is whatever casing the string table met
+        ///     first, so a tool that writes a Type into a document reads the spelling here.
+        /// </remarks>
+        IReadOnlyList<string> TypeSpellings { get; }
+
         /// <summary>Reports the description registered under a type name.</summary>
         /// <returns>True when the name is registered. False, with a null description, when it is not.</returns>
         bool TryGetDescription(AiString type, out ComponentDescription? description);

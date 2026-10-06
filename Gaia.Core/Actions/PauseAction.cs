@@ -62,11 +62,6 @@ namespace Gaia.Core.Actions
 
             TimeSource = creationData.TimeSource;
 
-            if (!creationData.RefuseChildren())
-            {
-                return false;
-            }
-
             if (!node.ReadFloat(DurationAttribute.Name, out float duration))
             {
                 return false;

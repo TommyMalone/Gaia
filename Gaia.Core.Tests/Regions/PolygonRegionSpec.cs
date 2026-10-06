@@ -145,11 +145,14 @@ public class PolygonRegionSpec
                                """;
         AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
-        PolygonRegion loaded = new();
+        // The factory refuses the short slot after Init returns true, so the test loads through the factory rather than
+        // calling Init.
+        bool wasCreated = creationData.Factories.Regions.TryCreate(creationData, out RegionBase? loaded);
 
         Assert.Multiple(() =>
         {
-            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(wasCreated, Is.False);
+            Assert.That(loaded, Is.Null);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 1, the Region element has fewer than 3 Corner elements",

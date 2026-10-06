@@ -4,6 +4,7 @@ using Gaia.Core.Considerations;
 using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Log;
+using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
 
 namespace Gaia.Core.Options
@@ -84,14 +85,29 @@ namespace Gaia.Core.Options
         /// </summary>
         internal float WeightBeforeScreening => _considerations.Weight;
 
-        /// <summary>The considerations that score this option, in the order they were added.</summary>
+        /// <summary>
+        ///     The considerations that score this option, in the order they were added, including the default
+        ///     TuningConsideration loading adds to an option that writes none.
+        /// </summary>
         /// <remarks>
-        ///     The <see cref="ConsiderationSet" /> that holds them is an implementation detail of the option, so this is
-        ///     where a reader reaches them. Nothing on the cycle path reads it, since combining runs inside the set.
+        ///     <para>
+        ///         The <see cref="ConsiderationSet" /> that holds them is an implementation detail of the option, so this is
+        ///         where a reader reaches them. An option whose element writes no Tuning consideration gains the default one at
+        ///         load, which has no element, so its list holds one more entry than the element has Consideration children. An
+        ///         option assembled in code gains the default when its reasoner is enabled.
+        ///     </para>
+        ///     <para>
+        ///         A foreach over this list allocates a boxed enumerator each time it runs and an indexed for does not, so a
+        ///         host that reads it every tick loops by index.
+        ///     </para>
         /// </remarks>
         public IReadOnlyList<ConsiderationBase> Considerations => _considerations.Considerations;
 
         /// <summary>The actions that run while this option is selected, in the order they were added.</summary>
+        /// <remarks>
+        ///     A foreach over this list allocates a boxed enumerator each time it runs and an indexed for does not, so a host
+        ///     that reads it every tick loops by index.
+        /// </remarks>
         public IReadOnlyList<ActionBase> Actions => _actions;
 
         /// <summary>True once every action on this option reports that it is done.</summary>
@@ -196,8 +212,10 @@ namespace Gaia.Core.Options
 
             if (addendSum * multiplierProduct <= 0f)
             {
+                SpecificationNode node = creationData.Node;
+
                 creationData.LogSink.LogWarning(creationData.LogChannel,
-                    $"the {Name.Text} option's fixed values sum to a weight of 0 or less, a reasoner that selects by weight can never select it");
+                    $"Line {node.LineNumber}, the {node.NameSpelling} element's fixed values sum to a weight of 0 or less, a reasoner that selects by weight can never select it");
             }
         }
 

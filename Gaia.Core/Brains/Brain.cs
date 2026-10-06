@@ -107,14 +107,19 @@ namespace Gaia.Core.Brains
         ///         wires either by hand.
         ///     </para>
         ///     <para>
-        ///         A Brain element with no Reasoner child loads, matching the runtime rule that a brain may decide nothing, and
-        ///         Enable warns about it. A second Reasoner child is refused, because silently keeping one of them would ship half
-        ///         the author's tree.
+        ///         No factory builds a brain, so Init holds the Brain element to its description itself, before the children
+        ///         load and again after. A Brain element with no Reasoner child loads, matching the runtime rule that a brain may
+        ///         decide nothing, and Enable warns about it.
         ///     </para>
         /// </remarks>
         /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         public bool Init(AiCreationData creationData)
         {
+            if (!Description.RefuseUndescribed(creationData, true))
+            {
+                return false;
+            }
+
             SpecificationNode node = creationData.Node;
 
             LogSink = creationData.LogSink;
@@ -125,22 +130,9 @@ namespace Gaia.Core.Brains
             Blackboard.LogSink = LogSink;
             Blackboard.LogChannel = LogChannel;
 
+            // Every child is the one Reasoner, since the description check refused anything else.
             foreach (SpecificationNode child in node.Children)
             {
-                if (child.Name != ReasonerSlot.Name)
-                {
-                    creationData.ReportError(
-                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
-                    return false;
-                }
-
-                if (RootReasoner != null)
-                {
-                    creationData.ReportError(
-                        $"Line {child.LineNumber}, the {node.Name.Text} element takes only one Reasoner element");
-                    return false;
-                }
-
                 AiCreationData childData = creationData.ForChild(child);
                 childData.LogChannel = LogChannel;
                 childData.BrainBlackboard = Blackboard;
@@ -153,7 +145,7 @@ namespace Gaia.Core.Brains
                 RootReasoner = rootReasoner;
             }
 
-            return true;
+            return Description.RefuseShortSlots(creationData);
         }
 
         /// <summary>Hands control to the brain, which starts RootReasoner deciding.</summary>

@@ -62,11 +62,6 @@ namespace Gaia.Core.Regions
         {
             SpecificationNode node = creationData.Node;
 
-            if (!creationData.RefuseChildren())
-            {
-                return false;
-            }
-
             if (node.HasAttribute(OriginAttribute.Name))
             {
                 if (!node.ReadVector3(OriginAttribute.Name, out Vector3 origin))

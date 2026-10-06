@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Actions;
+﻿using System.Reflection;
+using Gaia.Core.Actions;
 using Gaia.Core.Considerations;
 using Gaia.Core.Factories;
 using Gaia.Core.Options;
@@ -12,9 +13,14 @@ using Gaia.Core.WeightFunctions;
 namespace Gaia.Core.Tests.Factories;
 
 /// <summary>
-///     Covers <see cref="FactorySet" />, the built-in registrations its constructor installs and the order it lists
-///     them in.
+///     Covers <see cref="FactorySet" />, the built-in registrations its constructor installs, the order and spelling
+///     it lists them in, the root's name, and what every registered type refuses through its description.
 /// </summary>
+/// <remarks>
+///     The sweeps over every registered type walk <see cref="ConceptualAbstraction" /> through Enum.GetValues, so a
+///     factory added later is swept without this spec naming it. Each sweep builds the element through its abstraction's
+///     factory, since the factory is what runs the description check.
+/// </remarks>
 [TestFixture]
 public class FactorySetSpec
 {
@@ -23,6 +29,36 @@ public class FactorySetSpec
     {
         _logSink = new RecordingLogSink();
     }
+
+    /// <summary>How many types the constructor registers, which the sweeps over every type hold themselves to.</summary>
+    private const int BuiltInTypeCount = 32;
+
+    /// <summary>The element name a sweep writes for each abstraction, which is the name the reports print.</summary>
+    private static readonly Dictionary<ConceptualAbstraction, string> ElementNames = new()
+    {
+        [ConceptualAbstraction.Actions] = "Action",
+        [ConceptualAbstraction.Considerations] = "Consideration",
+        [ConceptualAbstraction.Options] = "Option",
+        [ConceptualAbstraction.Reasoners] = "Reasoner",
+        [ConceptualAbstraction.Regions] = "Region",
+        [ConceptualAbstraction.Targets] = "Target",
+        [ConceptualAbstraction.WeightFunctions] = "WeightFunction",
+    };
+
+    /// <summary>The TryCreate of each abstraction's factory, since the generic factories share no building method.</summary>
+    private static readonly Dictionary<ConceptualAbstraction, Func<AiCreationData, bool>> Creators = new()
+    {
+        [ConceptualAbstraction.Actions] = creationData => creationData.Factories.Actions.TryCreate(creationData, out _),
+        [ConceptualAbstraction.Considerations] = creationData =>
+            creationData.Factories.Considerations.TryCreate(creationData, out _),
+        [ConceptualAbstraction.Options] = creationData => creationData.Factories.Options.TryCreate(creationData, out _),
+        [ConceptualAbstraction.Reasoners] = creationData =>
+            creationData.Factories.Reasoners.TryCreate(creationData, out _),
+        [ConceptualAbstraction.Regions] = creationData => creationData.Factories.Regions.TryCreate(creationData, out _),
+        [ConceptualAbstraction.Targets] = creationData => creationData.Factories.Targets.TryCreate(creationData, out _),
+        [ConceptualAbstraction.WeightFunctions] = creationData =>
+            creationData.Factories.WeightFunctions.TryCreate(creationData, out _),
+    };
 
     private RecordingLogSink _logSink;
 
@@ -49,20 +85,64 @@ public class FactorySetSpec
     }
 
     [Test]
+    public void SpellsEveryBuiltInTypeAsItsRegistrationDoes()
+    {
+        FactorySet factories = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(factories.Actions.TypeSpellings, Is.EqualTo(new[] { "Pause", "Subreasoner" }));
+            Assert.That(factories.Considerations.TypeSpellings, Is.EqualTo(new[]
+            {
+                "BooleanVariable", "ConsiderationSet", "Distance", "EntityExists", "ExecutionHistory", "FloatVariable",
+                "IntVariable", "StringVariable", "Tuning",
+            }));
+            Assert.That(factories.Options.TypeSpellings, Is.EqualTo(new[] { "ConsiderationAndAction" }));
+            Assert.That(factories.Reasoners.TypeSpellings,
+                Is.EqualTo(new[] { "DualUtility", "RuleBased", "Sequence" }));
+            Assert.That(factories.Regions.TypeSpellings, Is.EqualTo(new[]
+            {
+                "Box", "Capsule", "Circle", "ConvexHull", "Cylinder", "ExtrudedPolygon", "Polygon", "Rectangle",
+                "Sphere",
+            }));
+            Assert.That(factories.Targets.TypeSpellings, Is.EqualTo(new[] { "ByName", "Position", "Self" }));
+            Assert.That(factories.WeightFunctions.TypeSpellings,
+                Is.EqualTo(new[] { "Constant", "Boolean", "String", "FloatSequence", "Curve" }));
+        });
+    }
+
+    [Test]
     public void AnswersTheFactoryOfEachConceptualAbstraction()
     {
         FactorySet factories = new();
 
         Assert.Multiple(() =>
         {
-            Assert.That(factories.Factory(ConceptualAbstraction.Actions), Is.SameAs(factories.Actions));
-            Assert.That(factories.Factory(ConceptualAbstraction.Considerations), Is.SameAs(factories.Considerations));
-            Assert.That(factories.Factory(ConceptualAbstraction.Options), Is.SameAs(factories.Options));
-            Assert.That(factories.Factory(ConceptualAbstraction.Reasoners), Is.SameAs(factories.Reasoners));
-            Assert.That(factories.Factory(ConceptualAbstraction.Regions), Is.SameAs(factories.Regions));
-            Assert.That(factories.Factory(ConceptualAbstraction.Targets), Is.SameAs(factories.Targets));
-            Assert.That(factories.Factory(ConceptualAbstraction.WeightFunctions), Is.SameAs(factories.WeightFunctions));
+            foreach (ConceptualAbstraction abstraction in Enum.GetValues<ConceptualAbstraction>())
+            {
+                // Each value is named for the property that holds its factory, so the property is looked up by the
+                // value's name and an abstraction added later is answered or fails here.
+                PropertyInfo? property = typeof(FactorySet).GetProperty(abstraction.ToString());
+
+                Assert.That(property, Is.Not.Null, $"{abstraction} names no property of the set");
+                Assert.That(factories.Factory(abstraction), Is.SameAs(property!.GetValue(factories)),
+                    $"{abstraction} is answered with another factory");
+            }
         });
+    }
+
+    [Test]
+    public void ThrowsForAValueNoConceptualAbstractionNames()
+    {
+        FactorySet factories = new();
+
+        Assert.That(() => factories.Factory((ConceptualAbstraction)7), Throws.TypeOf<ArgumentOutOfRangeException>());
+    }
+
+    [Test]
+    public void NamesTheRootElementBrain()
+    {
+        Assert.That(FactorySet.RootName, Is.EqualTo("Brain"));
     }
 
     [Test]
@@ -274,55 +354,106 @@ public class FactorySetSpec
     }
 
     [Test]
-    public void RefusesJunkChildrenInEveryWeightFunction()
+    public void RefusesAnUndescribedAttributeOnEveryRegisteredType()
     {
-        AssertJunkChildrenRefused("WeightFunction",
-            new[] { ("Constant", ""), ("Boolean", ""), ("String", ""), ("FloatSequence", ""), ("Curve", "") },
-            creationData => creationData.Factories.WeightFunctions.TryCreate(creationData, out _));
-    }
+        // The check runs before Init, so the snippet writes none of the attributes a type requires and is still
+        // refused for the one it does not describe.
+        int swept = 0;
 
-    [Test]
-    public void RefusesJunkChildrenInEveryConsideration()
-    {
-        const string variable = " Variable=\"Anything\"";
-
-        AssertJunkChildrenRefused("Consideration", new[]
+        Assert.Multiple(() =>
         {
-            ("Tuning", ""), ("BooleanVariable", variable), ("FloatVariable", variable), ("IntVariable", variable),
-            ("StringVariable", variable), ("EntityExists", variable), ("ExecutionHistory", ""),
-            ("ConsiderationSet", ""), ("Distance", ""),
-        }, creationData => creationData.Factories.Considerations.TryCreate(creationData, out _));
+            foreach ((ConceptualAbstraction abstraction, string typeName) in EveryRegisteredType())
+            {
+                string elementName = ElementNames[abstraction];
+                string snippet = $"""<{elementName} Type="{typeName}" Ranck="1"/>""";
+                RecordingLogSink logSink = new();
+                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+                Assert.That(Creators[abstraction](creationData), Is.False, typeName);
+                Assert.That(logSink.Entries, Is.EqualTo(new[]
+                {
+                    $"Error guard.xml Line 1, the {elementName} element does not take the Ranck attribute",
+                }), typeName);
+                swept++;
+            }
+
+            Assert.That(swept, Is.EqualTo(BuiltInTypeCount));
+        });
     }
 
     [Test]
-    public void RefusesJunkChildrenInEveryTarget()
+    public void RefusesAJunkChildInEveryRegisteredType()
     {
-        AssertJunkChildrenRefused("Target", new[] { ("Position", ""), ("Self", ""), ("ByName", "") },
-            creationData => creationData.Factories.Targets.TryCreate(creationData, out _));
-    }
+        int swept = 0;
 
-    [Test]
-    public void RefusesJunkChildrenInEveryRegion()
-    {
-        AssertJunkChildrenRefused("Region", new[]
+        Assert.Multiple(() =>
         {
-            ("Box", ""), ("Capsule", ""), ("Circle", ""), ("ConvexHull", ""), ("Cylinder", ""),
-            ("ExtrudedPolygon", " HalfHeight=\"1.5\""), ("Polygon", ""), ("Rectangle", ""), ("Sphere", ""),
-        }, creationData => creationData.Factories.Regions.TryCreate(creationData, out _));
+            foreach ((ConceptualAbstraction abstraction, string typeName) in EveryRegisteredType())
+            {
+                string elementName = ElementNames[abstraction];
+                string snippet = $"""
+                                  <{elementName} Type="{typeName}">
+                                      <Junk/>
+                                  </{elementName}>
+                                  """;
+                RecordingLogSink logSink = new();
+                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+                Assert.That(Creators[abstraction](creationData), Is.False, typeName);
+                Assert.That(logSink.Entries, Is.EqualTo(new[]
+                {
+                    $"Error guard.xml Line 2, the {elementName} element does not take Junk elements",
+                }), typeName);
+                swept++;
+            }
+
+            Assert.That(swept, Is.EqualTo(BuiltInTypeCount));
+        });
     }
 
     [Test]
-    public void RefusesJunkChildrenInEveryActionOptionAndReasoner()
+    public void RefusesASecondChildInEverySlotThatTakesOne()
     {
-        AssertJunkChildrenRefused("Action",
-            new[] { ("Pause", " Name=\"Wait\""), ("Subreasoner", " Name=\"Delegate\"") },
-            creationData => creationData.Factories.Actions.TryCreate(creationData, out _));
+        // The check refuses the second child before any child is built, so a bare child element with no Type is
+        // enough to fill a slot of an abstraction as well as an inline one.
+        FactorySet factories = new();
+        int swept = 0;
 
-        AssertJunkChildrenRefused("Option", new[] { ("ConsiderationAndAction", " Name=\"Idle\"") },
-            creationData => creationData.Factories.Options.TryCreate(creationData, out _));
+        Assert.Multiple(() =>
+        {
+            foreach ((ConceptualAbstraction abstraction, string typeName) in EveryRegisteredType())
+            {
+                factories.Factory(abstraction).TryGetDescription(typeName, out ComponentDescription? description);
 
-        AssertJunkChildrenRefused("Reasoner", new[] { ("RuleBased", ""), ("DualUtility", ""), ("Sequence", "") },
-            creationData => creationData.Factories.Reasoners.TryCreate(creationData, out _));
+                foreach (SlotDescription slot in description!.Slots)
+                {
+                    if (slot.MaxCount != 1)
+                    {
+                        continue;
+                    }
+
+                    string elementName = ElementNames[abstraction];
+                    string snippet = $"""
+                                      <{elementName} Type="{typeName}">
+                                          <{slot.Spelling}/>
+                                          <{slot.Spelling}/>
+                                      </{elementName}>
+                                      """;
+                    RecordingLogSink logSink = new();
+                    AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+                    string subject = $"{typeName} {slot.Spelling}";
+
+                    Assert.That(Creators[abstraction](creationData), Is.False, subject);
+                    Assert.That(logSink.Entries, Is.EqualTo(new[]
+                    {
+                        $"Error guard.xml Line 3, the {elementName} element takes only one {slot.Spelling} element",
+                    }), subject);
+                    swept++;
+                }
+            }
+
+            Assert.That(swept, Is.GreaterThan(0), "the shipped descriptions carry slots that take one child");
+        });
     }
 
     [Test]
@@ -353,39 +484,18 @@ public class FactorySetSpec
             creationData => creationData.Factories.Options.TryCreate(creationData, out _));
     }
 
-    /// <summary>
-    ///     Asserts that each catalog entry refuses a Junk child with an error naming the file and line, and builds no
-    ///     component.
-    /// </summary>
-    /// <remarks>
-    ///     Every loader sweeps its children and refuses an element it does not read, so a misspelled child can never
-    ///     vanish silently. The factory's failed-to-initialize line follows each component's own report.
-    /// </remarks>
-    private static void AssertJunkChildrenRefused(
-        string elementName,
-        (string typeName, string extraAttributes)[] catalog,
-        Func<AiCreationData, bool> create)
+    /// <summary>Every registered type of every abstraction of a fresh set, as the abstraction and the type's spelling.</summary>
+    private static IEnumerable<(ConceptualAbstraction abstraction, string typeName)> EveryRegisteredType()
     {
-        Assert.Multiple(() =>
-        {
-            foreach ((string typeName, string extraAttributes) in catalog)
-            {
-                string snippet = $"""
-                                  <{elementName} Type="{typeName}"{extraAttributes}>
-                                      <Junk/>
-                                  </{elementName}>
-                                  """;
-                RecordingLogSink logSink = new();
-                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+        FactorySet factories = new();
 
-                Assert.That(create(creationData), Is.False, typeName);
-                Assert.That(logSink.Entries, Is.EqualTo(new[]
-                {
-                    $"Error guard.xml Line 2, the {elementName} element does not take Junk elements",
-                    $"Error guard.xml Line 1, the {elementName} element's type {typeName} failed to initialize",
-                }), typeName);
+        foreach (ConceptualAbstraction abstraction in Enum.GetValues<ConceptualAbstraction>())
+        {
+            foreach (string typeName in factories.Factory(abstraction).TypeSpellings)
+            {
+                yield return (abstraction, typeName);
             }
-        });
+        }
     }
 
     /// <summary>Asserts that each catalog entry reports the first required attribute its snippet leaves out.</summary>

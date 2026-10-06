@@ -51,7 +51,8 @@ namespace Gaia.Core.Regions
 
         /// <summary>Loads the footprint's corners from the node's Corner children.</summary>
         /// <remarks>
-        ///     Every child must be a Corner element carrying a Position, and fewer than three corners is refused, since a
+        ///     Every child is a Corner, since the factory refused anything else against the description. A Corner with no
+        ///     Position fails the read here. The factory refuses fewer than three corners once the shape's Init returns, since a
         ///     footprint without area contains nothing and can only have been a mistake.
         /// </remarks>
         internal bool LoadFootprint(AiCreationData creationData)
@@ -60,26 +61,12 @@ namespace Gaia.Core.Regions
 
             foreach (SpecificationNode child in node.Children)
             {
-                if (child.Name != CornerSlot.Name)
-                {
-                    creationData.ReportError(
-                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
-                    return false;
-                }
-
                 if (!child.ReadVector2(PositionAttribute.Name, out Vector2 corner))
                 {
                     return false;
                 }
 
                 AddCorner(corner);
-            }
-
-            if (!HasArea)
-            {
-                creationData.ReportError(
-                    $"Line {node.LineNumber}, the {node.Name.Text} element has fewer than {MinCornerCount} Corner elements");
-                return false;
             }
 
             return true;

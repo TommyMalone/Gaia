@@ -22,15 +22,19 @@ namespace Gaia.Core.Factories
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>
     public sealed class AiCreationData
     {
-        private static readonly AiString BrainStoreName = "Brain";
-        private static readonly AiString WorldStoreName = "World";
+        private const string BrainStoreText = "Brain";
+        private const string WorldStoreText = "World";
+
+        private static readonly AiString BrainStoreName = BrainStoreText;
+        private static readonly AiString WorldStoreName = WorldStoreText;
 
         /// <summary>
-        ///     Describes the Store attribute <see cref="TryReadStore" /> reads by, for the description of every component
-        ///     that reads one.
+        ///     Describes the Store attribute that <see cref="TryReadStore" /> reads, and is added to the description of every
+        ///     component that reads a store.
         /// </summary>
-        internal static readonly AttributeDescription StoreAttribute = AttributeDescription.Optional("Store", "Store",
-            AttributeKind.String, "Brain", "Which blackboard holds the value, Brain or World.");
+        internal static readonly AttributeDescription StoreAttribute = AttributeDescription.Enumeration("Store",
+            "Store", new[] { BrainStoreText, WorldStoreText }, BrainStoreText,
+            "Which blackboard holds the value, Brain or World.");
 
         /// <summary>
         ///     Creates the creation data a load starts from, which <see cref="ForChild" /> then copies for every component
@@ -129,7 +133,7 @@ namespace Gaia.Core.Factories
                 if (WorldBlackboard == null)
                 {
                     ReportError(
-                        $"Line {node.LineNumber}, the {node.Name.Text} element's Store is World and no world blackboard was supplied");
+                        $"Line {node.LineNumber}, the {node.NameSpelling} element's Store is World and no world blackboard was supplied");
                     return false;
                 }
 
@@ -138,35 +142,24 @@ namespace Gaia.Core.Factories
             }
 
             ReportError(
-                $"Line {node.LineNumber}, the {node.Name.Text} element's Store is not Brain or World, it reads \"{text}\"");
-            return false;
-        }
-
-        /// <summary>Refuses every child element of the node, for a component that reads none.</summary>
-        /// <remarks>Only the first child is reported, since the component's load fails at it.</remarks>
-        /// <returns>True when the node has no child elements. False after reporting the first one.</returns>
-        internal bool RefuseChildren()
-        {
-            if (Node.Children.Count == 0)
-            {
-                return true;
-            }
-
-            SpecificationNode child = Node.Children[0];
-
-            ReportError(
-                $"Line {child.LineNumber}, the {Node.Name.Text} element does not take {child.Name.Text} elements");
+                $"Line {node.LineNumber}, the {node.NameSpelling} element's Store is not Brain or World, it reads \"{text}\"");
             return false;
         }
 
         /// <summary>Reports a loading error against the node, filed under the node's source document name.</summary>
-        internal void ReportError(string message)
+        /// <remarks>
+        ///     Public so that a game's component can refuse what it reads in the loader's own grammar. The message opens
+        ///     "Line n, the Element element", and a clause of the component's own follows. Here n is the line of the element at
+        ///     fault, and Element is that element's name as the document spells it.
+        /// </remarks>
+        public void ReportError(string message)
         {
             LogSink.LogError(Node.SourceDocumentName, message);
         }
 
         /// <summary>Reports a loading warning against the node, filed under the node's source document name.</summary>
-        internal void ReportWarning(string message)
+        /// <remarks>Public for the same reason <see cref="ReportError" /> is, and the message opens the same way.</remarks>
+        public void ReportWarning(string message)
         {
             LogSink.LogWarning(Node.SourceDocumentName, message);
         }

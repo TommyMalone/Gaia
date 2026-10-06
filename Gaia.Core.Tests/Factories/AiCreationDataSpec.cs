@@ -54,6 +54,31 @@ public class AiCreationDataSpec
     }
 
     [Test]
+    public void SpellsTheElementAsTheDocumentDoesInAStoreError()
+    {
+        // The table keeps the casing it met first, so the name is planted in one casing before the document is
+        // parsed in another, and the report shows which spelling it prints.
+        AiString planted = new("Pulley");
+
+        XmlSpecificationReader reader = new(_logSink);
+        reader.TryRead("""<pULLEY Type="ByName" Store="Wrold"/>""", "guard.xml", out SpecificationNode? root);
+
+        AiCreationData creationData = new(root!, _factories) { LogSink = _logSink };
+
+        bool wasRead = creationData.TryReadStore(root!, out _);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(planted.Text, Is.EqualTo("Pulley"), "the table met the name in the planted casing first");
+            Assert.That(wasRead, Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the pULLEY element's Store is not Brain or World, it reads \"Wrold\"",
+            }));
+        });
+    }
+
+    [Test]
     public void SharesEverythingButTheNodeWithAChild()
     {
         ManualTimeSource timeSource = new();

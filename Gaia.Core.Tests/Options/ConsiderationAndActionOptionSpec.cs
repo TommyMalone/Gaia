@@ -117,11 +117,14 @@ public class ConsiderationAndActionOptionSpec
                                """;
         AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
-        ConsiderationAndActionOption loaded = new();
+        // The factory refuses the child before Init runs, so the test loads through the factory rather than calling
+        // Init.
+        bool wasCreated = creationData.Factories.Options.TryCreate(creationData, out OptionBase? loaded);
 
         Assert.Multiple(() =>
         {
-            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(wasCreated, Is.False);
+            Assert.That(loaded, Is.Null);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 2, the Option element does not take Reasoner elements",
@@ -148,7 +151,7 @@ public class ConsiderationAndActionOptionSpec
             Assert.That(loaded.Init(creationData), Is.True);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
-                "Warning  the Disabled option's fixed values sum to a weight of 0 or less, a reasoner that selects by weight can never select it",
+                "Warning  Line 1, the Option element's fixed values sum to a weight of 0 or less, a reasoner that selects by weight can never select it",
             }));
         });
     }

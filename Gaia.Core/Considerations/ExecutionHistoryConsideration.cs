@@ -132,6 +132,7 @@ namespace Gaia.Core.Considerations
                 RankRetentionFactor = rankRetentionFactor;
             }
 
+            // Every child is one of the four roles, since the factory refused anything else against the description.
             foreach (SpecificationNode child in node.Children)
             {
                 WeightFunctionBase? weightFunction;
@@ -171,12 +172,6 @@ namespace Gaia.Core.Considerations
                     }
 
                     SinceLastRunWeightFunction = weightFunction;
-                }
-                else
-                {
-                    creationData.ReportError(
-                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
-                    return false;
                 }
             }
 
@@ -286,7 +281,7 @@ namespace Gaia.Core.Considerations
             if (!weightFunction!.ConvertsFloat)
             {
                 creationData.ReportError(
-                    $"Line {roleNode.LineNumber}, the {roleNode.Name.Text} element's type {roleNode.Type.Text} does not convert a float");
+                    $"Line {roleNode.LineNumber}, the {roleNode.NameSpelling} element's type {roleNode.TypeSpelling} does not convert a float");
                 weightFunction = null;
                 return false;
             }

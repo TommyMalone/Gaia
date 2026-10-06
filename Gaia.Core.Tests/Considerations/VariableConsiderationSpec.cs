@@ -278,11 +278,14 @@ public class VariableConsiderationSpec
                                """;
         AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
-        FloatVariableConsideration loaded = new();
+        // The factory refuses the short slot after Init returns true, so the test loads through the factory rather than
+        // calling Init.
+        bool wasCreated = creationData.Factories.Considerations.TryCreate(creationData, out ConsiderationBase? loaded);
 
         Assert.Multiple(() =>
         {
-            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(wasCreated, Is.False);
+            Assert.That(loaded, Is.Null);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 1, the Consideration element has no WeightFunction element",
@@ -374,6 +377,30 @@ public class VariableConsiderationSpec
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 2, the WeightFunction element's type Boolean does not convert a float",
+            }));
+        });
+    }
+
+    [Test]
+    public void NamesTheWeightFunctionElementAsTheDocumentSpellsIt()
+    {
+        // The element matches its slot in any casing, and the refusal spells it as the document does.
+        const string snippet = """
+                               <Consideration Type="FloatVariable" Variable="Health">
+                                   <weightfunction Type="Boolean"/>
+                               </Consideration>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+        creationData.BrainBlackboard = _blackboard;
+
+        FloatVariableConsideration loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 2, the weightfunction element's type Boolean does not convert a float",
             }));
         });
     }

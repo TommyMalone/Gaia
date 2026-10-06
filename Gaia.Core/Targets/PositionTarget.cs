@@ -29,11 +29,6 @@ namespace Gaia.Core.Targets
         {
             SpecificationNode node = creationData.Node;
 
-            if (!creationData.RefuseChildren())
-            {
-                return false;
-            }
-
             if (!node.ReadVector3(PositionAttribute.Name, out Vector3 position))
             {
                 return false;

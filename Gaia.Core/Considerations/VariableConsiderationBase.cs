@@ -80,6 +80,8 @@ namespace Gaia.Core.Considerations
                 return false;
             }
 
+            // Every child is a Missing or a WeightFunction, since the factory refused anything else against the
+            // description, and the factory refuses an element with no WeightFunction once this returns.
             foreach (SpecificationNode child in node.Children)
             {
                 if (child.Name == MissingSlot.Name)
@@ -99,19 +101,6 @@ namespace Gaia.Core.Considerations
                         return false;
                     }
                 }
-                else
-                {
-                    creationData.ReportError(
-                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
-                    return false;
-                }
-            }
-
-            if (WeightFunction == null)
-            {
-                creationData.ReportError(
-                    $"Line {node.LineNumber}, the {node.Name.Text} element has no WeightFunction element");
-                return false;
             }
 
             return true;

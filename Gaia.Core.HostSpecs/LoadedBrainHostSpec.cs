@@ -1,9 +1,11 @@
-﻿using Gaia.Core.Brains;
+﻿using Gaia.Core.Actions;
+using Gaia.Core.Brains;
 using Gaia.Core.Entities;
 using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Time;
 using Gaia.Core.Spatial;
+using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
 
 namespace Gaia.Core.HostSpecs;
@@ -79,6 +81,100 @@ public class LoadedBrainHostSpec
     }
 
     [Test]
+    public void ReadsAGameTypesSpellingBackThroughTheSet()
+    {
+        Assert.That(_factories.Actions.TypeSpellings[^1], Is.EqualTo("Record"),
+            "a game's type is listed after the built-ins, spelled as the game registered it");
+    }
+
+    [Test]
+    public void RefusesARecordActionWithAStrayChild()
+    {
+        // The action reads no children, and its description has no slots, so a consideration nested under it by
+        // mistake is refused before the action's own Init runs rather than vanishing.
+        const string configurationText = """
+                                         <Brain>
+                                             <Reasoner Type="RuleBased">
+                                                 <Option Type="ConsiderationAndAction" Name="Retreat">
+                                                     <Action Type="Record" Name="Retreat" Done="false">
+                                                         <Consideration Type="Tuning" Rank="5"/>
+                                                     </Action>
+                                                 </Option>
+                                             </Reasoner>
+                                         </Brain>
+                                         """;
+        ListLogSink logSink = new();
+        GaiaLoader loader = new(_factories, _timeSource, logSink: logSink);
+
+        bool isLoaded = loader.TryLoadBrain(configurationText, "strays.xml", out Brain? brain);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(isLoaded, Is.False);
+            Assert.That(brain, Is.Null);
+            Assert.That(logSink.Errors,
+                Has.Member("Error strays.xml Line 5, the Action element does not take Consideration elements"),
+                "the refusal is at the child's line");
+        });
+    }
+
+    [Test]
+    public void RefusesAnAttributeAGameComponentDoesNotDescribe()
+    {
+        const string configurationText = """
+                                         <Brain>
+                                             <Reasoner Type="RuleBased">
+                                                 <Option Type="ConsiderationAndAction" Name="Retreat">
+                                                     <Action Type="Record" Name="Retreat" Dnoe="false"/>
+                                                 </Option>
+                                             </Reasoner>
+                                         </Brain>
+                                         """;
+        ListLogSink logSink = new();
+        GaiaLoader loader = new(_factories, _timeSource, logSink: logSink);
+
+        bool isLoaded = loader.TryLoadBrain(configurationText, "strays.xml", out Brain? brain);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(isLoaded, Is.False);
+            Assert.That(brain, Is.Null);
+            Assert.That(logSink.Errors,
+                Has.Member("Error strays.xml Line 4, the Action element does not take the Dnoe attribute"));
+        });
+    }
+
+    [Test]
+    public void RefusesANegativeValueInTheLoadersGrammar()
+    {
+        // A negative speed parses as a number, so the typed read accepts it. The action then refuses it through the
+        // node's public reporter, so the sentence is the loader's own rather than one the action composed.
+        _factories.Actions.Register("Dash", () => new HostDashAction(), HostDashAction.Description);
+
+        const string configurationText = """
+                                         <Brain>
+                                             <Reasoner Type="RuleBased">
+                                                 <Option Type="ConsiderationAndAction" Name="Close">
+                                                     <Action Type="Dash" Name="Close" Speed="-3"/>
+                                                 </Option>
+                                             </Reasoner>
+                                         </Brain>
+                                         """;
+        ListLogSink logSink = new();
+        GaiaLoader loader = new(_factories, _timeSource, logSink: logSink);
+
+        bool isLoaded = loader.TryLoadBrain(configurationText, "dash.xml", out Brain? brain);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(isLoaded, Is.False);
+            Assert.That(brain, Is.Null);
+            Assert.That(logSink.Errors[0],
+                Is.EqualTo("Error dash.xml Line 4, the Action element's Speed is not 0 or above, it reads \"-3\""));
+        });
+    }
+
+    [Test]
     public void LoadsTheSniperThroughThePublicSurface()
     {
         Assert.Multiple(() =>
@@ -126,5 +222,46 @@ public class LoadedBrainHostSpec
         }
 
         Assert.That(_selections, Does.Contain("Fire"), "the loaded sequence fires once the aim pause elapses");
+    }
+
+    /// <summary>A game-defined action with a Speed that must be 0 or above, refused through the node's own reporter.</summary>
+    private sealed class HostDashAction : ActionBase
+    {
+        private static readonly DescriptionBuilder Builder = new DescriptionBuilder(ConceptualAbstraction.Actions,
+            "Moves the character at a set speed.").Add(NameAttribute);
+
+        /// <summary>Describes the Speed attribute OnInit reads by.</summary>
+        private static readonly AttributeDescription SpeedAttribute = Builder.Required("Speed", AttributeKind.Float,
+            "How fast the character moves, in meters per second, 0 or above.");
+
+        /// <summary>Describes the action for the host spec that registers it.</summary>
+        internal static readonly ComponentDescription Description = Builder.Build();
+
+        /// <summary>How fast the character moves, in meters per second.</summary>
+        public float Speed { get; private set; }
+
+        /// <inheritdoc />
+        public override bool IsDone => true;
+
+        /// <summary>Reads Speed and refuses a value below 0, which parses but has no meaning a configuration could intend.</summary>
+        protected override bool OnInit(AiCreationData creationData)
+        {
+            SpecificationNode node = creationData.Node;
+
+            if (!node.ReadFloat(SpeedAttribute.Name, out float speed))
+            {
+                return false;
+            }
+
+            if (speed < 0f)
+            {
+                node.TryGetString(SpeedAttribute.Name, out string speedText);
+                node.ReportMalformed(SpeedAttribute.Name, speedText, "0 or above");
+                return false;
+            }
+
+            Speed = speed;
+            return true;
+        }
     }
 }

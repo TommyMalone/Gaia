@@ -8,8 +8,9 @@ namespace Gaia.Core.HostSpecs;
 /// </summary>
 /// <remarks>
 ///     What each member refuses is covered in SpecificationNodeSpec, in Gaia.Core.Tests. What is asserted here is
-///     that the public members are enough to take back every kind of edit and write the same text as before it, which
-///     needs the index a removed child or attribute stood at and the spelling the attribute had.
+///     that the public members are enough to take back each edit and write the same text as before it. Some edits need
+///     something read back before they can be taken back. A removed child needs its index, a removed attribute its index
+///     and spelling, and cleared comments their text.
 /// </remarks>
 [TestFixture]
 public class SpecificationNodeHostSpec

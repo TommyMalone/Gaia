@@ -39,6 +39,24 @@ public class AttributeDescriptionSpec
     }
 
     [Test]
+    public void DescribesAnEnumerationFromTheNamesItIsGiven()
+    {
+        // The choices are kept as given, in the given order, for a kind whose names no enumeration type lists, such
+        // as the two blackboards a Store attribute picks between.
+        AttributeDescription store = AttributeDescription.Enumeration("Store", "Store", new[] { "Brain", "World" },
+            "Brain", "Which blackboard holds the value.");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(store.Kind, Is.EqualTo(AttributeKind.Enumeration));
+            Assert.That(store.Choices, Is.EqualTo(new[] { "Brain", "World" }));
+            Assert.That(store.DefaultText, Is.EqualTo("Brain"));
+            Assert.That(store.IsRequired, Is.False);
+            Assert.That(store.VariableKind, Is.Null);
+        });
+    }
+
+    [Test]
     public void CopiesItselfWithAnotherDefaultAndEveryOtherFieldKept()
     {
         AttributeDescription doneWhen = AttributeDescription.Enumeration<SubreasonerCompletion>("DoneWhen", "DoneWhen",

@@ -283,6 +283,34 @@ public class CurveWeightFunctionSpec
     }
 
     [Test]
+    public void RefusesAnAttributeOnAKeyframe()
+    {
+        // A keyframe is an inline element inside an inline curve element, two levels below the function, and the
+        // check enters both with their own descriptions.
+        const string snippet = """
+                               <WeightFunction Type="Curve">
+                                   <AddendCurve>
+                                       <Keyframe Input="0" Value="0" Ranck="1"/>
+                                   </AddendCurve>
+                               </WeightFunction>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        bool wasCreated =
+            creationData.Factories.WeightFunctions.TryCreate(creationData, out WeightFunctionBase? loaded);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wasCreated, Is.False);
+            Assert.That(loaded, Is.Null);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 3, the Keyframe element does not take the Ranck attribute",
+            }));
+        });
+    }
+
+    [Test]
     public void RefusesACurveElementWithNoKeyframes()
     {
         const string snippet = """
@@ -292,14 +320,18 @@ public class CurveWeightFunctionSpec
                                """;
         AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
-        CurveWeightFunction loaded = new();
+        // The factory refuses the short slot inside the inline curve element after Init returns true, so the test loads
+        // through the factory rather than calling Init.
+        bool wasCreated =
+            creationData.Factories.WeightFunctions.TryCreate(creationData, out WeightFunctionBase? loaded);
 
         Assert.Multiple(() =>
         {
-            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(wasCreated, Is.False);
+            Assert.That(loaded, Is.Null);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
-                "Error guard.xml Line 2, the AddendCurve element has no Keyframe elements",
+                "Error guard.xml Line 2, the AddendCurve element has no Keyframe element",
             }));
         });
     }

@@ -29,7 +29,8 @@ namespace Gaia.Core.Reasoners
         /// <summary>The options this reasoner chooses among, in the order they were added.</summary>
         /// <remarks>
         ///     A read-only view of the same list MutableOptions holds, so a reader outside the library reaches a loaded
-        ///     reasoner's options without reaching the list itself.
+        ///     reasoner's options without reaching the list itself. A foreach over this list allocates a boxed enumerator each
+        ///     time it runs and an indexed for does not, so a host that reads it every tick loops by index.
         /// </remarks>
         public IReadOnlyList<OptionBase> Options => MutableOptions;
 
@@ -38,7 +39,8 @@ namespace Gaia.Core.Reasoners
         ///     Iterating a List through IReadOnlyList boxes its enumerator, one small heap allocation per loop, which a
         ///     decision cycle runs several of. Iterating the concrete list keeps the enumerator on the stack, so per-cycle code
         ///     loops over this and everything else reads Options. It is protected so a game's own reasoner can loop the concrete
-        ///     list too, and internal as well so the monitors, which record inside the cycle, loop it rather than Options.
+        ///     list too, and internal as well so the monitors, which record inside the cycle, loop it rather than Options. It is
+        ///     the list AddOption adds to, and a game's own reasoner may change it the same way.
         /// </remarks>
         protected internal List<OptionBase> MutableOptions { get; } = new();
 
@@ -130,45 +132,40 @@ namespace Gaia.Core.Reasoners
             LogSink = creationData.LogSink;
             LogChannel = creationData.LogChannel;
 
+            // Every child is an Option, since the factory refused anything else against the description.
             foreach (SpecificationNode child in node.Children)
             {
-                if (child.Name != OptionSlot.Name)
-                {
-                    creationData.ReportError(
-                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
-                    return false;
-                }
-
                 if (!creationData.Factories.Options.TryCreate(creationData.ForChild(child), out OptionBase? option))
                 {
                     return false;
                 }
 
+                WarnWhenAnEarlierOptionSharesTheName(option!, child);
                 AddOption(option!);
             }
-
-            WarnWhenTwoOptionsShareAName();
 
             return true;
         }
 
-        /// <summary>Warns for each pair of loaded options carrying the same name.</summary>
+        /// <summary>Warns when a loaded option carries the name of an option loaded before it.</summary>
         /// <remarks>
         ///     A log line and a decision record identify an option by its name alone, so two options sharing one cannot be
         ///     told apart in either. Loading accepts it, since nothing about the decision itself is wrong.
         /// </remarks>
-        private void WarnWhenTwoOptionsShareAName()
+        private void WarnWhenAnEarlierOptionSharesTheName(OptionBase option, SpecificationNode node)
         {
-            for (int first = 0; first < MutableOptions.Count; first++)
+            if (!LogSink.IsEnabled(LogSeverity.Warning))
             {
-                for (int second = first + 1; second < MutableOptions.Count; second++)
+                return;
+            }
+
+            for (int index = 0; index < MutableOptions.Count; index++)
+            {
+                if (MutableOptions[index].Name == option.Name)
                 {
-                    if (MutableOptions[first].Name == MutableOptions[second].Name &&
-                        LogSink.IsEnabled(LogSeverity.Warning))
-                    {
-                        LogSink.LogWarning(LogChannel,
-                            $"two options share the name {MutableOptions[first].Name.Text}, their log lines and records cannot be told apart");
-                    }
+                    LogSink.LogWarning(LogChannel,
+                        $"Line {node.LineNumber}, the {node.NameSpelling} element shares the name {option.Name.Text} with an earlier option, their log lines and records cannot be told apart");
+                    return;
                 }
             }
         }

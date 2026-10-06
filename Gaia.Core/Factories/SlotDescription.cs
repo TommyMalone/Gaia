@@ -5,10 +5,9 @@ namespace Gaia.Core.Factories
 {
     /// <summary>One kind of child element a component reads, described for a tool that offers what may be added there.</summary>
     /// <remarks>
-    ///     A slot is filled one of two ways. A slot of a conceptual abstraction holds a component the factory of that
-    ///     abstraction builds, picked by the child's Type, such as a Consideration under an option. An inline slot holds a
-    ///     structural element the owner parses itself, with no Type, such as the True and False of a Boolean weight function,
-    ///     and carries that element's description. MinCount and MaxCount bound how many children the slot takes.
+    ///     A slot of a conceptual abstraction holds a component the factory of that abstraction builds, picked by the
+    ///     child's Type. An inline slot holds a structural element the owner parses itself, with no Type, and carries that
+    ///     element's description. The True and False elements of a Boolean weight function each fill an inline slot.
     /// </remarks>
     public sealed class SlotDescription
     {

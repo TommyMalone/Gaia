@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Actions;
+﻿using System;
+using Gaia.Core.Actions;
 using Gaia.Core.Brains;
 using Gaia.Core.Considerations;
 using Gaia.Core.Options;
@@ -21,6 +22,9 @@ namespace Gaia.Core.Factories
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>
     public sealed class FactorySet
     {
+        /// <summary>The name of a document's root element, which <see cref="GaiaLoader" /> holds every root to.</summary>
+        public const string RootName = "Brain";
+
         /// <summary>Creates a set holding every built-in component that can load itself.</summary>
         public FactorySet()
         {
@@ -105,6 +109,7 @@ namespace Gaia.Core.Factories
         ///     The factory of the given conceptual abstraction, the same object as the property named for it, for a caller
         ///     that holds a <see cref="SlotDescription.Abstraction" /> and asks what may fill the slot.
         /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">The value names no conceptual abstraction.</exception>
         public IComponentFactory Factory(ConceptualAbstraction abstraction)
         {
             switch (abstraction)
@@ -121,8 +126,11 @@ namespace Gaia.Core.Factories
                     return Regions;
                 case ConceptualAbstraction.Targets:
                     return Targets;
-                default:
+                case ConceptualAbstraction.WeightFunctions:
                     return WeightFunctions;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(abstraction), abstraction,
+                        $"The value {abstraction} names no conceptual abstraction, so no factory on the set builds it.");
             }
         }
     }

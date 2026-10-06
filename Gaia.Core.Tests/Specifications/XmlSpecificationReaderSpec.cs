@@ -435,6 +435,31 @@ public class XmlSpecificationReaderSpec
     }
 
     [Test]
+    public void RefusesADocumentTypeDefinition()
+    {
+        // A definition can declare an attribute default the text never writes, which would load and be saved back
+        // into the file, so the document is refused at the definition and no tree carries the default.
+        const string snippet = """
+                               <!DOCTYPE Brain [<!ATTLIST Entry Veto CDATA "true">]>
+                               <Brain>
+                                   <Entry/>
+                               </Brain>
+                               """;
+
+        bool wasRead = _reader.TryRead(snippet, SourceName, out SpecificationNode? root);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wasRead, Is.False);
+            Assert.That(root, Is.Null);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error test.xml Line 1, the document declares a document type, and Gaia reads no document type definition",
+            }));
+        });
+    }
+
+    [Test]
     [Category(SweepCategory)]
     public void ReturnsWithoutThrowingWhateverCharacterStandsAnywhereInADocument()
     {

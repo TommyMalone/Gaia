@@ -30,11 +30,6 @@ namespace Gaia.Core.Targets
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            if (!creationData.RefuseChildren())
-            {
-                return false;
-            }
-
             Self = creationData.Self;
             return true;
         }

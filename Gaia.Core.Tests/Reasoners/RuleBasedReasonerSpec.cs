@@ -271,7 +271,7 @@ public class RuleBasedReasonerSpec
             Assert.That(loaded.Init(creationData), Is.True);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
-                "Warning  the Patrol option's fixed values sum to a weight of 0 or less, a reasoner that selects by weight can never select it",
+                "Warning  Line 2, the Option element's fixed values sum to a weight of 0 or less, a reasoner that selects by weight can never select it",
             }), "the vetoing tuning is the deliberate off switch shape, which accepts its one warning");
 
             loaded.Enable();
@@ -299,8 +299,37 @@ public class RuleBasedReasonerSpec
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.True);
-            Assert.That(_logSink.Entries, Has.One.Contains("two options share the name Idle"),
-                "log lines and history records identify options by name alone");
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Warning  Line 3, the Option element shares the name Idle with an earlier option, their log lines and records cannot be told apart",
+            }), "log lines and history records identify options by name alone, and the second Idle is the one named");
+        });
+    }
+
+    [Test]
+    public void WarnsOnceForEachLaterOptionThatSharesAName()
+    {
+        // Each option is compared with the ones before it and warns at most once, so three options sharing a name
+        // warn twice, on the second and the third, and never for the first.
+        const string snippet = """
+                               <Reasoner Type="RuleBased">
+                                   <Option Type="ConsiderationAndAction" Name="Idle"/>
+                                   <Option Type="ConsiderationAndAction" Name="Idle"/>
+                                   <Option Type="ConsiderationAndAction" Name="Idle"/>
+                               </Reasoner>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        RuleBasedReasoner loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Warning  Line 3, the Option element shares the name Idle with an earlier option, their log lines and records cannot be told apart",
+                "Warning  Line 4, the Option element shares the name Idle with an earlier option, their log lines and records cannot be told apart",
+            }));
         });
     }
 }

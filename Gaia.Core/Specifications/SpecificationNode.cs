@@ -336,6 +336,15 @@ namespace Gaia.Core.Specifications
             return _attributes[_attributeNames[index]];
         }
 
+        /// <summary>
+        ///     The name of the attribute at the given index of <see cref="AttributeSpellings" />, for the factory's check
+        ///     against a description, which compares names by identity.
+        /// </summary>
+        internal AiString AttributeNameAt(int index)
+        {
+            return _attributeNames[index];
+        }
+
         /// <summary>Reports whether the element carries the named attribute.</summary>
         /// <remarks>
         ///     What a component's Init checks before reading an optional attribute whose default is not the zero value
@@ -633,29 +642,31 @@ namespace Gaia.Core.Specifications
         private void ReportMissing(AiString name)
         {
             _logSink.LogError(SourceDocumentName,
-                $"Line {LineNumber}, the {Name.Text} element has no {name.Text} attribute");
+                $"Line {LineNumber}, the {NameSpelling} element has no {name.Text} attribute");
         }
 
         /// <summary>Reports two attributes on one element that say the same thing differently.</summary>
         /// <remarks>
-        ///     Internal rather than private so that a component's Init can refuse a combination it cannot resolve, such as a
-        ///     veto and a multiplier.
+        ///     Public so that a game's component can refuse a combination it cannot resolve, such as a veto and a multiplier.
+        ///     It reports in the form every load error against an element takes, opening with the element's line and its name as
+        ///     the document spells it.
         /// </remarks>
-        internal void ReportConflict(AiString name, AiString other)
+        public void ReportConflict(AiString name, AiString other)
         {
             _logSink.LogError(SourceDocumentName,
-                $"Line {LineNumber}, the {Name.Text} element mixes {name.Text} with {other.Text}");
+                $"Line {LineNumber}, the {NameSpelling} element mixes {name.Text} with {other.Text}");
         }
 
         /// <summary>Reports an attribute whose text cannot be read as the kind that was asked for.</summary>
         /// <remarks>
-        ///     Internal rather than private so that a component's Init can also refuse a value that parsed but has no meaning
-        ///     the configuration could intend, such as a negative multiplier.
+        ///     Public so that a game's component can refuse a value that parsed but has no meaning the configuration could
+        ///     intend, such as a negative multiplier. It reports in the form every load error against an element takes, opening
+        ///     with the element's line and its name as the document spells it.
         /// </remarks>
-        internal void ReportMalformed(AiString name, string text, string expected)
+        public void ReportMalformed(AiString name, string text, string expected)
         {
             _logSink.LogError(SourceDocumentName,
-                $"Line {LineNumber}, the {Name.Text} element's {name.Text} is not {expected}, it reads \"{text}\"");
+                $"Line {LineNumber}, the {NameSpelling} element's {name.Text} is not {expected}, it reads \"{text}\"");
         }
 
         /// <summary>Refuses a name no attribute may have, and converts one that passes to its identity.</summary>

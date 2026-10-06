@@ -4,8 +4,10 @@ using Gaia.Core.Considerations;
 using Gaia.Core.Factories;
 using Gaia.Core.Options;
 using Gaia.Core.Reasoners;
+using Gaia.Core.Services.Random;
 using Gaia.Core.Services.Time;
 using Gaia.Core.Spatial;
+using Gaia.Core.Specifications;
 using Gaia.Core.Targets;
 using Gaia.Core.WeightFunctions;
 
@@ -22,8 +24,9 @@ namespace Gaia.Core.HostSpecs;
 ///     function's neutral values or veto decide whether the option is selected.
 ///     SelectsAnOptionBuiltFromComponentsThatWriteNoOnInit covers the other way a game reaches the bases, a consideration,
 ///     a weight function, a target and an action the loader builds, each of which overrides only what it answers with.
-///     RefusesAChildOfAComponentThatWritesNoOnInit covers what the default does with a child element such a component does
-///     not read.
+///     RefusesAChildOfAComponentThatWritesNoOnInit covers what the factory does with a child element such a component's
+///     description has no slot for. LoadsAGameWeightedConsiderationThroughTheSharedSlot covers a game's weighted
+///     consideration adding the WeightFunction slot its base reads.
 /// </remarks>
 [TestFixture]
 public class GameDefinedConsiderationHostSpec
@@ -125,7 +128,8 @@ public class GameDefinedConsiderationHostSpec
 
         GaiaLoader loader = new(factories, new ManualTimeSource(), logSink: logSink);
 
-        // The consideration writes no OnInit, so what refuses the Extra element is the default on its base.
+        // The consideration writes no OnInit and describes no slot, so the factory refuses the Extra element before the
+        // base's default OnInit runs.
         const string configurationText = """
                                          <Brain>
                                              <Reasoner Type="RuleBased">
@@ -145,6 +149,45 @@ public class GameDefinedConsiderationHostSpec
             Assert.That(isLoaded, Is.False);
             Assert.That(logSink.Errors,
                 Has.Member("Error defaults.xml Line 5, the Consideration element does not take Extra elements"));
+        });
+    }
+
+    [Test]
+    public void LoadsAGameWeightedConsiderationThroughTheSharedSlot()
+    {
+        ListLogSink logSink = new();
+
+        FactorySet factories = new();
+        factories.Considerations.Register("Range", () => new HostRangeConsideration(),
+            HostRangeConsideration.Description);
+
+        // A master is supplied so the loader reports no rolled seed into the sink the test reads.
+        GaiaLoader loader = new(factories, new ManualTimeSource(), new FixedRandomSource(0f), logSink);
+
+        // The consideration adds the slot its base reads to its own description, so the WeightFunction child is one
+        // the factory allows and the base's minimum of one is met.
+        const string configurationText = """
+                                         <Brain>
+                                             <Reasoner Type="RuleBased">
+                                                 <Option Type="ConsiderationAndAction" Name="Advance">
+                                                     <Consideration Type="Range">
+                                                         <WeightFunction Type="Constant" Addend="2"/>
+                                                     </Consideration>
+                                                 </Option>
+                                             </Reasoner>
+                                         </Brain>
+                                         """;
+
+        bool isLoaded = loader.TryLoadBrain(configurationText, "range.xml", out Brain? brain);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(isLoaded, Is.True);
+            Assert.That(logSink.Entries, Is.Empty);
+
+            HostRangeConsideration loaded = (HostRangeConsideration)brain!.RootReasoner!.Options[0].Considerations[0];
+
+            Assert.That(loaded.WeightFunction, Is.InstanceOf<ConstantWeightFunction>());
         });
     }
 
@@ -178,6 +221,52 @@ public class GameDefinedConsiderationHostSpec
         protected override WeightValues CalculateWeights(WeightFunctionBase weightFunction)
         {
             return weightFunction.CalculateFloat(Distance);
+        }
+    }
+
+    /// <summary>
+    ///     A game-defined weighted consideration the loader builds, which measures a fixed distance and hands it to the
+    ///     WeightFunction child its description takes from its base.
+    /// </summary>
+    private sealed class HostRangeConsideration : WeightedConsiderationBase
+    {
+        /// <summary>
+        ///     Describes the consideration for the test that registers it, the WeightFunction slot its base reads and nothing
+        ///     more.
+        /// </summary>
+        internal static readonly ComponentDescription Description =
+            new DescriptionBuilder(ConceptualAbstraction.Considerations, "Weighs a fixed distance.")
+                .Add(WeightFunctionSlot).Build();
+
+        /// <inheritdoc />
+        protected override string QueryPhrase => "a float";
+
+        /// <summary>Builds the WeightFunction child, which the factory has already held to one.</summary>
+        protected override bool OnInit(AiCreationData creationData)
+        {
+            SpecificationNode node = creationData.Node;
+
+            for (int index = 0; index < node.Children.Count; index++)
+            {
+                if (!TryLoadWeightFunction(node.Children[index], creationData))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <inheritdoc />
+        protected override bool CanConvert(WeightFunctionBase weightFunction)
+        {
+            return weightFunction.ConvertsFloat;
+        }
+
+        /// <summary>Hands a fixed distance to the function as a float.</summary>
+        protected override WeightValues CalculateWeights(WeightFunctionBase weightFunction)
+        {
+            return weightFunction.CalculateFloat(5f);
         }
     }
 

@@ -28,11 +28,15 @@ namespace Gaia.Core.Factories
     {
         private readonly Dictionary<AiString, Func<TBase>> _creators = new();
         private readonly Dictionary<AiString, ComponentDescription> _descriptions = new();
+        private readonly List<string> _typeSpellings = new();
         private readonly List<AiString> _types = new();
 
         /// <inheritdoc />
-        /// <remarks>A name registered again keeps its place, since only its creator and description change.</remarks>
+        /// <remarks>A name registered again keeps its place, since only its creator, description and spelling change.</remarks>
         public IReadOnlyList<AiString> Types => _types;
+
+        /// <inheritdoc />
+        public IReadOnlyList<string> TypeSpellings => _typeSpellings;
 
         /// <inheritdoc />
         public bool TryGetDescription(AiString type, out ComponentDescription? description)
@@ -41,21 +45,40 @@ namespace Gaia.Core.Factories
         }
 
         /// <summary>Registers a creator and its description under a type name, replacing both if that name already had them.</summary>
-        /// <param name="type">The Type attribute value that picks this creator.</param>
+        /// <param name="type">The Type attribute value that picks this creator, in the spelling a tool writes it.</param>
         /// <param name="creator">Constructs one uninitialized component. The factory runs Init afterward.</param>
-        /// <param name="description">What the component's element may hold, for a tool that edits a document without loading it.</param>
-        public void Register(AiString type, Func<TBase> creator, ComponentDescription description)
+        /// <param name="description">
+        ///     What the component's element may hold, which the factory holds the element to and a tool
+        ///     reads.
+        /// </param>
+        public void Register(string type, Func<TBase> creator, ComponentDescription description)
         {
-            if (!_creators.ContainsKey(type))
+            AiString name = type;
+            int index = _types.IndexOf(name);
+
+            if (index < 0)
             {
-                _types.Add(type);
+                _types.Add(name);
+                _typeSpellings.Add(type);
+            }
+            else
+            {
+                _typeSpellings[index] = type;
             }
 
-            _creators[type] = creator;
-            _descriptions[type] = description;
+            _creators[name] = creator;
+            _descriptions[name] = description;
         }
 
         /// <summary>Builds and initializes the component the creation data's node describes.</summary>
+        /// <remarks>
+        ///     The element is refused for having no Type, then for a Type nothing registered, then for anything its type's
+        ///     description does not name. Init runs next, and an Init that fails is refused. Once Init returns true, a slot short
+        ///     of its minimum is refused. Where an Init refuses a short slot itself, its sentence is reported rather than the one
+        ///     the minimum check writes, since Init runs before the minimums are counted. The description is checked before the
+        ///     creator runs, so a refused element constructs nothing. The component is handed out only once every check has
+        ///     passed.
+        /// </remarks>
         /// <returns>True when the component was built. False after reporting what went wrong.</returns>
         public bool TryCreate(AiCreationData creationData, out TBase? component)
         {
@@ -65,14 +88,21 @@ namespace Gaia.Core.Factories
 
             if (node.Type.IsEmpty)
             {
-                Report(creationData, $"Line {node.LineNumber}, the {node.Name.Text} element has no Type attribute");
+                Report(creationData, $"Line {node.LineNumber}, the {node.NameSpelling} element has no Type attribute");
                 return false;
             }
 
             if (!_creators.TryGetValue(node.Type, out Func<TBase>? creator))
             {
                 Report(creationData,
-                    $"Line {node.LineNumber}, the {node.Name.Text} element's type {node.Type.Text} is not registered");
+                    $"Line {node.LineNumber}, the {node.NameSpelling} element's type {node.TypeSpelling} is not registered");
+                return false;
+            }
+
+            ComponentDescription description = _descriptions[node.Type];
+
+            if (!description.RefuseUndescribed(creationData, false))
+            {
                 return false;
             }
 
@@ -81,7 +111,12 @@ namespace Gaia.Core.Factories
             if (!created.Init(creationData))
             {
                 Report(creationData,
-                    $"Line {node.LineNumber}, the {node.Name.Text} element's type {node.Type.Text} failed to initialize");
+                    $"Line {node.LineNumber}, the {node.NameSpelling} element's type {node.TypeSpelling} failed to initialize");
+                return false;
+            }
+
+            if (!description.RefuseShortSlots(creationData))
+            {
                 return false;
             }
 

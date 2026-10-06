@@ -36,11 +36,6 @@ namespace Gaia.Core.Considerations
         {
             SpecificationNode node = creationData.Node;
 
-            if (!creationData.RefuseChildren())
-            {
-                return false;
-            }
-
             if (!WeightValues.TryRead(node, Default, out WeightValues weights))
             {
                 return false;

@@ -40,11 +40,6 @@ namespace Gaia.Core.WeightFunctions
         {
             SpecificationNode node = creationData.Node;
 
-            if (!creationData.RefuseChildren())
-            {
-                return false;
-            }
-
             if (!WeightValues.TryRead(node, out WeightValues weights))
             {
                 return false;

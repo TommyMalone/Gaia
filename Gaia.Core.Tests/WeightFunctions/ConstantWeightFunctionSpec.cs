@@ -144,6 +144,28 @@ public class ConstantWeightFunctionSpec
     }
 
     [Test]
+    public void RefusesAVetoOfFalseWrittenBesideAMultiplier()
+    {
+        // A Veto beside a Multiplier is refused whatever the Veto says. Veto="false" beside a Multiplier of 0 is what a
+        // designer writes when removing a veto through the wrong attribute.
+        const string snippet = """
+                               <WeightFunction Type="Constant" Veto="false" Multiplier="0"/>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        ConstantWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the WeightFunction element mixes Veto with Multiplier",
+            }));
+        });
+    }
+
+    [Test]
     public void RefusesANegativeMultiplier()
     {
         // Two multipliers of -1 would cancel to a positive weight and turn strongly discouraged into selected, so a
@@ -195,11 +217,15 @@ public class ConstantWeightFunctionSpec
                                """;
         AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
-        ConstantWeightFunction loaded = new();
+        // The factory refuses the child before Init runs, so the test loads through the factory rather than calling
+        // Init.
+        bool wasCreated =
+            creationData.Factories.WeightFunctions.TryCreate(creationData, out WeightFunctionBase? loaded);
 
         Assert.Multiple(() =>
         {
-            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(wasCreated, Is.False);
+            Assert.That(loaded, Is.Null);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 2, the WeightFunction element does not take Extra elements",

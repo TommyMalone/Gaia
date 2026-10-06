@@ -40,6 +40,9 @@ namespace Gaia.Core.Factories
     {
         private static readonly AiString GaiaChannel = "Gaia";
 
+        /// <summary>The name every root is held to.</summary>
+        private static readonly AiString RootName = FactorySet.RootName;
+
         private readonly FactorySet _factories;
         private readonly ILogSink _logSink;
 
@@ -150,8 +153,8 @@ namespace Gaia.Core.Factories
 
         /// <summary>Loads one brain from a parsed tree.</summary>
         /// <param name="root">
-        ///     The Brain element to load, from the tree <see cref="TryParse" /> builds. The loader does not check
-        ///     the element's name.
+        ///     The Brain element to load, from the tree <see cref="TryParse" /> builds. A root with any name but
+        ///     Brain is refused. The name is matched in any casing.
         /// </param>
         /// <param name="brain">The loaded brain, or null when loading failed.</param>
         /// <param name="worldBlackboard">The blackboard every character shares, or null when the game keeps none.</param>
@@ -189,6 +192,13 @@ namespace Gaia.Core.Factories
                 WorldBlackboard = worldBlackboard,
                 Self = self,
             };
+
+            if (root.Name != RootName)
+            {
+                creationData.ReportError(
+                    $"Line {root.LineNumber}, the {root.NameSpelling} element is not a {FactorySet.RootName} element, which a document's root is");
+                return false;
+            }
 
             Brain loaded = new();
 

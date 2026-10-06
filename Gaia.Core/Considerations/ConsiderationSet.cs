@@ -59,15 +59,9 @@ namespace Gaia.Core.Considerations
         {
             SpecificationNode node = creationData.Node;
 
+            // Every child is a Consideration, since the factory refused anything else against the description.
             foreach (SpecificationNode child in node.Children)
             {
-                if (child.Name != ConsiderationSlot.Name)
-                {
-                    creationData.ReportError(
-                        $"Line {child.LineNumber}, the {node.Name.Text} element does not take {child.Name.Text} elements");
-                    return false;
-                }
-
                 if (!creationData.Factories.Considerations.TryCreate(creationData.ForChild(child),
                         out ConsiderationBase? consideration))
                 {

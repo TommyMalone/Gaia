@@ -111,11 +111,14 @@ public class SphereRegionSpec
                                """;
         AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
-        SphereRegion loaded = new();
+        // The factory refuses the second child before Init runs, so the test loads through the factory rather than
+        // calling Init.
+        bool wasCreated = creationData.Factories.Regions.TryCreate(creationData, out RegionBase? loaded);
 
         Assert.Multiple(() =>
         {
-            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(wasCreated, Is.False);
+            Assert.That(loaded, Is.Null);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 3, the Region element takes only one OriginTarget element",
