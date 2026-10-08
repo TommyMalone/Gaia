@@ -48,5 +48,24 @@ namespace Gaia.Core.Targets
 
             return true;
         }
+
+        /// <inheritdoc />
+        /// <remarks>
+        ///     The transform is Self's Position, Rotation and Scale, and the call fails while Self is null, as TryGetPosition
+        ///     does.
+        /// </remarks>
+        public override bool TryGetTransform(out Transform transform)
+        {
+            if (Self == null)
+            {
+                transform = Transform.Identity;
+
+                return false;
+            }
+
+            transform = new Transform(Self.Position, Self.Rotation, Self.Scale);
+
+            return true;
+        }
     }
 }

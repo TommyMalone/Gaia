@@ -55,24 +55,51 @@ public class EntitySpec
     private StubEntity _shooter;
 
     [Test]
-    public void CarriesAFacingAsAnActor()
+    public void CarriesAFacingAsAnyEntity()
     {
         // A quarter turn to the left about the up axis. A quaternion stores half its rotation angle, so the sine and
         // cosine here are taken at 45 degrees rather than 90.
         float halfAngle = MathF.PI / 4f;
         Rotation facingLeft = new(0f, -MathF.Sin(halfAngle), 0f, MathF.Cos(halfAngle));
 
-        _guard.Rotation = facingLeft;
+        Contact guardsContactForPlayer = new()
+        {
+            Name = "Player",
+            Rotation = facingLeft,
+        };
 
-        Assert.That(_guard.Rotation, Is.EqualTo(facingLeft));
+        Assert.That(guardsContactForPlayer.Rotation, Is.EqualTo(facingLeft));
     }
 
     [Test]
-    public void FacesForwardAsAnActorUntilTold()
+    public void FacesForwardUntilTold()
     {
-        Actor actor = new();
+        Threat explosion = new();
 
-        Assert.That(actor.Rotation, Is.EqualTo(Rotation.Identity));
+        Assert.That(explosion.Rotation, Is.EqualTo(Rotation.Identity));
+    }
+
+    [Test]
+    public void CarriesAScaleAsAnyEntity()
+    {
+        Vector3 twiceAsTall = new(1f, 2f, 1f);
+
+        Contact guardsContactForPlayer = new()
+        {
+            Name = "Player",
+            Scale = twiceAsTall,
+        };
+
+        Assert.That(guardsContactForPlayer.Scale, Is.EqualTo(twiceAsTall));
+    }
+
+    [Test]
+    public void KeepsItsAuthoredSizeUntilTold()
+    {
+        Vector3 authoredSize = new(1f, 1f, 1f);
+        Threat explosion = new();
+
+        Assert.That(explosion.Scale, Is.EqualTo(authoredSize));
     }
 
     [Test]

@@ -97,6 +97,27 @@ namespace Gaia.Core.Targets
             return true;
         }
 
+        /// <inheritdoc />
+        /// <remarks>
+        ///     The transform is the found entity's Position, Rotation and Scale, from one Find, so the three belong to the
+        ///     same entity.
+        /// </remarks>
+        public override bool TryGetTransform(out Transform transform)
+        {
+            EntityBase? entity = Find();
+
+            if (entity == null)
+            {
+                transform = Transform.Identity;
+
+                return false;
+            }
+
+            transform = new Transform(entity.Position, entity.Rotation, entity.Scale);
+
+            return true;
+        }
+
         /// <summary>
         ///     Searches the list under ListName for a valid entity named EntityName. Null when the store, the list or the
         ///     entity is missing.

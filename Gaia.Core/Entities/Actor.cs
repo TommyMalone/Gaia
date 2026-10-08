@@ -1,5 +1,4 @@
 ﻿using Gaia.Core.Brains;
-using Gaia.Core.Spatial;
 
 namespace Gaia.Core.Entities
 {
@@ -11,14 +10,6 @@ namespace Gaia.Core.Entities
     /// <seealso>"Modular AI", Section 8.4.3.3</seealso>
     public class Actor : EntityBase
     {
-        /// <summary>Which way this character is facing.</summary>
-        /// <remarks>
-        ///     Kept off <see cref="EntityBase" /> because a <see cref="Contact" /> or a <see cref="Threat" /> has a position
-        ///     but often no meaningful facing, and a rotation that every entity had to carry would sit unwritten at its default
-        ///     most of the time.
-        /// </remarks>
-        public Rotation Rotation { get; set; } = Rotation.Identity;
-
         /// <summary>The decision-making logic for this character, or null if nothing decides for it.</summary>
         /// <remarks>
         ///     Section 8.4.3.3 allows an actor for every character whether the AI controls it or not, so a player's actor may

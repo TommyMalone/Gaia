@@ -11,8 +11,8 @@ namespace Gaia.Core.Tests.Targets;
 /// <summary>Covers the three targets, and the distinction between having an entity and being able to find one.</summary>
 /// <remarks>
 ///     A <see cref="ByNameTarget" /> looks its entity up in a named list on a <see cref="BrainBlackboard" />, which
-///     stands in for the chapter's list of contacts. The entities are stubs, since nothing here depends on which kind they
-///     are.
+///     stands in for the chapter's list of contacts. The list the fixture builds holds a stub, since nothing here depends
+///     on which kind of entity is found.
 /// </remarks>
 /// <seealso>"Modular AI", Section 8.5.5</seealso>
 [TestFixture]
@@ -91,6 +91,19 @@ public class TargetSpec
     }
 
     [Test]
+    public void ReportsNoTurnFromAPositionTarget()
+    {
+        // Compared as a whole transform, so the scale of one is held as well as the identity.
+        Transform unturnedAtTheFixedPosition = new(_fixedPosition, Rotation.Identity);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_positionTarget.TryGetTransform(out Transform found), Is.True);
+            Assert.That(found, Is.EqualTo(unturnedAtTheFixedPosition));
+        });
+    }
+
+    [Test]
     public void ReportsTheActorFromASelfTarget()
     {
         Assert.Multiple(() =>
@@ -120,6 +133,33 @@ public class TargetSpec
     }
 
     [Test]
+    public void ReportsTheActorsFacingFromASelfTarget()
+    {
+        Rotation quarterTurnRight = Rotation.FromEulerAngles(0f, 90f, 0f);
+        _sniper.Rotation = quarterTurnRight;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_selfTarget.TryGetTransform(out Transform found), Is.True);
+            Assert.That(found.Origin, Is.EqualTo(_sniperPosition));
+            Assert.That(found.Rotation, Is.EqualTo(quarterTurnRight));
+        });
+    }
+
+    [Test]
+    public void ReportsTheActorsScaleFromASelfTarget()
+    {
+        Vector3 twiceAsTall = new(1f, 2f, 1f);
+        _sniper.Scale = twiceAsTall;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_selfTarget.TryGetTransform(out Transform found), Is.True);
+            Assert.That(found.Scale, Is.EqualTo(twiceAsTall));
+        });
+    }
+
+    [Test]
     public void IsInvalidAsASelfTargetWithNoActor()
     {
         _selfTarget.Self = null;
@@ -142,6 +182,47 @@ public class TargetSpec
             Assert.That(_byNameTarget.Entity, Is.SameAs(_lookout));
             Assert.That(_byNameTarget.TryGetPosition(out Vector3 found), Is.True);
             Assert.That(found, Is.EqualTo(_lookoutPosition));
+        });
+    }
+
+    [Test]
+    public void ReportsTheEntitysFacingFromAByNameTarget()
+    {
+        Vector3 scoutPosition = new(-4f, 0f, 12f);
+        Rotation quarterTurnLeft = Rotation.FromEulerAngles(0f, -90f, 0f);
+        Contact scout = new()
+        {
+            Name = "Scout",
+            Position = scoutPosition,
+            Rotation = quarterTurnLeft,
+        };
+        _contacts.Add(scout);
+        _byNameTarget.EntityName = "Scout";
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_byNameTarget.TryGetTransform(out Transform found), Is.True);
+            Assert.That(found.Origin, Is.EqualTo(scoutPosition));
+            Assert.That(found.Rotation, Is.EqualTo(quarterTurnLeft));
+        });
+    }
+
+    [Test]
+    public void ReportsTheEntitysScaleFromAByNameTarget()
+    {
+        Vector3 halfAsWide = new(0.5f, 1f, 1f);
+        Contact scout = new()
+        {
+            Name = "Scout",
+            Scale = halfAsWide,
+        };
+        _contacts.Add(scout);
+        _byNameTarget.EntityName = "Scout";
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_byNameTarget.TryGetTransform(out Transform found), Is.True);
+            Assert.That(found.Scale, Is.EqualTo(halfAsWide));
         });
     }
 
@@ -216,6 +297,38 @@ public class TargetSpec
         };
 
         Assert.That(target.IsValid, Is.False);
+    }
+
+    [Test]
+    public void ReportsTheSamePositionFromBothQuestions()
+    {
+        TargetBase[] shippedTargets = [_selfTarget, _byNameTarget, _positionTarget];
+
+        Assert.Multiple(() =>
+        {
+            foreach (TargetBase target in shippedTargets)
+            {
+                target.TryGetPosition(out Vector3 position);
+                target.TryGetTransform(out Transform transform);
+
+                Assert.That(transform.Origin, Is.EqualTo(position), target.GetType().Name);
+            }
+        });
+    }
+
+    [Test]
+    public void FailsBothQuestionsTogether()
+    {
+        _selfTarget.Self = null;
+        _byNameTarget.EntityName = "Officer";
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_selfTarget.TryGetPosition(out _), Is.False);
+            Assert.That(_selfTarget.TryGetTransform(out _), Is.False);
+            Assert.That(_byNameTarget.TryGetPosition(out _), Is.False);
+            Assert.That(_byNameTarget.TryGetTransform(out _), Is.False);
+        });
     }
 
     [Test]

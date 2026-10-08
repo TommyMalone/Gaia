@@ -100,6 +100,34 @@ public class GeometryHostSpec
     }
 
     [Test]
+    public void ReadsATransformFromAGameTargetThatGivesOnlyAPosition()
+    {
+        // The target answers a position away from the world's origin, so a default that dropped it would fail here. The
+        // answer is compared as a whole transform, so the scale of one is held as well as the identity.
+        Vector3 rallyPoint = new(3f, 10f, 4f);
+        HostWaypointTarget rally = new(rallyPoint);
+        Transform unturnedAtTheRallyPoint = new(rallyPoint, Rotation.Identity);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(rally.TryGetTransform(out Transform transform), Is.True);
+            Assert.That(transform, Is.EqualTo(unturnedAtTheRallyPoint));
+        });
+    }
+
+    [Test]
+    public void FailsTheTransformWhereAGameTargetFailsThePosition()
+    {
+        HostWaypointTarget lost = new(null);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(lost.TryGetPosition(out _), Is.False);
+            Assert.That(lost.TryGetTransform(out _), Is.False);
+        });
+    }
+
+    [Test]
     public void BuildsACurveByHand()
     {
         Curve response = new();
@@ -131,5 +159,27 @@ public class GeometryHostSpec
             Assert.That(response.Keyframes, Has.Count.EqualTo(2));
             Assert.That(response.Evaluate(1f), Is.EqualTo(2f).Within(0.0001f));
         });
+    }
+
+    /// <summary>
+    ///     A game-defined target that overrides only TryGetPosition, answering the waypoint it was made with, or failing
+    ///     when it was made with none.
+    /// </summary>
+    private sealed class HostWaypointTarget : TargetBase
+    {
+        private readonly Vector3? _waypoint;
+
+        /// <summary>Creates a target that answers the given waypoint, or fails every ask when it is null.</summary>
+        public HostWaypointTarget(Vector3? waypoint)
+        {
+            _waypoint = waypoint;
+        }
+
+        /// <inheritdoc />
+        public override bool TryGetPosition(out Vector3 position)
+        {
+            position = _waypoint ?? Vector3.Zero;
+            return _waypoint.HasValue;
+        }
     }
 }
