@@ -78,7 +78,7 @@ namespace Gaia.Core.Regions
         /// <inheritdoc />
         public override bool IsInRegion(Vector3 position)
         {
-            if (!TryGetFrame(OriginTarget, out RegionFrame frame))
+            if (!TryGetFrame(OriginTarget, out Transform frame))
             {
                 return false;
             }
@@ -91,7 +91,7 @@ namespace Gaia.Core.Regions
         /// <inheritdoc />
         public override bool TryGetRandomPosition(out Vector3 position)
         {
-            if (!TryGetFrame(OriginTarget, out RegionFrame frame))
+            if (!TryGetFrame(OriginTarget, out Transform frame))
             {
                 position = Vector3.Zero;
 

@@ -134,6 +134,38 @@ public class RotationSpec
     }
 
     [Test]
+    public void TurnsByTheRightOperandAboutTheAxesTheLeftOneSets()
+    {
+        // A yaw and a pitch share no axis, so their order shows. Yawed a quarter right, forward points along the
+        // world's right. Pitched a quarter about the yawed right axis, it points at the ground. The other order ends
+        // facing along the world's right.
+        Rotation yawTimesPitch = YawOf(90f) * PitchOf(90f);
+        Rotation pitchTimesYaw = PitchOf(90f) * YawOf(90f);
+        Vector3 worldDown = new(0f, -1f, 0f);
+
+        Assert.Multiple(() =>
+        {
+            AssertNearly(yawTimesPitch.Forward, worldDown);
+            AssertNearly(pitchTimesYaw.Forward, _worldRight);
+        });
+    }
+
+    [Test]
+    public void BuildsTheEulerFormAsAProduct()
+    {
+        // The yaw times the pitch, the order FromEulerAngles multiplies its turns in, worked by hand from the two
+        // single-axis quaternions.
+        Rotation workedByHand = new(0.5f, 0.5f, -0.5f, 0.5f);
+        Rotation yawTimesPitch = YawOf(90f) * PitchOf(90f);
+
+        Assert.Multiple(() =>
+        {
+            AssertNearly(Rotation.FromEulerAngles(90f, 90f, 0f), workedByHand);
+            AssertNearly(yawTimesPitch, workedByHand);
+        });
+    }
+
+    [Test]
     public void BuildsNoRotationFromNoAngles()
     {
         Assert.That(Rotation.FromEulerAngles(0f, 0f, 0f), Is.EqualTo(Rotation.Identity));
@@ -196,6 +228,10 @@ public class RotationSpec
     [Test]
     public void HashesEqualRotationsAlike()
     {
+        // Equal rotations hash alike, the one promise a hash makes. No test asks two different rotations to hash
+        // differently, since a hash that ignored a component would keep the promise and only collide more often.
+        // HashCode.Combine takes a new seed each process, so two different rotations can share a hash in one run and
+        // not the next. Such a test would fail in the rare run where the two happen to collide.
         Rotation facing = new(0f, 0.6f, 0f, 0.8f);
         Rotation sameFacing = new(0f, 0.6f, 0f, 0.8f);
 

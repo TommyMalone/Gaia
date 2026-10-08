@@ -129,6 +129,22 @@ namespace Gaia.Core.Spatial
             return new Vector3(pitch * RadiansToDegrees, yaw * RadiansToDegrees, roll * RadiansToDegrees);
         }
 
+        /// <summary>
+        ///     The rotation that turns by the left operand first and then by the right one about the axes the first turn
+        ///     sets, the Hamilton product of the two quaternions.
+        /// </summary>
+        /// <remarks>
+        ///     FromEulerAngles builds its turn as yaw * pitch * roll, the yaw, then the pitch about the yawed axes, then the
+        ///     roll about the pitched ones.
+        /// </remarks>
+        public static Rotation operator *(Rotation left, Rotation right)
+        {
+            return new Rotation(left.W * right.X + left.X * right.W + left.Y * right.Z - left.Z * right.Y,
+                left.W * right.Y - left.X * right.Z + left.Y * right.W + left.Z * right.X,
+                left.W * right.Z + left.X * right.Y - left.Y * right.X + left.Z * right.W,
+                left.W * right.W - left.X * right.X - left.Y * right.Y - left.Z * right.Z);
+        }
+
         public bool Equals(Rotation other)
         {
             return X.Equals(other.X) && Y.Equals(other.Y) && Z.Equals(other.Z) && W.Equals(other.W);

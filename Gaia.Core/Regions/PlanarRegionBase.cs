@@ -5,7 +5,7 @@ using Gaia.Core.Targets;
 
 namespace Gaia.Core.Regions
 {
-    /// <summary>A region that is a flat shape, placed and turned by a <see cref="RegionFrame" />.</summary>
+    /// <summary>A region that is a flat shape, placed and turned by a <see cref="Transform" />.</summary>
     /// <remarks>
     ///     <para>
     ///         The shape is described in the plane of its frame, so a rectangle is two <see cref="Vector2" /> corners and a
@@ -30,7 +30,7 @@ namespace Gaia.Core.Regions
             "Rotation", AttributeKind.Rotation, "(0, 0, 0)",
             "How far the shape's plane is turned from the ground, as pitch, yaw and roll in degrees.");
 
-        private RegionFrame _frame = RegionFrame.Identity;
+        private Transform _frame = Transform.Identity;
 
         /// <summary>The world position of the shape's (0, 0).</summary>
         public Vector3 Origin
@@ -43,11 +43,11 @@ namespace Gaia.Core.Regions
         public Rotation Rotation
         {
             get => _frame.Rotation;
-            set => _frame = new RegionFrame(_frame.Origin, value);
+            set => _frame = new Transform(_frame.Origin, value);
         }
 
-        /// <summary>The frame the shape is placed by.</summary>
-        protected RegionFrame Frame => _frame;
+        /// <summary>The transform the shape is placed by.</summary>
+        protected Transform Frame => _frame;
 
         /// <summary>Reads the Origin and Rotation attributes, keeping the identity for whichever is absent.</summary>
         /// <returns>True when the frame loaded. False after reporting malformed text.</returns>
@@ -68,7 +68,7 @@ namespace Gaia.Core.Regions
                 return false;
             }
 
-            _frame = new RegionFrame(origin, rotation);
+            _frame = new Transform(origin, rotation);
             return true;
         }
 
@@ -87,7 +87,7 @@ namespace Gaia.Core.Regions
         ///     Finds the frame at the time of the call, moved to the target's position when a target is given. Fails only
         ///     when the target cannot answer, which leaves the region containing nothing.
         /// </summary>
-        protected bool TryGetFrame(TargetBase? originTarget, out RegionFrame frame)
+        protected bool TryGetFrame(TargetBase? originTarget, out Transform frame)
         {
             if (originTarget == null)
             {
