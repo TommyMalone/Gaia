@@ -5,11 +5,12 @@ using Gaia.Core.Specifications;
 
 namespace Gaia.Core.Regions
 {
-    /// <summary>A ball swept along a vertical segment, which takes height into account.</summary>
+    /// <summary>A ball swept along a segment on its own up axis, which takes height into account.</summary>
     /// <remarks>
     ///     <para>
-    ///         The segment runs from HalfHeight below Origin to HalfHeight above it. A position is inside if it is within
-    ///         Radius of the nearest point of the segment, which caps the ends with hemispheres rather than cutting them flat.
+    ///         The segment runs along local Y from HalfHeight below Origin to HalfHeight above it. A position is inside if
+    ///         it is within Radius of the nearest point of the segment, which caps the ends with hemispheres rather than
+    ///         cutting them flat.
     ///     </para>
     ///     <para>
     ///         A random position is found by guessing inside the bounding box and keeping the first guess inside the
@@ -21,11 +22,9 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class CapsuleRegion : RegionBase
     {
-        private static readonly DescriptionBuilder Builder = new(ConceptualAbstraction.Regions,
-            "A cylinder with a rounded top and bottom.");
-
-        private static readonly AttributeDescription OriginAttribute = Builder.Optional("Origin", AttributeKind.Vector3,
-            "(0, 0, 0)", "Where the middle of the swept segment is.");
+        private static readonly DescriptionBuilder Builder =
+            new DescriptionBuilder(ConceptualAbstraction.Regions, "A cylinder with a rounded top and bottom.").Add(
+                OriginAttribute);
 
         private static readonly AttributeDescription RadiusAttribute = Builder.Required("Radius", AttributeKind.Float,
             "How far the region reaches from the segment.");
@@ -38,10 +37,7 @@ namespace Gaia.Core.Regions
         private float _radius;
         private float _radiusSquared;
 
-        /// <summary>Where the middle of the swept segment is. The world's origin until it is set.</summary>
-        public Vector3 Origin { get; set; }
-
-        /// <summary>How far the swept segment reaches above and below Origin.</summary>
+        /// <summary>How far the swept segment reaches from Origin either way along the capsule's own up.</summary>
         public float HalfHeight { get; set; }
 
         /// <summary>How far the region reaches from the segment.</summary>
@@ -62,16 +58,6 @@ namespace Gaia.Core.Regions
         {
             SpecificationNode node = creationData.Node;
 
-            if (node.HasAttribute(OriginAttribute.Name))
-            {
-                if (!node.ReadVector3(OriginAttribute.Name, out Vector3 origin))
-                {
-                    return false;
-                }
-
-                Origin = origin;
-            }
-
             if (!node.ReadFloat(RadiusAttribute.Name, out float radius) ||
                 !node.ReadFloat(HalfHeightAttribute.Name, out float halfHeight))
             {
@@ -84,22 +70,20 @@ namespace Gaia.Core.Regions
         }
 
         /// <inheritdoc />
-        public override bool IsInRegion(Vector3 position)
+        protected override bool IsInShape(Vector3 local)
         {
-            float clampedY = Math.Clamp(position.Y, Origin.Y - HalfHeight, Origin.Y + HalfHeight);
-            Vector3 nearestOnSegment = new(Origin.X, clampedY, Origin.Z);
+            float clampedY = Math.Clamp(local.Y, -HalfHeight, HalfHeight);
+            Vector3 nearestOnSegment = new(0f, clampedY, 0f);
 
-            return Vector3.SquaredDistance(nearestOnSegment, position) <= _radiusSquared;
+            return Vector3.SquaredDistance(nearestOnSegment, local) <= _radiusSquared;
         }
 
         /// <inheritdoc />
-        public override bool TryGetRandomPosition(out Vector3 position)
+        protected override bool TryGetRandomLocalPosition(out Vector3 local)
         {
             Vector3 reach = new(Radius, HalfHeight + Radius, Radius);
-            Vector3 min = Origin - reach;
-            Vector3 max = Origin + reach;
 
-            return MathHelpers.TryRejectionSample(this, min, max, out position);
+            return TryRejectionSample(Vector3.Zero - reach, reach, out local);
         }
     }
 }

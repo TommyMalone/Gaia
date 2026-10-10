@@ -8,7 +8,7 @@ namespace Gaia.Core.Regions
 {
     /// <summary>
     ///     What <see cref="PolygonRegion" /> and <see cref="ExtrudedPolygonRegion" /> share, which is a footprint made of
-    ///     corners in the plane of its frame.
+    ///     corners in its own plane.
     /// </summary>
     /// <remarks>
     ///     <para>
@@ -19,7 +19,7 @@ namespace Gaia.Core.Regions
     ///     <para>
     ///         A random point is found by guessing inside the footprint's bounds and keeping the first guess inside the
     ///         footprint. AddCorner keeps the bounds up to date, so reading them walks no corners, and each containment test
-    ///         walks them once. Subclasses carry the point out to the world, at the height they decide.
+    ///         walks them once. Subclasses raise the point to the height they decide.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>

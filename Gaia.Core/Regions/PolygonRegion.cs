@@ -3,7 +3,7 @@ using Gaia.Core.Spatial;
 
 namespace Gaia.Core.Regions
 {
-    /// <summary>A footprint of any shape in the plane of its frame, which ignores height.</summary>
+    /// <summary>A footprint of any shape in its own plane, which ignores height.</summary>
     /// <remarks>A random position lies in the footprint's own plane.</remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class PolygonRegion : PolygonRegionBase
@@ -14,26 +14,26 @@ namespace Gaia.Core.Regions
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            return LoadFrame(creationData) && LoadFootprint(creationData);
+            return LoadFootprint(creationData);
         }
 
         /// <inheritdoc />
-        public override bool IsInRegion(Vector3 position)
+        protected override bool IsInShape(Vector3 local)
         {
-            return IsInFootprint(Frame.ToLocal(position, out _));
+            return IsInFootprint(InPlane(local, out _));
         }
 
         /// <inheritdoc />
-        public override bool TryGetRandomPosition(out Vector3 position)
+        protected override bool TryGetRandomLocalPosition(out Vector3 local)
         {
             if (!TryGetRandomFootprintPoint(out Vector2 point))
             {
-                position = Vector3.Zero;
+                local = Vector3.Zero;
 
                 return false;
             }
 
-            position = Frame.ToWorld(point, 0f);
+            local = OutOfPlane(point, 0f);
 
             return true;
         }

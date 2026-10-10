@@ -122,8 +122,8 @@ public class DescriptionSpec
         Assert.Multiple(() =>
         {
             Assert.That(SlotOf(polygon, "Corner"), Is.Not.Null, "the footprint base reads Corner children");
-            Assert.That(AttributeOf(polygon, "Origin"), Is.Not.Null, "the flat shape base reads Origin");
-            Assert.That(AttributeOf(polygon, "Rotation"), Is.Not.Null, "the flat shape base reads Rotation");
+            Assert.That(AttributeOf(polygon, "Origin"), Is.Not.Null, "the region base reads Origin");
+            Assert.That(AttributeOf(polygon, "Rotation"), Is.Not.Null, "the region base reads Rotation");
             Assert.That(polygon.Attributes, Has.Count.EqualTo(2), "a polygon reads no attribute of its own");
         });
     }

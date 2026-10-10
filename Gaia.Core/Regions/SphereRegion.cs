@@ -7,23 +7,18 @@ namespace Gaia.Core.Regions
 {
     /// <summary>A ball around an origin, which takes height into account.</summary>
     /// <remarks>
+    ///     <para>A turn leaves the ball as it was, and a Scale that differs along its axes stretches it into an ellipsoid.</para>
     ///     <para>
-    ///         The ball is around Origin, or around OriginTarget's position while one is configured, as for
-    ///         <see cref="CircleRegion" />.
-    ///     </para>
-    ///     <para>
-    ///         A random position is found by guessing inside the bounding box and keeping the first guess inside the ball,
-    ///         so it can fail, though a ball fills over half its box and <see cref="MathHelpers.MaxSampleAttempts" /> is
-    ///         generous.
+    ///         A random position is found by guessing inside the cube around the ball and keeping the first guess inside the
+    ///         ball, so it can fail, though a ball fills over half its cube and <see cref="MathHelpers.MaxSampleAttempts" />
+    ///         is generous.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class SphereRegion : RegionBase
     {
-        private static readonly DescriptionBuilder Builder = new(ConceptualAbstraction.Regions, "A ball.");
-
-        private static readonly AttributeDescription OriginAttribute = Builder.Optional("Origin", AttributeKind.Vector3,
-            "(0, 0, 0)", "Where the middle of the ball is, unless an OriginTarget stands in.");
+        private static readonly DescriptionBuilder Builder =
+            new DescriptionBuilder(ConceptualAbstraction.Regions, "A ball.").Add(OriginAttribute);
 
         private static readonly AttributeDescription RadiusAttribute = Builder.Required("Radius", AttributeKind.Float,
             "How far the ball reaches from its middle.");
@@ -32,12 +27,6 @@ namespace Gaia.Core.Regions
 
         private float _radius;
         private float _radiusSquared;
-
-        /// <summary>Where the ball is, unless OriginTarget overrides it. The world's origin until it is set.</summary>
-        public Vector3 Origin { get; set; }
-
-        /// <summary>The target whose position replaces Origin while one is configured, or null to use Origin.</summary>
-        public TargetBase? OriginTarget { get; set; }
 
         /// <summary>How far the region reaches from its origin.</summary>
         public float Radius
@@ -64,16 +53,6 @@ namespace Gaia.Core.Regions
 
             SpecificationNode node = creationData.Node;
 
-            if (node.HasAttribute(OriginAttribute.Name))
-            {
-                if (!node.ReadVector3(OriginAttribute.Name, out Vector3 origin))
-                {
-                    return false;
-                }
-
-                Origin = origin;
-            }
-
             if (!node.ReadFloat(RadiusAttribute.Name, out float radius))
             {
                 return false;
@@ -84,47 +63,17 @@ namespace Gaia.Core.Regions
         }
 
         /// <inheritdoc />
-        public override bool IsInRegion(Vector3 position)
+        protected override bool IsInShape(Vector3 local)
         {
-            if (!TryGetOrigin(out Vector3 origin))
-            {
-                return false;
-            }
-
-            return Vector3.SquaredDistance(origin, position) <= _radiusSquared;
+            return local.SquaredMagnitude <= _radiusSquared;
         }
 
         /// <inheritdoc />
-        public override bool TryGetRandomPosition(out Vector3 position)
+        protected override bool TryGetRandomLocalPosition(out Vector3 local)
         {
-            if (!TryGetOrigin(out Vector3 origin))
-            {
-                position = Vector3.Zero;
-
-                return false;
-            }
-
             Vector3 reach = new(Radius, Radius, Radius);
-            Vector3 min = origin - reach;
-            Vector3 max = origin + reach;
 
-            return MathHelpers.TryRejectionSample(this, min, max, out position);
-        }
-
-        /// <summary>
-        ///     Finds where the origin is at the time of the call, asking OriginTarget if one is configured and reading Origin
-        ///     otherwise. Fails only when the target cannot answer.
-        /// </summary>
-        private bool TryGetOrigin(out Vector3 origin)
-        {
-            if (OriginTarget == null)
-            {
-                origin = Origin;
-
-                return true;
-            }
-
-            return OriginTarget.TryGetPosition(out origin);
+            return TryRejectionSample(Vector3.Zero - reach, reach, out local);
         }
     }
 }

@@ -2,11 +2,12 @@
 using Gaia.Core.Regions;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Spatial;
+using Gaia.Core.Targets;
 using Gaia.Core.Tests.Helpers;
 
 namespace Gaia.Core.Tests.Regions;
 
-/// <summary>Covers <see cref="RectangleRegion" />, and the frame loading every planar region shares.</summary>
+/// <summary>Covers <see cref="RectangleRegion" />, and the Origin and Rotation loading every shape shares.</summary>
 [TestFixture]
 public class RectangleRegionSpec
 {
@@ -105,7 +106,7 @@ public class RectangleRegionSpec
     }
 
     [Test]
-    public void LoadsItsFrameWithItsCorners()
+    public void LoadsItsOriginAndRotationWithItsCorners()
     {
         const string snippet = """
                                <Region Type="Rectangle" Origin="(100, 0, 100)" Rotation="(0, 90, 0)"
@@ -127,7 +128,7 @@ public class RectangleRegionSpec
     }
 
     [Test]
-    public void LiesOnTheGroundAtTheWorldsOriginWithoutAFrame()
+    public void LiesOnTheGroundAtTheWorldsOriginByDefault()
     {
         const string snippet = """
                                <Region Type="Rectangle" Min="(0, 0)" Max="(10, 20)"/>
@@ -144,5 +145,26 @@ public class RectangleRegionSpec
             Assert.That(loaded.IsInRegion(new Vector3(5f, 0f, 10f)), Is.True);
             Assert.That(_logSink.Entries, Is.Empty);
         });
+    }
+
+    [Test]
+    public void FollowsItsOriginTarget()
+    {
+        Vector3 middleFromTheFirstPosition = new(105f, 0f, 110f);
+        Vector3 middleFromTheSecondPosition = new(205f, 0f, 210f);
+        Vector3 middleOfTheWorld = new(5f, 0f, 10f);
+
+        PositionTarget target = new() { Position = new Vector3(100f, 0f, 100f) };
+        _rectangle.OriginTarget = target;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_rectangle.IsInRegion(middleFromTheFirstPosition), Is.True);
+            Assert.That(_rectangle.IsInRegion(middleOfTheWorld), Is.False, "where it lies without the target");
+        });
+
+        target.Position = new Vector3(200f, 0f, 200f);
+
+        Assert.That(_rectangle.IsInRegion(middleFromTheSecondPosition), Is.True);
     }
 }

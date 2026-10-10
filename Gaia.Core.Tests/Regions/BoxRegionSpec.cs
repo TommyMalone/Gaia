@@ -65,4 +65,27 @@ public class BoxRegionSpec
             Assert.That(box.IsInRegion(center), Is.True);
         });
     }
+
+    [Test]
+    public void TurnsItsCornersAboutItsOrigin()
+    {
+        // The corners run 10 along X from Origin and 1 either way across it. A quarter turn right swings that length
+        // from the world's X onto its Z, where the box runs from 0 to -10.
+        Vector3 alongTheTurnedLength = new(0f, 0f, -5f);
+        Vector3 alongTheUnturnedLength = new(5f, 0f, 0f);
+
+        BoxRegion box = new()
+        {
+            Min = new Vector3(0f, -1f, -1f),
+            Max = new Vector3(10f, 1f, 1f),
+            Rotation = Rotation.FromEulerAngles(0f, 90f, 0f),
+        };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(box.IsInRegion(alongTheTurnedLength), Is.True);
+            Assert.That(box.IsInRegion(alongTheUnturnedLength), Is.False,
+                "the unturned box and a box turned about its middle both hold it");
+        });
+    }
 }

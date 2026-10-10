@@ -8,13 +8,10 @@ namespace Gaia.Core.Regions
 {
     /// <summary>A disc extruded a half-height either side of its plane, which makes a cylinder.</summary>
     /// <remarks>
+    ///     <para>Origin is the middle of the cylinder. Unturned, the cylinder stands upright.</para>
     ///     <para>
-    ///         Origin is the middle of the cylinder, and OriginTarget's position stands in for it while one is configured,
-    ///         as for <see cref="CircleRegion" />. Unrotated, the cylinder stands upright.
-    ///     </para>
-    ///     <para>
-    ///         A random position is picked on the disc the way <see cref="CircleRegion" /> picks one and spread evenly along
-    ///         the height, so it fails only where a configured OriginTarget has no position.
+    ///         A random point is picked on the disc the way <see cref="CircleRegion" /> picks one and spread evenly along
+    ///         the height, so the cylinder's own pick never fails.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
@@ -32,9 +29,6 @@ namespace Gaia.Core.Regions
 
         private float _radius;
         private float _radiusSquared;
-
-        /// <summary>The target whose position replaces Origin while one is configured, or null to use Origin.</summary>
-        public TargetBase? OriginTarget { get; set; }
 
         /// <summary>How far the region reaches from its axis.</summary>
         public float Radius
@@ -64,7 +58,7 @@ namespace Gaia.Core.Regions
 
             SpecificationNode node = creationData.Node;
 
-            if (!LoadFrame(creationData) || !node.ReadFloat(RadiusAttribute.Name, out float radius) ||
+            if (!node.ReadFloat(RadiusAttribute.Name, out float radius) ||
                 !node.ReadFloat(HalfHeightAttribute.Name, out float halfHeight))
             {
                 return false;
@@ -76,32 +70,20 @@ namespace Gaia.Core.Regions
         }
 
         /// <inheritdoc />
-        public override bool IsInRegion(Vector3 position)
+        protected override bool IsInShape(Vector3 local)
         {
-            if (!TryGetFrame(OriginTarget, out Transform frame))
-            {
-                return false;
-            }
-
-            Vector2 point = frame.ToLocal(position, out float height);
+            Vector2 point = InPlane(local, out float height);
 
             return MathF.Abs(height) <= HalfHeight && point.SquaredMagnitude <= _radiusSquared;
         }
 
         /// <inheritdoc />
-        public override bool TryGetRandomPosition(out Vector3 position)
+        protected override bool TryGetRandomLocalPosition(out Vector3 local)
         {
-            if (!TryGetFrame(OriginTarget, out Transform frame))
-            {
-                position = Vector3.Zero;
-
-                return false;
-            }
-
             Vector2 point = MathHelpers.RandomInDisc(RandomSource, Radius);
             float height = MathHelpers.RandomInRange(RandomSource, -HalfHeight, HalfHeight);
 
-            position = frame.ToWorld(point, height);
+            local = OutOfPlane(point, height);
 
             return true;
         }

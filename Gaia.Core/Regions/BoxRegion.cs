@@ -4,10 +4,10 @@ using Gaia.Core.Specifications;
 
 namespace Gaia.Core.Regions
 {
-    /// <summary>An axis-aligned box, which takes height into account.</summary>
+    /// <summary>A box between two corners measured from its Origin, which takes height into account.</summary>
     /// <remarks>
-    ///     <see cref="RectangleRegion" /> with the Y axis included. TryGetRandomPosition never fails, since every point
-    ///     of the box is inside it.
+    ///     <see cref="RectangleRegion" /> with the Y axis included. TryGetRandomLocalPosition never fails, since every
+    ///     point of the box is inside it.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class BoxRegion : RegionBase
@@ -37,10 +37,10 @@ namespace Gaia.Core.Regions
             Max = center + extents;
         }
 
-        /// <summary>The corner with the smallest X, Y and Z.</summary>
+        /// <summary>The corner with the smallest X, Y and Z, measured from Origin.</summary>
         public Vector3 Min { get; set; }
 
-        /// <summary>The corner with the largest X, Y and Z.</summary>
+        /// <summary>The corner with the largest X, Y and Z, measured from Origin.</summary>
         public Vector3 Max { get; set; }
 
         /// <inheritdoc />
@@ -60,16 +60,16 @@ namespace Gaia.Core.Regions
         }
 
         /// <inheritdoc />
-        public override bool IsInRegion(Vector3 position)
+        protected override bool IsInShape(Vector3 local)
         {
-            return position.X >= Min.X && position.X <= Max.X && position.Y >= Min.Y && position.Y <= Max.Y &&
-                   position.Z >= Min.Z && position.Z <= Max.Z;
+            return local.X >= Min.X && local.X <= Max.X && local.Y >= Min.Y && local.Y <= Max.Y && local.Z >= Min.Z &&
+                   local.Z <= Max.Z;
         }
 
         /// <inheritdoc />
-        public override bool TryGetRandomPosition(out Vector3 position)
+        protected override bool TryGetRandomLocalPosition(out Vector3 local)
         {
-            position = MathHelpers.RandomInBox(RandomSource, Min, Max);
+            local = MathHelpers.RandomInBox(RandomSource, Min, Max);
 
             return true;
         }

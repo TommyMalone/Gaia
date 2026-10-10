@@ -15,6 +15,11 @@ namespace Gaia.Core.Regions
     ///         caller has to be told rather than handed a position outside the region.
     ///     </para>
     ///     <para>
+    ///         Every shape is described in its own coordinates, as the same shape standing unturned at the world's origin
+    ///         would be, and Origin, Rotation and Scale place it in the world. While the shape follows OriginTarget, the
+    ///         target's position stands in for Origin.
+    ///     </para>
+    ///     <para>
     ///         RandomSource is injected the same way it is for <see cref="DualUtilityReasoner" />, so a test can make
     ///         sampling deterministic.
     ///     </para>
@@ -27,6 +32,11 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6, Listing 8.6</seealso>
     public abstract class RegionBase : IAiComponent
     {
+        /// <summary>Describes the optional Origin attribute <see cref="Init" /> reads by.</summary>
+        protected static readonly AttributeDescription OriginAttribute = AttributeDescription.Optional("Origin",
+            "Origin", AttributeKind.Vector3, "(0, 0, 0)",
+            "Where the shape's (0, 0, 0) is in the world, unless an OriginTarget stands in.");
+
         /// <summary>
         ///     Describes the optional OriginTarget child <see cref="LoadOriginTarget" /> reads by, for the description of
         ///     every shape that calls it.
@@ -39,15 +49,75 @@ namespace Gaia.Core.Regions
         protected static readonly SlotDescription OriginTargetSlot = new("OriginTarget", "OriginTarget",
             ConceptualAbstraction.Targets, 0, 1);
 
+        /// <summary>Describes the optional Rotation attribute <see cref="Init" /> reads by.</summary>
+        protected static readonly AttributeDescription RotationAttribute = AttributeDescription.Optional("Rotation",
+            "Rotation", AttributeKind.Rotation, "(0, 0, 0)",
+            "How the shape is turned from the world's axes, as pitch, yaw and roll in degrees, pitch positive toward the ground and yaw positive to the right.");
+
+        private Transform _transform = Transform.Identity;
+
+        /// <summary>
+        ///     Where the shape's (0, 0, 0) is in the world, unless OriginTarget's position stands in for it. The world's
+        ///     origin until it is set.
+        /// </summary>
+        public Vector3 Origin
+        {
+            get => _transform.Origin;
+            set => _transform = _transform.WithOrigin(value);
+        }
+
+        /// <summary>How the shape is turned, relative to the world. No turn until it is set.</summary>
+        public Rotation Rotation
+        {
+            get => _transform.Rotation;
+            set => _transform = new Transform(_transform.Origin, value, _transform.Scale);
+        }
+
+        /// <summary>How far one of the shape's own units stretches along its right, up and forward. (1, 1, 1) until it is set.</summary>
+        /// <remarks>A zero component of Scale leaves the shape containing nothing and its sampling failing.</remarks>
+        public Vector3 Scale
+        {
+            get => _transform.Scale;
+            set => _transform = new Transform(_transform.Origin, _transform.Rotation, value);
+        }
+
+        /// <summary>The target whose position stands in for Origin while one is set, or null to place the shape at Origin.</summary>
+        /// <remarks>
+        ///     While it is set, the target's position is read at every query, and the shape keeps its own Rotation and Scale.
+        ///     A target that cannot answer leaves the shape containing nothing and its sampling failing.
+        /// </remarks>
+        public TargetBase? OriginTarget { get; set; }
+
         /// <summary>Where the region draws the numbers that pick a random position.</summary>
         public IRandomSource RandomSource { get; set; } = new Xoshiro128RandomSource();
 
         /// <summary>Loads this region's configuration from the creation data's node.</summary>
-        /// <remarks>Every region samples through the creation data's random source, so the base takes it before OnInit.</remarks>
+        /// <remarks>
+        ///     Every region samples through the creation data's random source and is placed by the Origin and Rotation
+        ///     attributes where its element declares them, so the base takes the source and reads both before OnInit, keeping the
+        ///     default for whichever is absent.
+        /// </remarks>
         /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         public bool Init(AiCreationData creationData)
         {
             RandomSource = creationData.RandomSource;
+
+            SpecificationNode node = creationData.Node;
+
+            Vector3 origin = Vector3.Zero;
+            Rotation rotation = Rotation.Identity;
+
+            if (node.HasAttribute(OriginAttribute.Name) && !node.ReadVector3(OriginAttribute.Name, out origin))
+            {
+                return false;
+            }
+
+            if (node.HasAttribute(RotationAttribute.Name) && !node.ReadRotation(RotationAttribute.Name, out rotation))
+            {
+                return false;
+            }
+
+            _transform = new Transform(origin, rotation, _transform.Scale);
             return OnInit(creationData);
         }
 
@@ -62,7 +132,7 @@ namespace Gaia.Core.Regions
             return true;
         }
 
-        /// <summary>Loads the node's OriginTarget child, if it has one, for the shapes that can follow a target.</summary>
+        /// <summary>Loads the node's OriginTarget child, if it has one, for the shapes whose element takes one.</summary>
         /// <remarks>
         ///     The factory has already refused any other child and a second OriginTarget against the shape's description, so
         ///     every child met here is the one OriginTarget.
@@ -88,10 +158,97 @@ namespace Gaia.Core.Regions
         }
 
         /// <summary>Tests whether a position is inside the region.</summary>
-        public abstract bool IsInRegion(Vector3 position);
+        public bool IsInRegion(Vector3 position)
+        {
+            return TryGetWorldTransform(out Transform world) && IsInShape(world.ToLocal(position));
+        }
 
         /// <summary>Picks a random position inside the region.</summary>
         /// <returns>True if a position was found. Some shapes can fail, and then the position is unspecified.</returns>
-        public abstract bool TryGetRandomPosition(out Vector3 position);
+        public bool TryGetRandomPosition(out Vector3 position)
+        {
+            if (!TryGetWorldTransform(out Transform world) || !TryGetRandomLocalPosition(out Vector3 local))
+            {
+                position = Vector3.Zero;
+
+                return false;
+            }
+
+            position = world.ToWorld(local);
+
+            return true;
+        }
+
+        /// <summary>Tests whether a point in the shape's own coordinates is inside the shape.</summary>
+        /// <remarks>
+        ///     The point has been brought into the shape's own coordinates through the transform that places it, so the shape
+        ///     is tested as though it stood unturned at the world's origin.
+        /// </remarks>
+        protected abstract bool IsInShape(Vector3 local);
+
+        /// <summary>Picks a random point inside the shape, in its own coordinates.</summary>
+        /// <returns>True if a point was found. Some shapes can fail, and then the point is unspecified.</returns>
+        protected abstract bool TryGetRandomLocalPosition(out Vector3 local);
+
+        /// <summary>
+        ///     Guesses points inside a box in the shape's own coordinates until IsInShape accepts one, or the attempts run
+        ///     out.
+        /// </summary>
+        /// <param name="min">The lowest corner of the box to guess inside.</param>
+        /// <param name="max">The highest corner of the box to guess inside.</param>
+        /// <param name="local">A point inside the shape, if one was found.</param>
+        /// <returns>True if a guess landed inside the shape.</returns>
+        protected bool TryRejectionSample(Vector3 min, Vector3 max, out Vector3 local)
+        {
+            for (int attempt = 0; attempt < MathHelpers.MaxSampleAttempts; attempt++)
+            {
+                local = MathHelpers.RandomInBox(RandomSource, min, max);
+
+                if (IsInShape(local))
+                {
+                    return true;
+                }
+            }
+
+            local = Vector3.Zero;
+
+            return false;
+        }
+
+        /// <summary>
+        ///     Finds the transform that places the shape at the time of the call, the stored one, or the stored one moved to
+        ///     OriginTarget's position while a target is set.
+        /// </summary>
+        /// <remarks>
+        ///     It fails when the target cannot answer, and when a component of the scale is zero, before ToLocal divides by
+        ///     that zero. Either leaves the shape containing nothing and its sampling failing.
+        /// </remarks>
+        private bool TryGetWorldTransform(out Transform world)
+        {
+            if (OriginTarget == null)
+            {
+                world = _transform;
+            }
+            else
+            {
+                if (!OriginTarget.TryGetPosition(out Vector3 targetPosition))
+                {
+                    world = default;
+
+                    return false;
+                }
+
+                world = _transform.WithOrigin(targetPosition);
+            }
+
+            if (world.Scale.X == 0f || world.Scale.Y == 0f || world.Scale.Z == 0f)
+            {
+                world = default;
+
+                return false;
+            }
+
+            return true;
+        }
     }
 }

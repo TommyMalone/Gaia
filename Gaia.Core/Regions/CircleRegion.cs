@@ -4,7 +4,7 @@ using Gaia.Core.Targets;
 
 namespace Gaia.Core.Regions
 {
-    /// <summary>A disc in the plane of its frame, which ignores height.</summary>
+    /// <summary>A disc in its own plane, which ignores height.</summary>
     /// <remarks>
     ///     The disc is around Origin, or around OriginTarget's position while one is configured, so that a region can
     ///     follow a character. An OriginTarget whose <see cref="TargetBase.TryGetPosition" /> fails leaves the region
@@ -23,9 +23,6 @@ namespace Gaia.Core.Regions
 
         private float _radius;
         private float _radiusSquared;
-
-        /// <summary>The target whose position replaces Origin while one is configured, or null to use Origin.</summary>
-        public TargetBase? OriginTarget { get; set; }
 
         /// <summary>How far the region reaches from its axis.</summary>
         public float Radius
@@ -50,7 +47,7 @@ namespace Gaia.Core.Regions
 
             OriginTarget = originTarget;
 
-            if (!LoadFrame(creationData) || !creationData.Node.ReadFloat(RadiusAttribute.Name, out float radius))
+            if (!creationData.Node.ReadFloat(RadiusAttribute.Name, out float radius))
             {
                 return false;
             }
@@ -60,28 +57,16 @@ namespace Gaia.Core.Regions
         }
 
         /// <inheritdoc />
-        public override bool IsInRegion(Vector3 position)
+        protected override bool IsInShape(Vector3 local)
         {
-            if (!TryGetFrame(OriginTarget, out Transform frame))
-            {
-                return false;
-            }
-
-            return frame.ToLocal(position, out _).SquaredMagnitude <= _radiusSquared;
+            return InPlane(local, out _).SquaredMagnitude <= _radiusSquared;
         }
 
         /// <inheritdoc />
-        /// <remarks>A random position lies in the disc's own plane, since the disc ignores height.</remarks>
-        public override bool TryGetRandomPosition(out Vector3 position)
+        /// <remarks>A random point lies in the disc's own plane, since the disc ignores height.</remarks>
+        protected override bool TryGetRandomLocalPosition(out Vector3 local)
         {
-            if (!TryGetFrame(OriginTarget, out Transform frame))
-            {
-                position = Vector3.Zero;
-
-                return false;
-            }
-
-            position = frame.ToWorld(MathHelpers.RandomInDisc(RandomSource, Radius), 0f);
+            local = OutOfPlane(MathHelpers.RandomInDisc(RandomSource, Radius), 0f);
 
             return true;
         }

@@ -86,6 +86,52 @@ public class GeometryHostSpec
     }
 
     [Test]
+    public void TurnsAHullAfterItsPlanesAreAdded()
+    {
+        // A beam 10 long along its own X from its origin, 2 tall and 4 wide. It lies on one side of its origin, so the
+        // direction of a turn shows. A quarter turn right swings its length onto the world's Z, where it runs from 0
+        // to -10.
+        const int sampleCount = 10;
+
+        Vector3 towardNegativeX = new(-1f, 0f, 0f);
+        Vector3 towardPositiveX = new(1f, 0f, 0f);
+        Vector3 towardNegativeY = new(0f, -1f, 0f);
+        Vector3 towardPositiveY = new(0f, 1f, 0f);
+        Vector3 towardNegativeZ = new(0f, 0f, -1f);
+        Vector3 towardPositiveZ = new(0f, 0f, 1f);
+
+        Plane backEnd = new(towardNegativeX, 0f);
+        Plane frontEnd = new(towardPositiveX, 10f);
+        Plane underside = new(towardNegativeY, 1f);
+        Plane topside = new(towardPositiveY, 1f);
+        Plane leftSide = new(towardNegativeZ, 2f);
+        Plane rightSide = new(towardPositiveZ, 2f);
+
+        ConvexHullRegion beam = new() { RandomSource = new Xoshiro128RandomSource(7) };
+        beam.AddPlane(backEnd);
+        beam.AddPlane(frontEnd);
+        beam.AddPlane(underside);
+        beam.AddPlane(topside);
+        beam.AddPlane(leftSide);
+        beam.AddPlane(rightSide);
+
+        beam.Rotation = Rotation.FromEulerAngles(0f, 90f, 0f);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(beam.IsInRegion(new Vector3(0f, 0f, -5f)), Is.True, "along the world's Z once turned");
+            Assert.That(beam.IsInRegion(new Vector3(5f, 0f, 0f)), Is.False, "where it would lie unturned");
+            Assert.That(beam.IsInRegion(new Vector3(0f, 0f, 5f)), Is.False, "where a turn the other way would put it");
+
+            for (int sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
+            {
+                Assert.That(beam.TryGetRandomPosition(out Vector3 sample), Is.True);
+                Assert.That(beam.IsInRegion(sample), Is.True, $"sample {sampleIndex} at {sample} landed outside");
+            }
+        });
+    }
+
+    [Test]
     public void PointsATargetAndReadsItBack()
     {
         Vector3 vantagePosition = new(3f, 10f, 4f);

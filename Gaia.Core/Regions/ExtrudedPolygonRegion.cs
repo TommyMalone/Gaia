@@ -30,8 +30,7 @@ namespace Gaia.Core.Regions
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            if (!LoadFrame(creationData) ||
-                !creationData.Node.ReadFloat(HalfHeightAttribute.Name, out float halfHeight))
+            if (!creationData.Node.ReadFloat(HalfHeightAttribute.Name, out float halfHeight))
             {
                 return false;
             }
@@ -41,24 +40,24 @@ namespace Gaia.Core.Regions
         }
 
         /// <inheritdoc />
-        public override bool IsInRegion(Vector3 position)
+        protected override bool IsInShape(Vector3 local)
         {
-            Vector2 point = Frame.ToLocal(position, out float height);
+            Vector2 point = InPlane(local, out float height);
 
             return MathF.Abs(height) <= HalfHeight && IsInFootprint(point);
         }
 
         /// <inheritdoc />
-        public override bool TryGetRandomPosition(out Vector3 position)
+        protected override bool TryGetRandomLocalPosition(out Vector3 local)
         {
             if (!TryGetRandomFootprintPoint(out Vector2 point))
             {
-                position = Vector3.Zero;
+                local = Vector3.Zero;
 
                 return false;
             }
 
-            position = Frame.ToWorld(point, MathHelpers.RandomInRange(RandomSource, -HalfHeight, HalfHeight));
+            local = OutOfPlane(point, MathHelpers.RandomInRange(RandomSource, -HalfHeight, HalfHeight));
 
             return true;
         }

@@ -2,11 +2,15 @@
 using Gaia.Core.Brains;
 using Gaia.Core.Considerations;
 using Gaia.Core.DataStores;
+using Gaia.Core.Entities;
 using Gaia.Core.Reasoners;
+using Gaia.Core.Regions;
 using Gaia.Core.Services.Diagnostics;
 using Gaia.Core.Services.Log;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Services.Time;
+using Gaia.Core.Spatial;
+using Gaia.Core.Targets;
 using Gaia.Core.Tests.Helpers;
 using Gaia.Core.WeightFunctions;
 
@@ -14,7 +18,8 @@ namespace Gaia.Core.Tests.Integration;
 
 /// <summary>
 ///     Proves a steady-state decision cycle allocates nothing, which is what keeps hundreds of agents from producing
-///     collector work every cycle. A walk of a data store's entries is held to the same standard.
+///     collector work every cycle. A walk of a data store's entries and a region's two answers are held to the same
+///     standard.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -47,6 +52,13 @@ namespace Gaia.Core.Tests.Integration;
 ///         would otherwise allocate once per walk. It runs the same warm-up and the same thousand measured passes, and
 ///         counts the entries the measured passes read, so a walk that reads nothing cannot pass as one that allocates
 ///         nothing.
+///     </para>
+///     <para>
+///         The region case asks a hull that follows a ByName target whether a position is inside it and for a random
+///         position, a thousand times after the same warm-up. A sample guesses until one lands behind every plane, so the
+///         measured passes run the rejection loop, the walk of the planes and the read of the cached bounds. They also run
+///         the target's walk of its list and the move of the hull's transform to the target's position. The case counts
+///         the answers that land inside, so a region that answers nothing cannot pass as one that allocates nothing.
 ///     </para>
 /// </remarks>
 [TestFixture]
@@ -98,6 +110,44 @@ public class AllocationSpec
             foreach (DataStoreEntry entry in store.Entries)
             {
                 entriesRead++;
+            }
+        }
+
+        return GC.GetAllocatedBytesForCurrentThread() - bytesBefore;
+    }
+
+    /// <summary>
+    ///     Runs the warm-up, then measures the thread-local bytes a thousand further passes allocate, each asking the
+    ///     region whether a position is inside it and for a random position.
+    /// </summary>
+    /// <param name="region">The region to ask.</param>
+    /// <param name="position">The position every pass asks about.</param>
+    /// <param name="answersInside">
+    ///     How many measured answers held the position or found a sample, which the failure message
+    ///     reports.
+    /// </param>
+    private static long MeasureRegionQueries(RegionBase region, Vector3 position, out int answersInside)
+    {
+        for (int pass = 0; pass < WarmUpCycles; pass++)
+        {
+            region.IsInRegion(position);
+            region.TryGetRandomPosition(out _);
+        }
+
+        long bytesBefore = GC.GetAllocatedBytesForCurrentThread();
+
+        answersInside = 0;
+
+        for (int pass = 0; pass < MeasuredCycles; pass++)
+        {
+            if (region.IsInRegion(position))
+            {
+                answersInside++;
+            }
+
+            if (region.TryGetRandomPosition(out _))
+            {
+                answersInside++;
             }
         }
 
@@ -191,5 +241,63 @@ public class AllocationSpec
 
         Assert.That(entriesRead, Is.EqualTo(entriesHeld * MeasuredCycles), "every measured walk reads every entry");
         Assert.That(allocatedBytes, Is.EqualTo(0), $"walking {entriesRead} entries must not feed the collector");
+    }
+
+    [Test]
+    public void AsksARegionThatFollowsATargetWithoutAllocating()
+    {
+        const int answersPerPass = 2;
+
+        Vector3 lookoutPosition = new(50f, 0f, 50f);
+
+        Contact lookout = new()
+        {
+            Name = "Lookout",
+            Position = lookoutPosition,
+        };
+
+        StubDataStore store = new();
+        store.SetEntityList("Contacts", [lookout]);
+
+        ByNameTarget lookoutTarget = new()
+        {
+            DataStore = store,
+            ListName = "Contacts",
+            EntityName = "Lookout",
+        };
+
+        // A cube 2 on a side around the hull's own origin, which the target carries to the lookout.
+        Vector3 towardNegativeX = new(-1f, 0f, 0f);
+        Vector3 towardPositiveX = new(1f, 0f, 0f);
+        Vector3 towardNegativeY = new(0f, -1f, 0f);
+        Vector3 towardPositiveY = new(0f, 1f, 0f);
+        Vector3 towardNegativeZ = new(0f, 0f, -1f);
+        Vector3 towardPositiveZ = new(0f, 0f, 1f);
+
+        Plane leftWall = new(towardNegativeX, 1f);
+        Plane rightWall = new(towardPositiveX, 1f);
+        Plane floor = new(towardNegativeY, 1f);
+        Plane ceiling = new(towardPositiveY, 1f);
+        Plane nearWall = new(towardNegativeZ, 1f);
+        Plane farWall = new(towardPositiveZ, 1f);
+
+        ConvexHullRegion hull = new()
+        {
+            OriginTarget = lookoutTarget,
+            RandomSource = new Xoshiro128RandomSource(7),
+        };
+        hull.AddPlane(leftWall);
+        hull.AddPlane(rightWall);
+        hull.AddPlane(floor);
+        hull.AddPlane(ceiling);
+        hull.AddPlane(nearWall);
+        hull.AddPlane(farWall);
+
+        long allocatedBytes = MeasureRegionQueries(hull, lookoutPosition, out int answersInside);
+
+        Assert.That(answersInside, Is.EqualTo(answersPerPass * MeasuredCycles),
+            "every measured pass holds the lookout's position and finds a sample");
+        Assert.That(allocatedBytes, Is.EqualTo(0),
+            $"answering {answersInside} questions of a following region must not feed the collector");
     }
 }

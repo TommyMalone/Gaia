@@ -4,7 +4,7 @@ using Gaia.Core.Specifications;
 
 namespace Gaia.Core.Regions
 {
-    /// <summary>A rectangle in the plane of its frame, which ignores height.</summary>
+    /// <summary>A rectangle in its own plane, which ignores height.</summary>
     /// <remarks>
     ///     Min and Max are the corners with the smallest and the largest coordinates in that plane, measured from Origin,
     ///     so a Rotation turns the rectangle about Origin. A rectangle that should turn about its middle puts Origin there and
@@ -35,7 +35,7 @@ namespace Gaia.Core.Regions
         {
             SpecificationNode node = creationData.Node;
 
-            if (!LoadFrame(creationData) || !node.ReadVector2(MinAttribute.Name, out Vector2 min) ||
+            if (!node.ReadVector2(MinAttribute.Name, out Vector2 min) ||
                 !node.ReadVector2(MaxAttribute.Name, out Vector2 max))
             {
                 return false;
@@ -47,21 +47,21 @@ namespace Gaia.Core.Regions
         }
 
         /// <inheritdoc />
-        public override bool IsInRegion(Vector3 position)
+        protected override bool IsInShape(Vector3 local)
         {
-            Vector2 point = Frame.ToLocal(position, out _);
+            Vector2 point = InPlane(local, out _);
 
             return point.X >= Min.X && point.X <= Max.X && point.Y >= Min.Y && point.Y <= Max.Y;
         }
 
         /// <inheritdoc />
-        /// <remarks>A random position lies in the rectangle's own plane, since the rectangle ignores height.</remarks>
-        public override bool TryGetRandomPosition(out Vector3 position)
+        /// <remarks>A random point lies in the rectangle's own plane, since the rectangle ignores height.</remarks>
+        protected override bool TryGetRandomLocalPosition(out Vector3 local)
         {
             Vector2 point = new(MathHelpers.RandomInRange(RandomSource, Min.X, Max.X),
                 MathHelpers.RandomInRange(RandomSource, Min.Y, Max.Y));
 
-            position = Frame.ToWorld(point, 0f);
+            local = OutOfPlane(point, 0f);
 
             return true;
         }

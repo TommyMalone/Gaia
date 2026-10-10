@@ -130,12 +130,12 @@ public class ConvexHullRegionSpec
 
         Assert.Multiple(() =>
         {
-            Assert.That(_hullBox.TryGetBounds(out Vector3 boxMin, out Vector3 boxMax), Is.True);
+            Assert.That(_hullBox.TryGetLocalBounds(out Vector3 boxMin, out Vector3 boxMax), Is.True);
             RegionSpecHelpers.AssertNearly(boxMin, origin);
             RegionSpecHelpers.AssertNearly(boxMax, boxFarCorner);
 
             // The diagonal plane's normal is not a round number, so the corners it produces are not either.
-            Assert.That(_hullWedge.TryGetBounds(out Vector3 wedgeMin, out Vector3 wedgeMax), Is.True);
+            Assert.That(_hullWedge.TryGetLocalBounds(out Vector3 wedgeMin, out Vector3 wedgeMax), Is.True);
             RegionSpecHelpers.AssertNearly(wedgeMin, origin);
             RegionSpecHelpers.AssertNearly(wedgeMax, wedgeFarCorner);
         });
@@ -157,7 +157,7 @@ public class ConvexHullRegionSpec
         Assert.Multiple(() =>
         {
             Assert.That(slab.IsInRegion(farFromTheOriginInsideTheSlab), Is.True, "the slab is unbounded in Y and Z");
-            Assert.That(slab.TryGetBounds(out _, out _), Is.False);
+            Assert.That(slab.TryGetLocalBounds(out _, out _), Is.False);
             Assert.That(slab.TryGetRandomPosition(out _), Is.False);
         });
     }
@@ -166,7 +166,7 @@ public class ConvexHullRegionSpec
     public void HasNoBoundsWhenItsPlanesLeaveAnOpenEnd()
     {
         // Three planes around the Y axis make a triangular tube with no top or bottom. Three planes are fewer than the
-        // four a closed volume needs, so TryGetBounds reports no bounds before the region looks for corners.
+        // four a closed volume needs, so TryGetLocalBounds reports no bounds before the region looks for corners.
         Plane leftWall = new(TowardNegativeX, 0f);
         Plane nearWall = new(TowardNegativeZ, 0f);
         Plane diagonal = new(DiagonalNormal, 10f);
@@ -176,7 +176,7 @@ public class ConvexHullRegionSpec
         tube.AddPlane(nearWall);
         tube.AddPlane(diagonal);
 
-        Assert.That(tube.TryGetBounds(out _, out _), Is.False);
+        Assert.That(tube.TryGetLocalBounds(out _, out _), Is.False);
     }
 
     [Test]
@@ -199,7 +199,7 @@ public class ConvexHullRegionSpec
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.True);
-            Assert.That(loaded.Planes, Has.Count.EqualTo(6));
+            Assert.That(loaded.LocalPlanes, Has.Count.EqualTo(6));
             Assert.That(loaded.IsInRegion(Vector3.Zero), Is.True);
             Assert.That(loaded.IsInRegion(new Vector3(2f, 0f, 0f)), Is.False);
             Assert.That(_logSink.Entries, Is.Empty);
@@ -248,5 +248,62 @@ public class ConvexHullRegionSpec
                 "Error guard.xml Line 2, the Plane element's Normal has no length",
             }));
         });
+    }
+
+    [Test]
+    public void AddsAPlaneInItsOwnCoordinatesOnceTurned()
+    {
+        // Turned a quarter right, the box's own Z runs along the world's X. A plane keeping its own Z at or below 5
+        // then cuts it where the world's X is 5. Read in the world's coordinates the same plane would cut nothing,
+        // since the turned box lies where the world's Z is 0 or less.
+        Plane shortWall = new(TowardPositiveZ, 5f);
+        Vector3 pastTheShortWall = new(10f, 1f, -5f);
+        Vector3 shortOfTheShortWall = new(2f, 1f, -5f);
+
+        _hullBox.Rotation = Rotation.FromEulerAngles(0f, 90f, 0f);
+        _hullBox.AddPlane(shortWall);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_hullBox.IsInRegion(pastTheShortWall), Is.False);
+            Assert.That(_hullBox.IsInRegion(shortOfTheShortWall), Is.True);
+        });
+    }
+
+    [Test]
+    public void SamplesInsideItselfOnceTurned()
+    {
+        Rotation quarterTurnRight = Rotation.FromEulerAngles(0f, 90f, 0f);
+
+        _hullBox.Rotation = quarterTurnRight;
+        _hullWedge.Rotation = quarterTurnRight;
+
+        RegionSpecHelpers.AssertEverySampleLandsInside(_hullBox);
+        RegionSpecHelpers.AssertEverySampleLandsInside(_hullWedge);
+    }
+
+    [Test]
+    public void ContainsNothingWhenScaledToNothing()
+    {
+        // Each of the box's planes faces along one axis, so its distance multiplies two of a point's coordinates by
+        // zero. Scaled to nothing, farOutside and middle come in with infinite coordinates. Flattened along Y,
+        // farOutsideOnTheFlatteningPlane comes in with a Y that is not a number. Either way every distance is not a
+        // number, which no plane rejects, so the planes alone would hold each of these positions.
+        Vector3 farOutside = new(1000f, 1000f, 1000f);
+        Vector3 middle = new(5f, 1f, 10f);
+        Vector3 farOutsideOnTheFlatteningPlane = new(1000f, 0f, 1000f);
+
+        _hullBox.Scale = new Vector3(0f, 0f, 0f);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_hullBox.IsInRegion(farOutside), Is.False);
+            Assert.That(_hullBox.IsInRegion(middle), Is.False);
+            Assert.That(_hullBox.TryGetRandomPosition(out _), Is.False);
+        });
+
+        _hullBox.Scale = new Vector3(1f, 0f, 1f);
+
+        Assert.That(_hullBox.IsInRegion(farOutsideOnTheFlatteningPlane), Is.False, "one zero component is enough");
     }
 }

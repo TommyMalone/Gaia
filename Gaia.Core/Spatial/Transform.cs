@@ -108,32 +108,6 @@ namespace Gaia.Core.Spatial
             return new Transform(origin, rotation, scale);
         }
 
-        /// <summary>Brings a world position into the plane, reporting its height above the plane separately.</summary>
-        /// <remarks>
-        ///     The plane's X is along Right and its Y along Forward, so an unturned transform lays the plane on the ground
-        ///     with Y along the world's Z, and height is the distance along Up, which a shape either ignores or bounds. This
-        ///     conversion reads no Scale, and the flat shapes that call it build their transform with a scale of (1, 1, 1), having
-        ///     no scale of their own yet.
-        /// </remarks>
-        public Vector2 ToLocal(Vector3 position, out float height)
-        {
-            Vector3 offset = position - Origin;
-
-            height = Vector3.Dot(offset, Up);
-
-            return new Vector2(Vector3.Dot(offset, Right), Vector3.Dot(offset, Forward));
-        }
-
-        /// <summary>Carries a point of the plane, raised to a height above it, out to the world.</summary>
-        /// <remarks>
-        ///     The plane is the one ToLocal(Vector3, out float) brings a position into. This conversion reads no Scale, and
-        ///     the flat shapes that call it build their transform with a scale of (1, 1, 1), having no scale of their own yet.
-        /// </remarks>
-        public Vector3 ToWorld(Vector2 point, float height)
-        {
-            return Origin + Right * point.X + Forward * point.Y + Up * height;
-        }
-
         public bool Equals(Transform other)
         {
             return Origin.Equals(other.Origin) && Rotation.Equals(other.Rotation) && Scale.Equals(other.Scale);

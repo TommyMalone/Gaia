@@ -14,10 +14,15 @@ namespace Gaia.Core.Regions
     ///         symmetric hull hides that, so a test should include a shape that is not symmetric.
     ///     </para>
     ///     <para>
-    ///         Random positions are guessed inside the hull's bounding box and the first one behind every plane is kept. The
-    ///         box is worked out from the hull's own corners, which are wherever three of its planes meet at a point that is
-    ///         behind all the others. EnsureBounds does that once, the first time it is needed after AddPlane, since it visits
-    ///         every triple of planes.
+    ///         The planes are written in the hull's own coordinates, each Distance measured along its normal from Origin, so
+    ///         a hull left at the world's origin, unturned and unscaled, reads them as world planes. Nothing about the hull is
+    ///         stored in the world's coordinates, so moving or turning it changes no plane and no bound.
+    ///     </para>
+    ///     <para>
+    ///         Random positions are guessed inside the box around the hull's corners, in its own coordinates, and the first
+    ///         one behind every plane is kept. The box is worked out from the hull's own corners, which are wherever three of
+    ///         its planes meet at a point that is behind all the others. EnsureBounds does that once, the first time it is
+    ///         needed after AddPlane, since it visits every triple of planes.
     ///     </para>
     ///     <para>
     ///         Planes alone can describe an unbounded volume, such as a slab between two parallel planes, and a volume with
@@ -69,8 +74,8 @@ namespace Gaia.Core.Regions
         /// <summary>True if the planes enclosed any corners the last time the bounds were computed.</summary>
         private bool _hasBounds;
 
-        /// <summary>The planes bounding the volume, normals facing outward.</summary>
-        public IReadOnlyList<Plane> Planes => _planes;
+        /// <summary>The planes bounding the volume, in the hull's own coordinates, normals facing outward.</summary>
+        public IReadOnlyList<Plane> LocalPlanes => _planes;
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
@@ -108,16 +113,16 @@ namespace Gaia.Core.Regions
             return true;
         }
 
-        /// <summary>Adds another plane to the boundary.</summary>
+        /// <summary>Adds another plane to the boundary, in the hull's own coordinates.</summary>
         public void AddPlane(Plane plane)
         {
             _planes.Add(plane);
             _boundsAreCurrent = false;
         }
 
-        /// <summary>Finds the box around the hull's corners.</summary>
+        /// <summary>Finds the box around the hull's corners, in the hull's own coordinates.</summary>
         /// <returns>True if the hull has corners to put a box around.</returns>
-        public bool TryGetBounds(out Vector3 min, out Vector3 max)
+        public bool TryGetLocalBounds(out Vector3 min, out Vector3 max)
         {
             EnsureBounds();
 
@@ -128,7 +133,7 @@ namespace Gaia.Core.Regions
         }
 
         /// <inheritdoc />
-        public override bool IsInRegion(Vector3 position)
+        protected override bool IsInShape(Vector3 local)
         {
             if (_planes.Count == 0)
             {
@@ -137,7 +142,7 @@ namespace Gaia.Core.Regions
 
             foreach (Plane plane in _planes)
             {
-                if (plane.SignedDistance(position) > 0f)
+                if (plane.SignedDistance(local) > 0f)
                 {
                     return false;
                 }
@@ -147,16 +152,16 @@ namespace Gaia.Core.Regions
         }
 
         /// <inheritdoc />
-        public override bool TryGetRandomPosition(out Vector3 position)
+        protected override bool TryGetRandomLocalPosition(out Vector3 local)
         {
-            if (!TryGetBounds(out Vector3 min, out Vector3 max))
+            if (!TryGetLocalBounds(out Vector3 min, out Vector3 max))
             {
-                position = Vector3.Zero;
+                local = Vector3.Zero;
 
                 return false;
             }
 
-            return MathHelpers.TryRejectionSample(this, min, max, out position);
+            return TryRejectionSample(min, max, out local);
         }
 
         /// <summary>
