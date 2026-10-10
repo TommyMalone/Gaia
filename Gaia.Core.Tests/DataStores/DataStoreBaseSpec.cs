@@ -26,6 +26,12 @@ public class DataStoreBaseSpec
         };
     }
 
+    /// <summary>
+    ///     Every kind a store holds, read from the enumeration. Write and TryRead below name each kind, so a kind added
+    ///     later fails the tests that walk the kinds until both learn it.
+    /// </summary>
+    private static readonly DataStoreValueType[] ValueTypes = Enum.GetValues<DataStoreValueType>();
+
     private StubDataStore _dataStore;
     private StubEntity _guard;
 
@@ -95,6 +101,20 @@ public class DataStoreBaseSpec
     }
 
     [Test]
+    public void ReportsARotationItWasGiven()
+    {
+        Rotation facing = Rotation.FromEulerAngles(0f, 90f, 0f);
+
+        _dataStore.SetRotation("Facing", facing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_dataStore.TryGetRotation("Facing", out Rotation storedFacing), Is.True);
+            Assert.That(storedFacing, Is.EqualTo(facing));
+        });
+    }
+
+    [Test]
     public void ReportsAnEntityItWasGiven()
     {
         _dataStore.SetEntity("SnipeTarget", _guard);
@@ -140,6 +160,36 @@ public class DataStoreBaseSpec
     }
 
     [Test]
+    public void ReportsAPlainMissForANameItDoesNotHold()
+    {
+        // Each read misses on a store that has had a name written to it, so its index of names and kinds exists. What
+        // makes the read a plain miss rather than a mismatch is that the index holds nothing under the name. The stub
+        // store records every mismatch it is told of and the warning store warns of each, so a mismatch would show in
+        // the stub's record or the warning store's sink, and both stay empty.
+        DataStoreBase[] dataStores = { _dataStore, _warningStore };
+
+        Assert.Multiple(() =>
+        {
+            foreach (DataStoreBase dataStore in dataStores)
+            {
+                dataStore.SetFloat("Health", 0.5f);
+                Assert.That(dataStore.TryGetString("Side", out AiString _), Is.False,
+                    "a name never written, beside one that was");
+
+                dataStore.SetInt("AmmoCount", 7);
+                dataStore.Remove("AmmoCount");
+                Assert.That(dataStore.TryGetInt("AmmoCount", out int _), Is.False, "a name removed");
+
+                dataStore.Clear();
+                Assert.That(dataStore.TryGetFloat("Health", out float _), Is.False, "a name forgotten by Clear");
+            }
+
+            Assert.That(_dataStore.TypeMismatches, Is.Empty);
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
     public void KeepsTheMostRecentValueWrittenUnderAName()
     {
         _dataStore.SetFloat("Health", 0.5f);
@@ -149,6 +199,27 @@ public class DataStoreBaseSpec
         {
             Assert.That(_dataStore.TryGetFloat("Health", out float health), Is.True);
             Assert.That(health, Is.EqualTo(0.25f));
+        });
+    }
+
+    [Test]
+    public void KeepsEveryNameWrittenAsTheSameKind()
+    {
+        // Each kind's table is made on the first write of that kind, so a second name is what shows a later write adds
+        // to that table rather than replacing it.
+        Assert.Multiple(() =>
+        {
+            foreach (DataStoreValueType valueType in ValueTypes)
+            {
+                AiString firstName = $"First{valueType}";
+                AiString secondName = $"Second{valueType}";
+
+                Write(_dataStore, firstName, valueType);
+                Write(_dataStore, secondName, valueType);
+
+                Assert.That(TryRead(_dataStore, firstName, valueType), Is.True, firstName.Text);
+                Assert.That(TryRead(_dataStore, secondName, valueType), Is.True, secondName.Text);
+            }
         });
     }
 
@@ -182,6 +253,25 @@ public class DataStoreBaseSpec
     }
 
     [Test]
+    public void ReportsTheKindOfANameOfEveryKind()
+    {
+        Assert.Multiple(() =>
+        {
+            foreach (DataStoreValueType valueType in ValueTypes)
+            {
+                AiString name = valueType.ToString();
+
+                Write(_dataStore, name, valueType);
+
+                Assert.That(_dataStore.Contains(name), Is.True, name.Text);
+                Assert.That(_dataStore.TryGetValueType(name, out DataStoreValueType reportedValueType), Is.True,
+                    name.Text);
+                Assert.That(reportedValueType, Is.EqualTo(valueType), name.Text);
+            }
+        });
+    }
+
+    [Test]
     public void EnumeratesEveryNameItHoldsWithTheKindItWasWrittenAs()
     {
         _dataStore.SetBool("IsOfficer", true);
@@ -206,6 +296,37 @@ public class DataStoreBaseSpec
         {
             Assert.That(_dataStore.TryGetString("Health", out AiString _), Is.False);
             Assert.That(_dataStore.TypeMismatches, Is.EqualTo(new[] { "Health Float String" }));
+        });
+    }
+
+    [Test]
+    public void ReportsAMissAndAWarningWhenANameIsReadAsAnyOtherKind()
+    {
+        // A store warns about a name once, so each pair of kinds is read under a name of its own.
+        List<string> expectedWarnings = new();
+
+        Assert.Multiple(() =>
+        {
+            foreach (DataStoreValueType writtenValueType in ValueTypes)
+            {
+                foreach (DataStoreValueType readValueType in ValueTypes)
+                {
+                    if (readValueType == writtenValueType)
+                    {
+                        continue;
+                    }
+
+                    AiString name = $"{writtenValueType}ReadAs{readValueType}";
+
+                    Write(_warningStore, name, writtenValueType);
+
+                    Assert.That(TryRead(_warningStore, name, readValueType), Is.False, name.Text);
+                    expectedWarnings.Add(
+                        $"Warning Guard the {name.Text} name was written as {writtenValueType} and used as {readValueType}");
+                }
+            }
+
+            Assert.That(_logSink.Entries, Is.EqualTo(expectedWarnings));
         });
     }
 
@@ -245,6 +366,33 @@ public class DataStoreBaseSpec
     }
 
     [Test]
+    public void ForgetsANameOfEveryKindThatWasRemoved()
+    {
+        // A write of another kind evicts the old value the way Remove does, so each kind is checked after a Remove and
+        // after a write of another kind.
+        Assert.Multiple(() =>
+        {
+            foreach (DataStoreValueType valueType in ValueTypes)
+            {
+                AiString removedName = $"Removed{valueType}";
+                AiString rewrittenName = $"Rewritten{valueType}";
+                DataStoreValueType otherValueType = valueType == DataStoreValueType.Bool
+                    ? DataStoreValueType.Int
+                    : DataStoreValueType.Bool;
+
+                Write(_dataStore, removedName, valueType);
+                _dataStore.Remove(removedName);
+
+                Write(_dataStore, rewrittenName, valueType);
+                Write(_dataStore, rewrittenName, otherValueType);
+
+                Assert.That(TryRead(_dataStore, removedName, valueType), Is.False, removedName.Text);
+                Assert.That(TryRead(_dataStore, rewrittenName, valueType), Is.False, rewrittenName.Text);
+            }
+        });
+    }
+
+    [Test]
     public void StopsEnumeratingANameThatWasRemoved()
     {
         _dataStore.SetFloat("Health", 0.5f);
@@ -276,6 +424,26 @@ public class DataStoreBaseSpec
 
             _dataStore.SetFloat("SnipeTarget", 1f);
             Assert.That(_dataStore.TypeMismatches, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void ForgetsEveryValueOfEveryKindWhenCleared()
+    {
+        // A pooled store is cleared and handed to its next character, which must read back nothing the last one wrote.
+        foreach (DataStoreValueType valueType in ValueTypes)
+        {
+            Write(_dataStore, valueType.ToString(), valueType);
+        }
+
+        _dataStore.Clear();
+
+        Assert.Multiple(() =>
+        {
+            foreach (DataStoreValueType valueType in ValueTypes)
+            {
+                Assert.That(TryRead(_dataStore, valueType.ToString(), valueType), Is.False, valueType.ToString());
+            }
         });
     }
 
@@ -330,6 +498,25 @@ public class DataStoreBaseSpec
         }));
     }
 
+    [Test]
+    public void WarnsAgainAboutAMismatchedNameAfterBeingCleared()
+    {
+        // A pooled store is cleared for its next character, whose mismatch under the same name is a new one.
+        _warningStore.SetInt("Ammo", 3);
+        _warningStore.TryGetFloat("Ammo", out _);
+
+        _warningStore.Clear();
+
+        _warningStore.SetInt("Ammo", 3);
+        _warningStore.TryGetFloat("Ammo", out _);
+
+        Assert.That(_logSink.Entries, Is.EqualTo(new[]
+        {
+            "Warning Guard the Ammo name was written as Int and used as Float",
+            "Warning Guard the Ammo name was written as Int and used as Float",
+        }));
+    }
+
     /// <summary>Walks the fixture's store and describes each entry as its name and the kind it reports.</summary>
     /// <remarks>
     ///     A dictionary decides the order its names come out in, which the store does not promise, so the tests that hold
@@ -345,5 +532,54 @@ public class DataStoreBaseSpec
         }
 
         return entries;
+    }
+
+    /// <summary>Writes a value of the given kind under the name, the same value for every name of that kind.</summary>
+    private void Write(DataStoreBase dataStore, AiString name, DataStoreValueType valueType)
+    {
+        switch (valueType)
+        {
+            case DataStoreValueType.Bool:
+                dataStore.SetBool(name, true);
+                break;
+            case DataStoreValueType.Int:
+                dataStore.SetInt(name, 7);
+                break;
+            case DataStoreValueType.Float:
+                dataStore.SetFloat(name, 0.5f);
+                break;
+            case DataStoreValueType.String:
+                dataStore.SetString(name, "Enemy");
+                break;
+            case DataStoreValueType.Vector3:
+                dataStore.SetVector3(name, Vector3.Zero);
+                break;
+            case DataStoreValueType.Rotation:
+                dataStore.SetRotation(name, Rotation.Identity);
+                break;
+            case DataStoreValueType.Entity:
+                dataStore.SetEntity(name, _guard);
+                break;
+            case DataStoreValueType.EntityList:
+                List<EntityBase> targets = new() { _guard };
+                dataStore.SetEntityList(name, targets);
+                break;
+        }
+    }
+
+    /// <summary>Reads the name through the getter of the given kind and reports whether the read found a value.</summary>
+    private static bool TryRead(DataStoreBase dataStore, AiString name, DataStoreValueType valueType)
+    {
+        return valueType switch
+        {
+            DataStoreValueType.Bool => dataStore.TryGetBool(name, out _),
+            DataStoreValueType.Int => dataStore.TryGetInt(name, out _),
+            DataStoreValueType.Float => dataStore.TryGetFloat(name, out _),
+            DataStoreValueType.String => dataStore.TryGetString(name, out _),
+            DataStoreValueType.Vector3 => dataStore.TryGetVector3(name, out _),
+            DataStoreValueType.Rotation => dataStore.TryGetRotation(name, out _),
+            DataStoreValueType.Entity => dataStore.TryGetEntity(name, out _),
+            _ => dataStore.TryGetEntityList(name, out _),
+        };
     }
 }
