@@ -54,20 +54,17 @@ public class GeometryHostSpec
     [Test]
     public void TurnsAHandBuiltRegion()
     {
-        // A corridor that runs along the world's X is a rectangle turned a quarter turn, which a host writes as a
-        // rotation rather than by working out the turned corners.
-        RectangleRegion corridor = new()
-        {
-            Origin = new Vector3(0f, 0f, 0f),
-            Rotation = Rotation.FromEulerAngles(0f, 90f, 0f),
-            Min = new Vector2(-2f, 0f),
-            Max = new Vector2(2f, 50f),
-        };
+        // A corridor 50 long that runs along the world's X from the origin is a rectangle reaching 25 along its
+        // forward, turned a quarter turn about its middle. Both points answer the other way with the turn left out.
+        Vector3 center = new(25f, 0f, 0f);
+        Vector2 extents = new(2f, 25f);
+
+        RectangleRegion corridor = new(center, extents) { Rotation = Rotation.FromEulerAngles(0f, 90f, 0f) };
 
         Assert.Multiple(() =>
         {
-            Assert.That(corridor.IsInRegion(new Vector3(25f, 0f, 0f)), Is.True, "along the world's X once turned");
-            Assert.That(corridor.IsInRegion(new Vector3(0f, 0f, 25f)), Is.False, "where it would lie unturned");
+            Assert.That(corridor.IsInRegion(new Vector3(45f, 0f, 0f)), Is.True, "along the world's X once turned");
+            Assert.That(corridor.IsInRegion(new Vector3(25f, 0f, 20f)), Is.False, "where it would lie unturned");
         });
     }
 

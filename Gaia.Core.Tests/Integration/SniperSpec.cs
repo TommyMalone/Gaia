@@ -58,8 +58,8 @@ public class SniperSpec
         };
         _retreatRoute = new RectangleRegion
         {
-            Min = new Vector2(-5f, -200f),
-            Max = new Vector2(5f, -10f),
+            Origin = new Vector3(0f, 0f, -105f),
+            Extents = new Vector2(5f, 95f),
         };
 
         _brain = new Brain

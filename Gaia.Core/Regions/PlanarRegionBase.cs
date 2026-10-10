@@ -5,10 +5,11 @@ namespace Gaia.Core.Regions
 {
     /// <summary>A region that is a flat shape, described in a plane of its own coordinates.</summary>
     /// <remarks>
-    ///     The shape is described in a plane of its own coordinates, so a rectangle is two <see cref="Vector2" /> corners
-    ///     and a footprint is a ring of them, and each shape's arithmetic is the flat kind whichever way it is turned. The
-    ///     plane's X is local X and its Y is local Z, so an unturned shape lies on the ground with its Y along the world's Z.
-    ///     Height is local Y, ignored by the shapes that are only a footprint and bounded by the ones that are extruded.
+    ///     The shape is described in a plane of its own coordinates, so a rectangle's half size is a
+    ///     <see cref="Vector2" /> and a footprint is a ring of Vector2 corners, and each shape's arithmetic is the flat kind
+    ///     whichever way it is turned. The plane's X is local X and its Y is local Z, so an unturned shape lies on the ground
+    ///     with its Y along the world's Z. Height is local Y, ignored by the shapes that are only a footprint and bounded by
+    ///     the ones that are extruded.
     /// </remarks>
     public abstract class PlanarRegionBase : RegionBase
     {

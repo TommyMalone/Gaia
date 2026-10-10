@@ -33,7 +33,8 @@ namespace Gaia.Core.Regions
 
         /// <summary>Describes the Position attribute <see cref="LoadFootprint" /> reads a corner by.</summary>
         private static readonly AttributeDescription PositionAttribute = CornerBuilder.Required("Position",
-            AttributeKind.Vector2, "Where the corner is in the shape's plane, measured from Origin.");
+            AttributeKind.Vector2,
+            "Where the corner is in the shape's plane, measured from Origin, the first number along the shape's right and the second along its forward, the world's X and Z while the shape is unturned.");
 
         /// <summary>Describes the Corner children <see cref="LoadFootprint" /> reads by.</summary>
         private static readonly SlotDescription CornerSlot = new("Corner", "Corner", CornerBuilder.Build(),

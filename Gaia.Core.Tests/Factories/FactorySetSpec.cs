@@ -257,7 +257,8 @@ public class FactorySetSpec
         (string typeName, string snippet, Type componentType)[] catalog =
         {
             ("Circle", """<Region Type="Circle" Origin="(0, 0, 0)" Radius="5"/>""", typeof(CircleRegion)),
-            ("Rectangle", """<Region Type="Rectangle" Min="(0, 0)" Max="(10, 10)"/>""", typeof(RectangleRegion)),
+            ("Rectangle", """<Region Type="Rectangle" Origin="(5, 0, 5)" Extents="(5, 5)"/>""",
+                typeof(RectangleRegion)),
             ("Polygon", FootprintSnippet("Polygon", ""), typeof(PolygonRegion)),
             ("Sphere", """<Region Type="Sphere" Origin="(0, 0, 0)" Radius="5"/>""", typeof(SphereRegion)),
             ("Box", """<Region Type="Box" Origin="(5, 5, 5)" Extents="(5, 5, 5)"/>""", typeof(BoxRegion)),
@@ -460,13 +461,13 @@ public class FactorySetSpec
     public void RefusesAMissingRequiredAttributeInEveryRegion()
     {
         // Origin is optional on every shape that takes one, so a bare round shape names Radius. The capsule and the
-        // cylinder name HalfHeight once given a Radius, the extruded polygon names HalfHeight, the box names Extents,
-        // and the rectangle, defined by corners, names Min.
+        // cylinder name HalfHeight once given a Radius, the extruded polygon names HalfHeight, and the box and the
+        // rectangle name Extents.
         AssertMissingAttributeRefused("Region", new[]
         {
             ("Box", "", "Extents"), ("Capsule", "", "Radius"), ("Capsule", " Radius=\"2\"", "HalfHeight"),
             ("Circle", "", "Radius"), ("Cylinder", "", "Radius"), ("Cylinder", " Radius=\"5\"", "HalfHeight"),
-            ("ExtrudedPolygon", "", "HalfHeight"), ("Rectangle", "", "Min"), ("Sphere", "", "Radius"),
+            ("ExtrudedPolygon", "", "HalfHeight"), ("Rectangle", "", "Extents"), ("Sphere", "", "Radius"),
         }, creationData => creationData.Factories.Regions.TryCreate(creationData, out _));
     }
 
