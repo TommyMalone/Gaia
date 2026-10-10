@@ -17,7 +17,7 @@ public class CapsuleRegionSpec
         _capsule = new CapsuleRegion
         {
             Origin = new Vector3(10f, 5f, 10f),
-            HalfHeight = 3f,
+            HalfHeight = 5f,
             Radius = 2f,
             RandomSource = _randomSource,
         };
@@ -68,6 +68,34 @@ public class CapsuleRegionSpec
     }
 
     [Test]
+    public void SpreadsSamplesIntoItsCaps()
+    {
+        // HalfHeight 5 and Radius 2 leave a segment reaching 3 either side of the middle at y = 5. A sample above y = 8
+        // is then in the upper cap and one below y = 2 in the lower. A sampler that guessed only in the eighth of its
+        // box past Origin would still land every sample inside the capsule and none in the lower cap, so the test asks
+        // for a sample in each cap. Each cap is 2/13 of the capsule, so the chance that 200 uniform samples all miss a
+        // given cap is (11/13) to the 200th, about 3 in 10 to the 15th.
+        const int sampleCount = 200;
+
+        bool sawInTheUpperCap = false;
+        bool sawInTheLowerCap = false;
+
+        for (int sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
+        {
+            _capsule.TryGetRandomPosition(out Vector3 position);
+
+            sawInTheUpperCap |= position.Y > 8f;
+            sawInTheLowerCap |= position.Y < 2f;
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(sawInTheUpperCap, Is.True);
+            Assert.That(sawInTheLowerCap, Is.True);
+        });
+    }
+
+    [Test]
     public void FollowsItsOriginTarget()
     {
         // The capsule is built at the default Origin, so the target's position alone places it. Each point lies 1 to
@@ -111,6 +139,69 @@ public class CapsuleRegionSpec
         {
             Assert.That(_capsule.IsInRegion(inTheCapAlongTheTilt), Is.True);
             Assert.That(_capsule.IsInRegion(aboveTheMiddle), Is.False, "the upright capsule holds it");
+        });
+    }
+
+    [Test]
+    public void MeasuresItsHalfHeightWithItsCaps()
+    {
+        // HalfHeight 5 and Radius 1 leave a segment reaching 4 either way, so the tip of the upper cap is 5 above the
+        // middle. A segment reaching HalfHeight would put the tip at 6.
+        Vector3 justUnderTheTip = new(0f, 4.9f, 0f);
+        Vector3 justOverTheTip = new(0f, 5.1f, 0f);
+
+        CapsuleRegion capsule = new()
+        {
+            HalfHeight = 5f,
+            Radius = 1f,
+        };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(capsule.IsInRegion(justUnderTheTip), Is.True);
+            Assert.That(capsule.IsInRegion(justOverTheTip), Is.False);
+        });
+    }
+
+    [Test]
+    public void SamplesInsideItselfOnceTilted()
+    {
+        _capsule.Rotation = Rotation.FromEulerAngles(45f, 0f, 0f);
+
+        RegionSpecHelpers.AssertEverySampleLandsInside(_capsule);
+    }
+
+    [Test]
+    public void ActsAsABallWhenItsHalfHeightIsUnderItsRadius()
+    {
+        // HalfHeight 1 under Radius 2 leaves no segment, so the capsule is the ball of radius 2. About a sixth of that
+        // ball lies above y = 1, where a sample box reaching only HalfHeight never puts a sample.
+        const int sampleCount = 200;
+
+        Vector3 justInsideTheBall = new(0f, 1.9f, 0f);
+        Vector3 justOutsideTheBall = new(0f, 2.1f, 0f);
+
+        CapsuleRegion capsule = new()
+        {
+            HalfHeight = 1f,
+            Radius = 2f,
+            RandomSource = _randomSource,
+        };
+
+        bool sawAboveTheHalfHeight = false;
+
+        for (int sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
+        {
+            capsule.TryGetRandomPosition(out Vector3 position);
+
+            sawAboveTheHalfHeight |= position.Y > 1f;
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(capsule.IsInRegion(justInsideTheBall), Is.True);
+            Assert.That(capsule.IsInRegion(justOutsideTheBall), Is.False);
+            Assert.That(sawAboveTheHalfHeight, Is.True, "a sample lies above y = 1");
         });
     }
 }

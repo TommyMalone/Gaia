@@ -20,12 +20,20 @@ namespace Gaia.Core.Regions
             DescribeFootprint("A footprint of any shape given a height.");
 
         private static readonly AttributeDescription HalfHeightAttribute = Builder.Required("HalfHeight",
-            AttributeKind.Float, "How far the shape reaches either side of its plane.");
+            AttributeKind.Float,
+            "How far the shape reaches either side of its plane. A negative value is read as its size.");
 
         internal static readonly ComponentDescription Description = Builder.Build();
 
+        private float _halfHeight;
+
         /// <summary>How far the region reaches either side of its plane.</summary>
-        public float HalfHeight { get; set; }
+        /// <remarks>A negative value is stored as its size, so -1.5 reads back as 1.5.</remarks>
+        public float HalfHeight
+        {
+            get => _halfHeight;
+            set => _halfHeight = MathF.Abs(value);
+        }
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)

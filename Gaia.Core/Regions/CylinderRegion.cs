@@ -23,10 +23,12 @@ namespace Gaia.Core.Regions
             "How far the cylinder reaches from its axis.");
 
         private static readonly AttributeDescription HalfHeightAttribute = Builder.Required("HalfHeight",
-            AttributeKind.Float, "How far the cylinder reaches either side of its plane.");
+            AttributeKind.Float,
+            "How far the cylinder reaches either side of its plane. A negative value is read as its size.");
 
         internal static readonly ComponentDescription Description = Builder.Add(OriginTargetSlot).Build();
 
+        private float _halfHeight;
         private float _radius;
         private float _radiusSquared;
 
@@ -44,7 +46,12 @@ namespace Gaia.Core.Regions
         }
 
         /// <summary>How far the region reaches either side of its plane.</summary>
-        public float HalfHeight { get; set; }
+        /// <remarks>A negative value is stored as its size, so -1.5 reads back as 1.5.</remarks>
+        public float HalfHeight
+        {
+            get => _halfHeight;
+            set => _halfHeight = MathF.Abs(value);
+        }
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)

@@ -73,6 +73,30 @@ public class CylinderRegionSpec
     }
 
     [Test]
+    public void SpreadsSamplesAlongItsHeight()
+    {
+        // A height pick from zero to HalfHeight would still land every sample inside the cylinder, none of them below
+        // its middle at y = 1.5, so the test asks for a sample on each side of the middle. The chance that fifty
+        // uniform samples all lie on a given side of the middle is one in 2 to the 50th.
+        bool sawLowerHalf = false;
+        bool sawUpperHalf = false;
+
+        for (int sampleIndex = 0; sampleIndex < RegionSpecHelpers.SampleCount; sampleIndex++)
+        {
+            _cylinder.TryGetRandomPosition(out Vector3 position);
+
+            sawLowerHalf |= position.Y < 1.5f;
+            sawUpperHalf |= position.Y >= 1.5f;
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(sawLowerHalf, Is.True);
+            Assert.That(sawUpperHalf, Is.True);
+        });
+    }
+
+    [Test]
     public void LiesOnItsSideWithItsRotation()
     {
         // Pitched a quarter turn, the axis runs along the world's Z, so the height bound applies to Z and the disc
@@ -182,6 +206,21 @@ public class CylinderRegionSpec
             {
                 "Error guard.xml Line 3, the Region element takes only one OriginTarget element",
             }));
+        });
+    }
+
+    [Test]
+    public void ReadsANegativeHalfHeightAsItsSize()
+    {
+        Vector3 belowTheMiddle = new(10f, 1f, 10f);
+
+        _cylinder.HalfHeight = -1.5f;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_cylinder.IsInRegion(belowTheMiddle), Is.True,
+                "a HalfHeight of -1.5 stored as given holds nothing");
+            Assert.That(_cylinder.HalfHeight, Is.EqualTo(1.5f));
         });
     }
 }

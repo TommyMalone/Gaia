@@ -117,4 +117,19 @@ public class ExtrudedPolygonRegionSpec
 
         Assert.That(line.TryGetRandomPosition(out _), Is.False);
     }
+
+    [Test]
+    public void ReadsANegativeHalfHeightAsItsSize()
+    {
+        Vector3 lowerLeftQuarterBelowThePlane = new(2f, 1f, 2f);
+
+        _extrudedPolygon.HalfHeight = -1.5f;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_extrudedPolygon.IsInRegion(lowerLeftQuarterBelowThePlane), Is.True,
+                "a HalfHeight of -1.5 stored as given holds nothing");
+            Assert.That(_extrudedPolygon.HalfHeight, Is.EqualTo(1.5f));
+        });
+    }
 }

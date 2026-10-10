@@ -260,10 +260,10 @@ public class FactorySetSpec
             ("Rectangle", """<Region Type="Rectangle" Min="(0, 0)" Max="(10, 10)"/>""", typeof(RectangleRegion)),
             ("Polygon", FootprintSnippet("Polygon", ""), typeof(PolygonRegion)),
             ("Sphere", """<Region Type="Sphere" Origin="(0, 0, 0)" Radius="5"/>""", typeof(SphereRegion)),
-            ("Box", """<Region Type="Box" Min="(0, 0, 0)" Max="(10, 10, 10)"/>""", typeof(BoxRegion)),
+            ("Box", """<Region Type="Box" Origin="(5, 5, 5)" Extents="(5, 5, 5)"/>""", typeof(BoxRegion)),
             ("Cylinder", """<Region Type="Cylinder" Origin="(0, 0, 0)" Radius="5" HalfHeight="1.5"/>""",
                 typeof(CylinderRegion)),
-            ("Capsule", """<Region Type="Capsule" Origin="(0, 0, 0)" Radius="2" HalfHeight="3"/>""",
+            ("Capsule", """<Region Type="Capsule" Origin="(0, 0, 0)" Radius="2" HalfHeight="5"/>""",
                 typeof(CapsuleRegion)),
             ("ExtrudedPolygon", FootprintSnippet("ExtrudedPolygon", " HalfHeight=\"1.5\""),
                 typeof(ExtrudedPolygonRegion)),
@@ -459,11 +459,12 @@ public class FactorySetSpec
     [Test]
     public void RefusesAMissingRequiredAttributeInEveryRegion()
     {
-        // Origin is optional on the shapes that take one and absent from Box, so a bare round shape names Radius, the
-        // two with a height name HalfHeight once given one, and the shapes defined by corners name Min.
+        // Origin is optional on every shape that takes one, so a bare round shape names Radius. The capsule and the
+        // cylinder name HalfHeight once given a Radius, the extruded polygon names HalfHeight, the box names Extents,
+        // and the rectangle, defined by corners, names Min.
         AssertMissingAttributeRefused("Region", new[]
         {
-            ("Box", "", "Min"), ("Capsule", "", "Radius"), ("Capsule", " Radius=\"2\"", "HalfHeight"),
+            ("Box", "", "Extents"), ("Capsule", "", "Radius"), ("Capsule", " Radius=\"2\"", "HalfHeight"),
             ("Circle", "", "Radius"), ("Cylinder", "", "Radius"), ("Cylinder", " Radius=\"5\"", "HalfHeight"),
             ("ExtrudedPolygon", "", "HalfHeight"), ("Rectangle", "", "Min"), ("Sphere", "", "Radius"),
         }, creationData => creationData.Factories.Regions.TryCreate(creationData, out _));

@@ -1,75 +1,74 @@
-﻿using Gaia.Core.Factories;
+﻿using System;
+using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
-using Gaia.Core.Specifications;
 
 namespace Gaia.Core.Regions
 {
-    /// <summary>A box between two corners measured from its Origin, which takes height into account.</summary>
-    /// <remarks>
-    ///     <see cref="RectangleRegion" /> with the Y axis included. TryGetRandomLocalPosition never fails, since every
-    ///     point of the box is inside it.
-    /// </remarks>
+    /// <summary>A box around its Origin, reaching Extents along its own right, up and forward.</summary>
+    /// <remarks>TryGetRandomLocalPosition never fails, since every point of the box is inside it.</remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class BoxRegion : RegionBase
     {
-        private static readonly DescriptionBuilder Builder = new(ConceptualAbstraction.Regions,
-            "A box aligned with the world's axes.");
+        private static readonly DescriptionBuilder Builder =
+            new DescriptionBuilder(ConceptualAbstraction.Regions, "A box that can be placed and turned.")
+                .Add(OriginAttribute).Add(RotationAttribute);
 
-        private static readonly AttributeDescription MinAttribute = Builder.Required("Min", AttributeKind.Vector3,
-            "The corner with the smallest X, Y and Z.");
-
-        private static readonly AttributeDescription MaxAttribute = Builder.Required("Max", AttributeKind.Vector3,
-            "The corner with the largest X, Y and Z.");
+        private static readonly AttributeDescription ExtentsAttribute = Builder.Required("Extents",
+            AttributeKind.Vector3,
+            "Half the box's size along its own right, up and forward. A negative component is read as its size.");
 
         internal static readonly ComponentDescription Description = Builder.Build();
 
-        /// <summary>Creates a box whose corners are set through Min and Max.</summary>
+        private Vector3 _extents;
+
+        /// <summary>Creates a box at the world's origin whose size is set through Extents.</summary>
         public BoxRegion()
         {
         }
 
         /// <summary>Creates a box reaching the given extents out from a center.</summary>
-        /// <param name="center">Where the middle of the box is.</param>
-        /// <param name="extents">How far the box reaches from center along each axis, half of its size in each.</param>
+        /// <param name="center">Where the middle of the box is, which becomes Origin.</param>
+        /// <param name="extents">
+        ///     How far the box reaches from center along each of its own axes, half of its size along each, a
+        ///     negative component read as its size.
+        /// </param>
         public BoxRegion(Vector3 center, Vector3 extents)
         {
-            Min = center - extents;
-            Max = center + extents;
+            Origin = center;
+            Extents = extents;
         }
 
-        /// <summary>The corner with the smallest X, Y and Z, measured from Origin.</summary>
-        public Vector3 Min { get; set; }
-
-        /// <summary>The corner with the largest X, Y and Z, measured from Origin.</summary>
-        public Vector3 Max { get; set; }
+        /// <summary>How far the box reaches from Origin along its own right, up and forward, half of its size along each.</summary>
+        /// <remarks>A negative component is stored as its size, so (-5, 1, 1) reads back as (5, 1, 1).</remarks>
+        public Vector3 Extents
+        {
+            get => _extents;
+            set => _extents = new Vector3(MathF.Abs(value.X), MathF.Abs(value.Y), MathF.Abs(value.Z));
+        }
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            SpecificationNode node = creationData.Node;
-
-            if (!node.ReadVector3(MinAttribute.Name, out Vector3 min) ||
-                !node.ReadVector3(MaxAttribute.Name, out Vector3 max))
+            if (!creationData.Node.ReadVector3(ExtentsAttribute.Name, out Vector3 extents))
             {
                 return false;
             }
 
-            Min = min;
-            Max = max;
+            Extents = extents;
             return true;
         }
 
         /// <inheritdoc />
         protected override bool IsInShape(Vector3 local)
         {
-            return local.X >= Min.X && local.X <= Max.X && local.Y >= Min.Y && local.Y <= Max.Y && local.Z >= Min.Z &&
-                   local.Z <= Max.Z;
+            return MathF.Abs(local.X) <= Extents.X && MathF.Abs(local.Y) <= Extents.Y &&
+                   MathF.Abs(local.Z) <= Extents.Z;
         }
 
         /// <inheritdoc />
         protected override bool TryGetRandomLocalPosition(out Vector3 local)
         {
-            local = MathHelpers.RandomInBox(RandomSource, Min, Max);
+            local = MathHelpers.RandomInBox(RandomSource, Vector3.Zero - Extents, Extents);
 
             return true;
         }

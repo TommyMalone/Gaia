@@ -39,8 +39,8 @@ public class GeometryHostSpec
     {
         BoxRegion spawnArea = new()
         {
-            Min = new Vector3(-5f, 0f, -5f),
-            Max = new Vector3(5f, 2f, 5f),
+            Origin = new Vector3(0f, 1f, 0f),
+            Extents = new Vector3(5f, 1f, 5f),
             RandomSource = new Xoshiro128RandomSource(7),
         };
 
@@ -74,14 +74,60 @@ public class GeometryHostSpec
     [Test]
     public void BuildsABoxFromItsCenterAndExtents()
     {
-        // A spawn volume is usually given as a point and a half size, so a host builds one that way rather than
-        // working out the corners itself.
-        BoxRegion spawnArea = new(new Vector3(0f, 1f, 0f), new Vector3(5f, 1f, 5f));
+        Vector3 center = new(0f, 1f, 0f);
+        Vector3 extents = new(5f, 1f, 5f);
+
+        BoxRegion spawnArea = new(center, extents);
 
         Assert.Multiple(() =>
         {
-            Assert.That(spawnArea.Min, Is.EqualTo(new Vector3(-5f, 0f, -5f)));
-            Assert.That(spawnArea.Max, Is.EqualTo(new Vector3(5f, 2f, 5f)));
+            Assert.That(spawnArea.Origin, Is.EqualTo(center));
+            Assert.That(spawnArea.Extents, Is.EqualTo(extents));
+            Assert.That(spawnArea.IsInRegion(center), Is.True);
+        });
+    }
+
+    [Test]
+    public void TurnsAHandBuiltBox()
+    {
+        // The box reaches 10 along its own right and 1 along its up and its forward. A quarter turn right swings its
+        // length from the world's X onto the world's Z.
+        Vector3 alongTheTurnedLength = new(0f, 1f, -8f);
+        Vector3 alongTheUnturnedLength = new(8f, 1f, 0f);
+
+        BoxRegion plank = new()
+        {
+            Origin = new Vector3(0f, 1f, 0f),
+            Extents = new Vector3(10f, 1f, 1f),
+            Rotation = Rotation.FromEulerAngles(0f, 90f, 0f),
+        };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(plank.IsInRegion(alongTheTurnedLength), Is.True, "along the world's Z once turned");
+            Assert.That(plank.IsInRegion(alongTheUnturnedLength), Is.False, "where it would lie unturned");
+        });
+    }
+
+    [Test]
+    public void LaysACapsuleAlongATiltedAxis()
+    {
+        // HalfHeight 5 and Radius 1 leave a segment reaching 4 from the middle. Pitched 45 degrees, the capsule's up
+        // leans toward the world's Z. The point in the cap lies on that axis 4.53 from the middle.
+        Vector3 inTheCapAlongTheTilt = new(0f, 3.2f, 3.2f);
+        Vector3 straightAboveTheMiddle = new(0f, 4.9f, 0f);
+
+        CapsuleRegion capsule = new()
+        {
+            HalfHeight = 5f,
+            Radius = 1f,
+            Rotation = Rotation.FromEulerAngles(45f, 0f, 0f),
+        };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(capsule.IsInRegion(inTheCapAlongTheTilt), Is.True);
+            Assert.That(capsule.IsInRegion(straightAboveTheMiddle), Is.False, "the upright capsule holds it");
         });
     }
 

@@ -62,6 +62,33 @@ public class SphereRegionSpec
     }
 
     [Test]
+    public void SamplesBelowItsOriginAlongEveryAxis()
+    {
+        // A sampler that guessed from zero to Radius along each axis would still land every sample inside the ball, in
+        // the eighth of it past Origin, so the test asks for a sample below Origin on each axis. The chance that fifty
+        // uniform samples all lie past Origin on one axis is one in 2 to the 50th.
+        bool sawBelowOriginAlongX = false;
+        bool sawBelowOriginAlongY = false;
+        bool sawBelowOriginAlongZ = false;
+
+        for (int sampleIndex = 0; sampleIndex < RegionSpecHelpers.SampleCount; sampleIndex++)
+        {
+            _sphere.TryGetRandomPosition(out Vector3 position);
+
+            sawBelowOriginAlongX |= position.X < 10f;
+            sawBelowOriginAlongY |= position.Y < 0f;
+            sawBelowOriginAlongZ |= position.Z < 10f;
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(sawBelowOriginAlongX, Is.True);
+            Assert.That(sawBelowOriginAlongY, Is.True);
+            Assert.That(sawBelowOriginAlongZ, Is.True);
+        });
+    }
+
+    [Test]
     public void ContainsNothingWhenItsOriginTargetHasNoPosition()
     {
         Vector3 initialOrigin = new(10f, 0f, 10f);
