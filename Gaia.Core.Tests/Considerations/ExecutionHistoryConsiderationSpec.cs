@@ -216,6 +216,22 @@ public class ExecutionHistoryConsiderationSpec
     }
 
     [Test]
+    public void RetainsNothingFromAnOptionSelectedAtRankZero()
+    {
+        // Rank 0 is the rank guard.xml gives Patrol. The WhileRunning function reports a rank of float.MinValue, so
+        // even a kept rank of 0 would raise it. Only a rank above 0 is kept.
+        WeightValues rankZero = new(0f, 1f, 0f);
+        _rankConsideration.Set(rankZero);
+        _consideration.RankRetentionFactor = 1f;
+
+        SelectTheOption();
+
+        _consideration.Calculate();
+
+        Assert.That(_consideration.Weights, Is.EqualTo(_whileRunningWeights));
+    }
+
+    [Test]
     public void StopsRetainingRankOnceTheActionsAreFinished()
     {
         // Retention applies only while the option's IsDone is false. Once IsDone is true, FinishedWeightFunction alone
@@ -260,6 +276,30 @@ public class ExecutionHistoryConsiderationSpec
         _consideration.Calculate();
 
         Assert.That(_whileRunningWeightFunction.LastFloat, Is.EqualTo(RunningTime.Value));
+    }
+
+    [Test]
+    public void IgnoresTimeThatPassedBeforeItsOptionWasSelected()
+    {
+        // An option selected at 0 makes the time since selection equal to the clock's reading, so here the clock runs
+        // before the selection.
+        Seconds timeBeforeSelection = new(100f);
+        _timeSource.Advance(timeBeforeSelection);
+
+        _consideration.Select();
+
+        _timeSource.Advance(RunningTime);
+
+        _consideration.Calculate();
+
+        _action.SetDone(true);
+        _consideration.Calculate();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_whileRunningWeightFunction.LastFloat, Is.EqualTo(RunningTime.Value));
+            Assert.That(_finishedWeightFunction.LastFloat, Is.EqualTo(RunningTime.Value));
+        });
     }
 
     [Test]
@@ -423,6 +463,33 @@ public class ExecutionHistoryConsiderationSpec
     }
 
     [Test]
+    public void LoadsARetentionFactorOfZeroAndOfOne()
+    {
+        // The two ends of the range loading accepts. 0 keeps none of the rank, and 1 keeps all of it, which is the
+        // Commit pattern.
+        const string noneKeptSnippet = """
+                                       <Consideration Type="ExecutionHistory" RankRetentionFactor="0"/>
+                                       """;
+        const string allKeptSnippet = """
+                                      <Consideration Type="ExecutionHistory" RankRetentionFactor="1"/>
+                                      """;
+        AiCreationData noneKeptData = LoadingSpecHelpers.ParseForLoad(noneKeptSnippet, _logSink);
+        AiCreationData allKeptData = LoadingSpecHelpers.ParseForLoad(allKeptSnippet, _logSink);
+
+        ExecutionHistoryConsideration keepsNone = new();
+        ExecutionHistoryConsideration keepsAll = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(keepsNone.Init(noneKeptData), Is.True);
+            Assert.That(keepsNone.RankRetentionFactor, Is.EqualTo(0f));
+            Assert.That(keepsAll.Init(allKeptData), Is.True);
+            Assert.That(keepsAll.RankRetentionFactor, Is.EqualTo(1f));
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
     public void LoadsItsRoleWeightFunctionsAndRetention()
     {
         const string snippet = """
@@ -471,6 +538,37 @@ public class ExecutionHistoryConsiderationSpec
             {
                 "Error guard.xml Line 2, the Finished element's type Boolean does not convert a float",
             }));
+        });
+    }
+
+    [Test]
+    public void RefusesARoleFunctionThatFailsToLoad()
+    {
+        // Each role holds a Constant whose Addend does not read, so the function fails its own load and the
+        // consideration has to pass that failure up.
+        string[] roles = { "WhileRunning", "Finished", "NeverRun", "SinceLastRun" };
+
+        Assert.Multiple(() =>
+        {
+            foreach (string role in roles)
+            {
+                RecordingLogSink logSink = new();
+                string snippet = $"""
+                                  <Consideration Type="ExecutionHistory">
+                                      <{role} Type="Constant" Addend="many"/>
+                                  </Consideration>
+                                  """;
+                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+                ExecutionHistoryConsideration loaded = new();
+
+                Assert.That(loaded.Init(creationData), Is.False, role);
+                Assert.That(logSink.Entries, Is.EqualTo(new[]
+                {
+                    $"Error guard.xml Line 2, the {role} element's Addend is not a number, it reads \"many\"",
+                    $"Error guard.xml Line 2, the {role} element's type Constant failed to initialize",
+                }), role);
+            }
         });
     }
 }

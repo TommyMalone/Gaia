@@ -87,6 +87,33 @@ public class Xoshiro128RandomSourceSpec
     }
 
     [Test]
+    public void ReturnsTheLowerBoundForAnEmptyRange()
+    {
+        Assert.That(_source.NextInt(5, 5), Is.EqualTo(5));
+    }
+
+    [Test]
+    public void ReproducesTheReferenceValuesOfAKnownSeed()
+    {
+        // Seed 1's values, computed from the published xoshiro128**, splitmix64 and djb2 definitions outside this
+        // codebase. The range from int.MinValue to 2 to the 30th spans 3 times 2 to the 30th, so its rejection
+        // threshold is 2 to the 30th. Seed 1 is chosen because its first three values for that range fall below the
+        // threshold and are drawn again, where seed 7 keeps its first.
+        const int referenceSeed = 1;
+        AiString asterName = "Aster";
+
+        Xoshiro128RandomSource source = new(referenceSeed);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(source.NextInt(), Is.EqualTo(847552733));
+            Assert.That(source.NextInt(10, 20), Is.EqualTo(19));
+            Assert.That(source.NextInt(int.MinValue, 1 << 30), Is.EqualTo(-1182203801));
+            Assert.That(Xoshiro128RandomSource.DeriveSeed(referenceSeed, asterName), Is.EqualTo(1494917191));
+        });
+    }
+
+    [Test]
     public void DerivesAStreamSeedFromAMasterAndAName()
     {
         AiString asterName = "Aster";

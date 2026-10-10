@@ -88,6 +88,22 @@ public class FloatSequenceWeightFunctionSpec
     }
 
     [Test]
+    public void RollsNothingForAnEntryWithAFixedThreshold()
+    {
+        // A seeded brain replays its run only while every selection takes the same rolls. A source that took nothing
+        // rolls next what an untouched source of the same seed rolls first.
+        const int seed = 42;
+
+        Xoshiro128RandomSource randomSource = new(seed);
+        Xoshiro128RandomSource untouchedSource = new(seed);
+        _weightFunction.RandomSource = randomSource;
+
+        _weightFunction.Select();
+
+        Assert.That(randomSource.NextFloat(), Is.EqualTo(untouchedSource.NextFloat()));
+    }
+
+    [Test]
     public void RollsARandomizedEntryAsItIsAdded()
     {
         FloatSequenceWeightFunction weightFunction = new(WeightValues.Vetoed);
@@ -266,6 +282,28 @@ public class FloatSequenceWeightFunctionSpec
     }
 
     [Test]
+    public void RefusesARerollOnSelectThatIsNotABoolean()
+    {
+        const string snippet = """
+                               <WeightFunction Type="FloatSequence">
+                                   <Entry ThresholdMin="10" ThresholdMax="20" RerollOnSelect="sometimes" Multiplier="0"/>
+                               </WeightFunction>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        FloatSequenceWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 2, the Entry element's RerollOnSelect is not true or false, it reads \"sometimes\"",
+            }));
+        });
+    }
+
+    [Test]
     public void LoadsAnEntryThatHoldsItsFirstRoll()
     {
         const string snippet = """
@@ -293,6 +331,34 @@ public class FloatSequenceWeightFunctionSpec
     }
 
     [Test]
+    public void RerollsALoadedRangeOnSelectUnlessToldNotTo()
+    {
+        const string snippet = """
+                               <WeightFunction Type="FloatSequence">
+                                   <Entry ThresholdMin="10" ThresholdMax="20" Multiplier="0"/>
+                               </WeightFunction>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+        creationData.RandomSource = new FixedRandomSource(0.5f);
+
+        FloatSequenceWeightFunction loaded = new();
+
+        Assert.That(loaded.Init(creationData), Is.True);
+
+        // Loading rolled the threshold to 15. The entry writes no RerollOnSelect, so a selection under a source of 0.9
+        // rolls it again, to 19.
+        loaded.RandomSource = new FixedRandomSource(0.9f);
+        loaded.Select();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.CalculateFloat(18.5f), Is.EqualTo(WeightValues.Vetoed), "the entry rolled 19");
+            Assert.That(loaded.CalculateFloat(19.5f), Is.EqualTo(WeightValues.Neutral));
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
     public void RefusesAnEntryMixingItsThresholdForms()
     {
         const string snippet = """
@@ -311,6 +377,39 @@ public class FloatSequenceWeightFunctionSpec
             {
                 "Error guard.xml Line 2, the Entry element mixes Threshold with ThresholdMin and ThresholdMax",
             }));
+        });
+    }
+
+    [Test]
+    public void RefusesAnEntryWithNoThresholdOrHalfARange()
+    {
+        (string entry, string missingAttribute)[] cases =
+        {
+            ("""<Entry Multiplier="0"/>""", "Threshold"),
+            ("""<Entry ThresholdMin="10" Multiplier="0"/>""", "ThresholdMax"),
+            ("""<Entry ThresholdMax="20" Multiplier="0"/>""", "ThresholdMin"),
+        };
+
+        Assert.Multiple(() =>
+        {
+            foreach ((string entry, string missingAttribute) in cases)
+            {
+                RecordingLogSink logSink = new();
+                string snippet = $"""
+                                  <WeightFunction Type="FloatSequence">
+                                      {entry}
+                                  </WeightFunction>
+                                  """;
+                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+                FloatSequenceWeightFunction loaded = new();
+
+                Assert.That(loaded.Init(creationData), Is.False, entry);
+                Assert.That(logSink.Entries, Is.EqualTo(new[]
+                {
+                    $"Error guard.xml Line 2, the Entry element has no {missingAttribute} attribute",
+                }), entry);
+            }
         });
     }
 
@@ -334,6 +433,53 @@ public class FloatSequenceWeightFunctionSpec
             {
                 "Error guard.xml Line 3, the Entry element is out of order, it starts at 50 and the entry before it reaches 300",
             }));
+        });
+    }
+
+    [Test]
+    public void RefusesAnEntryThatStartsInsideTheRolledRangeBeforeIt()
+    {
+        // A source of 0 rolls the range to 10, so 15 starts above the rolled threshold and inside the range. A check
+        // against the rolled threshold would pass the entry on to AddEntry, which throws.
+        const string snippet = """
+                               <WeightFunction Type="FloatSequence">
+                                   <Entry ThresholdMin="10" ThresholdMax="20" Multiplier="0"/>
+                                   <Entry Threshold="15" Addend="1"/>
+                               </WeightFunction>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+        creationData.RandomSource = new FixedRandomSource(0f);
+
+        FloatSequenceWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 3, the Entry element is out of order, it starts at 15 and the entry before it reaches 20",
+            }));
+        });
+    }
+
+    [Test]
+    public void LoadsAnEntryStartingWhereTheRangeBeforeItEnds()
+    {
+        // Bands that touch are what a designer writes, each starting where the one before it ends.
+        const string snippet = """
+                               <WeightFunction Type="FloatSequence">
+                                   <Entry ThresholdMin="10" ThresholdMax="20" Multiplier="0"/>
+                                   <Entry Threshold="20" Addend="1"/>
+                               </WeightFunction>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        FloatSequenceWeightFunction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 

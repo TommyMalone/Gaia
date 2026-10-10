@@ -251,6 +251,39 @@ public class RuleBasedReasonerSpec
     }
 
     [Test]
+    public void CallsOnDisableOnceItsOptionIsDeselected()
+    {
+        // The hook's remarks promise it runs after SelectedOption has been deselected, so the record shows the action's
+        // Deselect before it.
+        RecordAction patrolAction = new("Patrol", _executed, false);
+        StubOption patrolOption = new([], [patrolAction]);
+
+        DisableRecordingReasoner reasoner = new(_executed);
+        reasoner.AddOption(patrolOption);
+        reasoner.Enable();
+
+        reasoner.Update();
+
+        reasoner.Disable();
+
+        Assert.That(_executed, Is.EqualTo(new[]
+        {
+            // @formatter:off
+            "Patrol.Select", "Patrol.Update",
+            "Patrol.Deselect", "Reasoner.OnDisable",
+            // @formatter:on
+        }));
+    }
+
+    [Test]
+    public void HoldsNoOptionsOnceCleared()
+    {
+        _ruleBasedReasoner.Clear();
+
+        Assert.That(_ruleBasedReasoner.Options, Is.Empty);
+    }
+
+    [Test]
     public void LoadsItsOptionsAndRunsTheFirstValidOne()
     {
         const string snippet = """
@@ -331,5 +364,23 @@ public class RuleBasedReasonerSpec
                 "Warning  Line 4, the Option element shares the name Idle with an earlier option, their log lines and records cannot be told apart",
             }));
         });
+    }
+
+    /// <summary>A reasoner that appends "Reasoner.OnDisable" to a log each time its OnDisable hook runs.</summary>
+    private sealed class DisableRecordingReasoner : RuleBasedReasoner
+    {
+        private readonly List<string> _log;
+
+        /// <summary>Creates a reasoner that appends to the given log.</summary>
+        public DisableRecordingReasoner(List<string> log)
+        {
+            _log = log;
+        }
+
+        /// <summary>Records "Reasoner.OnDisable".</summary>
+        protected override void OnDisable()
+        {
+            _log.Add("Reasoner.OnDisable");
+        }
     }
 }

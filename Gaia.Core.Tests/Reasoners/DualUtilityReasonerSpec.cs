@@ -122,6 +122,29 @@ public class DualUtilityReasonerSpec
     }
 
     [Test]
+    public void RollsNothingWhenEveryOptionIsVetoed()
+    {
+        // A seeded brain replays its run only while every cycle takes the same rolls. A source that took nothing rolls
+        // next what an untouched source of the same seed rolls first.
+        const int seed = 42;
+
+        _firstConsideration.Set(_vetoedWithALargeAddend);
+        _secondConsideration.Set(_vetoedWithALargeAddend);
+
+        Xoshiro128RandomSource randomSource = new(seed);
+        Xoshiro128RandomSource untouchedSource = new(seed);
+        _dualUtilityReasoner.RandomSource = randomSource;
+
+        _dualUtilityReasoner.Update();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(randomSource.NextFloat(), Is.EqualTo(untouchedSource.NextFloat()));
+            Assert.That(_dualUtilityReasoner.LastDecisionRoll, Is.EqualTo(0f));
+        });
+    }
+
+    [Test]
     public void IgnoresLowerRanksNoMatterHowMuchTheyWeigh()
     {
         // Step 2. Rank is a hard tier boundary, so the option weighing a hundred times more never gets considered.
@@ -158,6 +181,27 @@ public class DualUtilityReasonerSpec
     }
 
     [Test]
+    public void ChoosesOnlyAmongTheHeaviestOptionsWithAScreeningFactorOfOne()
+    {
+        // A factor of 1 puts the threshold at the best weight itself, so the heaviest option survives by meeting it
+        // exactly. Second is the heavier, and without screening a roll of 0 would land on First.
+        _firstConsideration.Set(_lightWeight);
+        _secondConsideration.Set(_heavyWeight);
+
+        _dualUtilityReasoner.WeightScreeningFactor = 1f;
+
+        _dualUtilityReasoner.Update();
+
+        Assert.That(_dualUtilityReasoner.SelectedOption, Is.SameAs(_secondOption), "a roll of 0");
+
+        _dualUtilityReasoner.RandomSource = new FixedRandomSource(0.99f);
+
+        _dualUtilityReasoner.Update();
+
+        Assert.That(_dualUtilityReasoner.SelectedOption, Is.SameAs(_secondOption), "a roll of 0.99");
+    }
+
+    [Test]
     public void LandsOnTheHeavierOptionForALowRoll()
     {
         // Step 4. Weights of 3 and 1 give a total of 4. A roll of 0 falls inside First's share of [0, 3).
@@ -179,6 +223,21 @@ public class DualUtilityReasonerSpec
         _secondConsideration.Set(_lightWeight);
 
         _dualUtilityReasoner.RandomSource = new FixedRandomSource(0.9f);
+
+        _dualUtilityReasoner.Update();
+
+        Assert.That(_executed, Is.EqualTo(new[] { "Second.Select", "Second.Update" }));
+    }
+
+    [Test]
+    public void GivesARollOnABoundaryBetweenTwoOptionsToTheLaterOne()
+    {
+        // Two weights of 1 give First the roll range [0, 1) and Second [1, 2), and a roll of 0.5 lands at 1 exactly.
+        // Which option a roll on a boundary goes to decides what a seeded brain replays.
+        _firstConsideration.Set(_lightWeight);
+        _secondConsideration.Set(_lightWeight);
+
+        _dualUtilityReasoner.RandomSource = new FixedRandomSource(0.5f);
 
         _dualUtilityReasoner.Update();
 
@@ -383,6 +442,26 @@ public class DualUtilityReasonerSpec
     }
 
     [Test]
+    public void RefusesAScreeningFactorThatIsNotANumber()
+    {
+        const string snippet = """
+                               <Reasoner Type="DualUtility" WeightScreeningFactor="most"/>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        DualUtilityReasoner loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Reasoner element's WeightScreeningFactor is not a number, it reads \"most\"",
+            }));
+        });
+    }
+
+    [Test]
     public void LoadsItsScreeningFactorAndRandomSource()
     {
         const string snippet = """
@@ -400,6 +479,32 @@ public class DualUtilityReasonerSpec
             Assert.That(loaded.Init(creationData), Is.True);
             Assert.That(loaded.WeightScreeningFactor, Is.EqualTo(0.6f));
             Assert.That(loaded.RandomSource, Is.SameAs(randomSource));
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void LoadsAScreeningFactorOfZeroAndOfOne()
+    {
+        // The two ends of the range loading accepts. 0 screens out nothing, and 1 keeps the best weight alone.
+        const string noScreeningSnippet = """
+                                          <Reasoner Type="DualUtility" WeightScreeningFactor="0"/>
+                                          """;
+        const string bestAloneSnippet = """
+                                        <Reasoner Type="DualUtility" WeightScreeningFactor="1"/>
+                                        """;
+        AiCreationData noScreeningData = LoadingSpecHelpers.ParseForLoad(noScreeningSnippet, _logSink);
+        AiCreationData bestAloneData = LoadingSpecHelpers.ParseForLoad(bestAloneSnippet, _logSink);
+
+        DualUtilityReasoner screensNothing = new();
+        DualUtilityReasoner keepsTheBestAlone = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(screensNothing.Init(noScreeningData), Is.True);
+            Assert.That(screensNothing.WeightScreeningFactor, Is.EqualTo(0f));
+            Assert.That(keepsTheBestAlone.Init(bestAloneData), Is.True);
+            Assert.That(keepsTheBestAlone.WeightScreeningFactor, Is.EqualTo(1f));
             Assert.That(_logSink.Entries, Is.Empty);
         });
     }

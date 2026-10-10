@@ -2,6 +2,7 @@
 using Gaia.Core.Entities;
 using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
+using Gaia.Core.Services.Diagnostics;
 using Gaia.Core.Strings;
 using Gaia.Core.Tests.Helpers;
 
@@ -137,6 +138,24 @@ public class BrainSpec
     }
 
     [Test]
+    public void CountsNoCyclesWhileDisabled()
+    {
+        // The monitor's count numbers the cycles in the decision history. An Update on a disabled brain runs no cycle,
+        // so it leaves the count where it was.
+        MonitorSettings settings = new();
+        BrainMonitor monitor = new(settings);
+        _brain.Monitor = monitor;
+
+        _brain.Enable();
+        _brain.Update();
+        _brain.Disable();
+
+        _brain.Update();
+
+        Assert.That(monitor.CycleIndex, Is.EqualTo(1));
+    }
+
+    [Test]
     public void StartsAgainWhenReEnabled()
     {
         _brain.Enable();
@@ -155,17 +174,21 @@ public class BrainSpec
     public void EnablesOnlyOnce()
     {
         // A second Enable must not restart the reasoner. A SequenceReasoner makes that observable, since enabling one
-        // puts it back at its first option. The sequence here is mid-run on Second, having passed its instantaneous
-        // First in the first cycle, so a restart would show First selected again instead of the sequence finishing.
+        // puts it back at its first option. The sequence here is mid-run on Third, having passed its instantaneous
+        // First and Second in the first cycle. A restart would set its position back to First, so stepping on once
+        // Third finishes would land on Second and replay it instead of finishing the sequence.
         RecordAction firstAction = new("First", _executed);
-        RecordAction secondAction = new("Second", _executed, false);
+        RecordAction secondAction = new("Second", _executed);
+        RecordAction thirdAction = new("Third", _executed, false);
 
         StubOption firstStep = new([], [firstAction]);
         StubOption secondStep = new([], [secondAction]);
+        StubOption thirdStep = new([], [thirdAction]);
 
         SequenceReasoner sequence = new();
         sequence.AddOption(firstStep);
         sequence.AddOption(secondStep);
+        sequence.AddOption(thirdStep);
 
         Brain brain = new() { RootReasoner = sequence };
 
@@ -175,15 +198,15 @@ public class BrainSpec
 
         brain.Enable();
 
-        secondAction.SetDone(true);
+        thirdAction.SetDone(true);
         brain.Update();
 
         Assert.That(_executed, Is.EqualTo(new[]
         {
             // @formatter:off
-            "First.Select", "First.Deselect", "Second.Select", "Second.Update",
-            "Second.Update",
-            "Second.Deselect",
+            "First.Select", "First.Deselect", "Second.Select", "Second.Deselect", "Third.Select", "Third.Update",
+            "Third.Update",
+            "Third.Deselect",
             // @formatter:on
         }));
     }
