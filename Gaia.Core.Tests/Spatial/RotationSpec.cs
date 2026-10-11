@@ -166,6 +166,20 @@ public class RotationSpec
     }
 
     [Test]
+    public void MultipliesTwoTurnsOffTheAxes()
+    {
+        // No component of either turn is zero, so every term of the product counts. A yaw and a pitch each have two
+        // zero components, and most terms of their product multiply a zero. Swapping the sign of such a term changes
+        // nothing, and neither does dividing the zero by the other factor in place of multiplying the two. Both turns
+        // have length 1, and the product was worked by hand.
+        Rotation firstTurn = new(0.1f, 0.5f, 0.7f, 0.5f);
+        Rotation secondTurn = new(0.5f, 0.7f, 0.1f, 0.5f);
+        Rotation workedByHand = new(-0.14f, 0.94f, 0.22f, -0.22f);
+
+        AssertNearly(firstTurn * secondTurn, workedByHand);
+    }
+
+    [Test]
     public void BuildsNoRotationFromNoAngles()
     {
         Assert.That(Rotation.FromEulerAngles(0f, 0f, 0f), Is.EqualTo(Rotation.Identity));

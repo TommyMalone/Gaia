@@ -103,6 +103,20 @@ public class TransformSpec
     }
 
     [Test]
+    public void UndoesItsStretchWhenBringingAPositionIn()
+    {
+        // No scale is 1, so multiplying a distance by its scale gives another answer than dividing it. No two scales
+        // match, so dividing by the wrong axis's scale does too. With no turn each local axis lies along the world's.
+        Vector3 differentStretchAlongEachAxis = new(2f, 4f, 8f);
+        Transform stretched = new(Vector3.Zero, Rotation.Identity, differentStretchAlongEachAxis);
+        Vector3 position = new(2f, 4f, 8f);
+
+        Vector3 oneAlongEachAxis = new(1f, 1f, 1f);
+
+        AssertNearly(stretched.ToLocal(position), oneAlongEachAxis);
+    }
+
+    [Test]
     public void ComposesScalesAxisByAxis()
     {
         // Neither transform is turned, which is a case the axis-by-axis product composes exactly. The parent stretches
@@ -124,6 +138,24 @@ public class TransformSpec
             AssertNearly(placed.Scale, multipliedScale);
             AssertNearly(placed.Origin, originStretchedAlongY);
         });
+    }
+
+    [Test]
+    public void MultipliesTheScalesOfAllThreeAxes()
+    {
+        // Neither transform has a scale of 1 on any axis, so dividing the two scales on an axis gives another answer
+        // than multiplying them. Neither transform is turned, a case the axis-by-axis product composes exactly.
+        Vector3 parentScale = new(2f, 3f, 4f);
+        Transform parent = new(Vector3.Zero, Rotation.Identity, parentScale);
+
+        Vector3 localScale = new(5f, 6f, 7f);
+        Transform local = new(Vector3.Zero, Rotation.Identity, localScale);
+
+        Transform placed = parent.ToWorld(local);
+
+        Vector3 multipliedScale = new(10f, 18f, 28f);
+
+        AssertNearly(placed.Scale, multipliedScale);
     }
 
     [Test]
@@ -151,6 +183,48 @@ public class TransformSpec
             Assert.That(stretched != unstretched, Is.True);
             Assert.That(stretched.Scale, Is.EqualTo(twiceAlongUp));
             Assert.That(unstretched.Scale, Is.EqualTo(noStretch));
+        });
+    }
+
+    [Test]
+    public void EqualsOnlyATransformWithTheSameOriginTurnAndScale()
+    {
+        // The moved transform differs from the stretched one in its origin alone, and the unturned one in its turn
+        // alone. A comparison that took a match in either part as enough would call one of them equal.
+        // EqualsAnotherTransformWithTheSameParts tells two transforms apart by Scale alone.
+        Vector3 origin = new(3f, -2f, 5f);
+        Rotation quarterTurnRight = Rotation.FromEulerAngles(0f, 90f, 0f);
+        Vector3 twiceAlongUp = new(1f, 2f, 1f);
+        Transform stretched = new(origin, quarterTurnRight, twiceAlongUp);
+
+        Vector3 oneFurtherAlongX = new(4f, -2f, 5f);
+        Transform moved = new(oneFurtherAlongX, quarterTurnRight, twiceAlongUp);
+        Transform unturned = new(origin, Rotation.Identity, twiceAlongUp);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(stretched == moved, Is.False);
+            Assert.That(stretched != moved, Is.True);
+            Assert.That(stretched == unturned, Is.False);
+            Assert.That(stretched != unturned, Is.True);
+        });
+    }
+
+    [Test]
+    public void EqualsTheSameTransformArrivingBoxed()
+    {
+        Vector3 origin = new(3f, -2f, 5f);
+        Rotation quarterTurnRight = Rotation.FromEulerAngles(0f, 90f, 0f);
+        Vector3 twiceAlongUp = new(1f, 2f, 1f);
+        object boxedSameStretched = new Transform(origin, quarterTurnRight, twiceAlongUp);
+        Transform stretched = new(origin, quarterTurnRight, twiceAlongUp);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(stretched.Equals(boxedSameStretched), Is.True);
+
+            // A value of another type is never equal, not even the transform's own origin.
+            Assert.That(stretched.Equals(origin), Is.False);
         });
     }
 
