@@ -160,6 +160,19 @@ public class DataStoreBaseSpec
     }
 
     [Test]
+    public void LeavesTheEmptyStringForANameItHoldsNoStringUnder()
+    {
+        bool isFound = _dataStore.TryGetString("Target", out AiString target);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(isFound, Is.False);
+            Assert.That(target, Is.EqualTo(AiString.Empty));
+            Assert.That(target.IsEmpty, Is.True);
+        });
+    }
+
+    [Test]
     public void ReportsAPlainMissForANameItDoesNotHold()
     {
         // Each read misses on a store that has had a name written to it, so its index of names and kinds exists. What

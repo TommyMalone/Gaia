@@ -31,7 +31,7 @@ namespace Gaia.Core.Services.Diagnostics
     ///         cycle is not read as a whole one.
     ///     </para>
     /// </remarks>
-    public class ReasonerMonitor
+    public sealed class ReasonerMonitor
     {
         private long _cycleIndex;
         private int _cyclesNothingSelected;

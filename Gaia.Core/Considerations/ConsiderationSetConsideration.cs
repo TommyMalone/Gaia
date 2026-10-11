@@ -55,13 +55,9 @@ namespace Gaia.Core.Considerations
             return _set.Init(creationData);
         }
 
-        /// <summary>
-        ///     Passes the option down to the contained <see cref="ConsiderationSet" /> through its AttachTo, so nested
-        ///     considerations know it too.
-        /// </summary>
-        internal override void AttachTo(OptionBase option)
+        /// <inheritdoc />
+        protected override void OnAttach(OptionBase option)
         {
-            base.AttachTo(option);
             _set.AttachTo(option);
         }
 

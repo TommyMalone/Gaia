@@ -26,7 +26,10 @@ namespace Gaia.Core.HostSpecs;
 ///     a weight function, a target and an action the loader builds, each of which overrides only what it answers with.
 ///     RefusesAChildOfAComponentThatWritesNoOnInit covers what the factory does with a child element such a component's
 ///     description has no slot for. LoadsAGameWeightedConsiderationThroughTheSharedSlot covers a game's weighted
-///     consideration adding the WeightFunction slot its base reads.
+///     consideration adding the WeightFunction slot its base reads. PassesItsOptionToTheConsiderationsAGameGroupHolds
+///     covers a game's own group, which passes its option to what it holds through OnAttach and AttachChild, and
+///     PassesItsOptionThroughAGameGroupHeldByAnother covers a game's group held by another, where AttachChild runs the
+///     held group's OnAttach, so the option reaches what the held group holds.
 /// </remarks>
 [TestFixture]
 public class GameDefinedConsiderationHostSpec
@@ -191,6 +194,36 @@ public class GameDefinedConsiderationHostSpec
         });
     }
 
+    [Test]
+    public void PassesItsOptionToTheConsiderationsAGameGroupHolds()
+    {
+        HostReadyConsideration firstHeld = new();
+        HostReadyConsideration secondHeld = new();
+        HostGroupConsideration group = new([firstHeld, secondHeld]);
+        ConsiderationAndActionOption patrol = new("Patrol");
+
+        patrol.AddConsideration(group);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(firstHeld.Option, Is.SameAs(patrol));
+            Assert.That(secondHeld.Option, Is.SameAs(patrol));
+        });
+    }
+
+    [Test]
+    public void PassesItsOptionThroughAGameGroupHeldByAnother()
+    {
+        HostReadyConsideration held = new();
+        HostGroupConsideration inner = new([held]);
+        HostGroupConsideration outer = new([inner]);
+        ConsiderationAndActionOption patrol = new("Patrol");
+
+        patrol.AddConsideration(outer);
+
+        Assert.That(held.Option, Is.SameAs(patrol));
+    }
+
     /// <summary>A game-defined consideration reading a distance the game writes, scored by whatever function it holds.</summary>
     private sealed class HostDistanceConsideration : WeightedConsiderationBase
     {
@@ -281,6 +314,33 @@ public class GameDefinedConsiderationHostSpec
         public override void Calculate()
         {
             Weights = WeightValues.Neutral;
+        }
+    }
+
+    /// <summary>A game-defined group, which passes its option to each consideration it holds.</summary>
+    private sealed class HostGroupConsideration : ConsiderationBase
+    {
+        private readonly ConsiderationBase[] _held;
+
+        /// <summary>Creates a group holding the given considerations.</summary>
+        public HostGroupConsideration(ConsiderationBase[] held)
+        {
+            _held = held;
+        }
+
+        /// <inheritdoc />
+        public override void Calculate()
+        {
+            Weights = WeightValues.Neutral;
+        }
+
+        /// <summary>Attaches each consideration this group holds to the option this group was attached to.</summary>
+        protected override void OnAttach(OptionBase option)
+        {
+            foreach (ConsiderationBase held in _held)
+            {
+                AttachChild(held, option);
+            }
         }
     }
 

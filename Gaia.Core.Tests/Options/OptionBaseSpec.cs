@@ -61,6 +61,16 @@ public class OptionBaseSpec
     }
 
     [Test]
+    public void SetsTheOptionBeforeOnAttachRuns()
+    {
+        AttachRecordingConsideration recorder = new();
+
+        _option.AddConsideration(recorder);
+
+        Assert.That(recorder.OptionWhenAttached, Is.SameAs(_option));
+    }
+
+    [Test]
     public void LeavesAConsiderationNoOptionUntilOneTakesIt()
     {
         StubConsideration looseConsideration = new(WeightValues.Neutral);
@@ -89,5 +99,24 @@ public class OptionBaseSpec
         StubOption option = new([], [firstAction, secondAction]);
 
         Assert.That(option.Actions, Is.EqualTo(new ActionBase[] { firstAction, secondAction }));
+    }
+
+    /// <summary>A consideration that records its own Option at the moment OnAttach runs.</summary>
+    private sealed class AttachRecordingConsideration : ConsiderationBase
+    {
+        /// <summary>The Option this consideration read when OnAttach ran, or null until it has run.</summary>
+        internal OptionBase? OptionWhenAttached { get; private set; }
+
+        /// <inheritdoc />
+        public override void Calculate()
+        {
+            Weights = WeightValues.Neutral;
+        }
+
+        /// <summary>Records Option as it stands when the hook runs.</summary>
+        protected override void OnAttach(OptionBase option)
+        {
+            OptionWhenAttached = Option;
+        }
     }
 }

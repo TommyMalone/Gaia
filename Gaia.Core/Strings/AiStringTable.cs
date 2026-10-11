@@ -19,6 +19,9 @@ namespace Gaia.Core.Strings
     /// <seealso>"Modular AI", Section 8.4.1</seealso>
     public static class AiStringTable
     {
+        /// <summary>The hash of empty text, which is the value djb2 starts from.</summary>
+        internal const ulong EmptyTextHash = 5381;
+
         /// <summary>Guards Texts against a read on one thread racing a write on another.</summary>
         /// <remarks>
         ///     Register usually happens while a configuration is loading, and GetText usually happens while debug output is
@@ -120,7 +123,7 @@ namespace Gaia.Core.Strings
         /// <seealso>djb2, described at https://www.cse.yorku.ca/~oz/hash.html</seealso>
         private static ulong ComputeHash(string text)
         {
-            ulong hash = 5381;
+            ulong hash = EmptyTextHash;
 
             foreach (char character in text)
             {

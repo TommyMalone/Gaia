@@ -59,10 +59,33 @@ namespace Gaia.Core.Considerations
         /// <summary>Called once per decision cycle to evaluate the situation and store the result in Weights.</summary>
         public abstract void Calculate();
 
-        /// <summary>Sets Option. Called by the <see cref="ConsiderationSet" /> that takes this consideration.</summary>
-        internal virtual void AttachTo(OptionBase option)
+        /// <summary>
+        ///     Sets Option, then calls OnAttach. Called by the <see cref="ConsiderationSet" /> that takes this consideration,
+        ///     and by AttachChild.
+        /// </summary>
+        internal void AttachTo(OptionBase option)
         {
             Option = option;
+            OnAttach(option);
+        }
+
+        /// <summary>
+        ///     Called by AttachTo once Option is set, so a consideration that holds considerations of its own can pass the
+        ///     option to each of them through AttachChild.
+        /// </summary>
+        /// <remarks>A consideration this one takes on after this has run is attached by calling AttachChild with Option.</remarks>
+        protected virtual void OnAttach(OptionBase option)
+        {
+        }
+
+        /// <summary>Attaches a consideration this one holds to the given option, setting its Option and running its OnAttach.</summary>
+        /// <remarks>
+        ///     It is static because a consideration in a game's own code may call a protected instance member only on its own
+        ///     type, not on a ConsiderationBase it holds.
+        /// </remarks>
+        protected static void AttachChild(ConsiderationBase child, OptionBase option)
+        {
+            child.AttachTo(option);
         }
 
         /// <summary>Called when the option this consideration scores is selected. Sets IsSelected, then OnSelect runs.</summary>
