@@ -255,4 +255,28 @@ public class DistanceConsiderationSpec
             }));
         });
     }
+
+    [Test]
+    public void RefusesAnIgnoreHeightThatIsNotABoolean()
+    {
+        const string snippet = """
+                               <Consideration Type="Distance" IgnoreHeight="yes">
+                                   <From Type="Position" Position="(0, 0, 0)"/>
+                                   <To Type="Position" Position="(0, 0, 100)"/>
+                                   <WeightFunction Type="Constant"/>
+                               </Consideration>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        DistanceConsideration loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Consideration element's IgnoreHeight is not true or false, it reads \"yes\"",
+            }));
+        });
+    }
 }

@@ -141,6 +141,28 @@ public class ConsiderationSetConsiderationSpec
     }
 
     [Test]
+    public void RefusesAGroupHoldingAConsiderationThatFailsToLoad()
+    {
+        const string snippet = """
+                               <Consideration Type="ConsiderationSet">
+                                   <Consideration Type="Unregistered"/>
+                               </Consideration>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        ConsiderationSetConsideration loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 2, the Consideration element's type Unregistered is not registered",
+            }));
+        });
+    }
+
+    [Test]
     public void ReportsTheConsiderationsItGroupsInTheOrderTheyWereLoaded()
     {
         // Each child's addend is its place in the document, so the addends read back show the order the considerations

@@ -412,4 +412,24 @@ public class TargetSpec
             }));
         });
     }
+
+    [Test]
+    public void RefusesAByNameTargetWhoseStoreNamesNeitherBlackboard()
+    {
+        const string snippet = """
+                               <Target Type="ByName" List="Actors" Entity="Officer" Store="Nowhere"/>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        ByNameTarget loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Target element's Store is not Brain or World, it reads \"Nowhere\"",
+            }));
+        });
+    }
 }

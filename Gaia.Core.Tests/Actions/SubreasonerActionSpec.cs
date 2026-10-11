@@ -512,6 +512,28 @@ public class SubreasonerActionSpec
         });
     }
 
+    [TestCase("SelectedOptionDone", SubreasonerCompletion.SelectedOptionDone)]
+    [TestCase("NothingEligible", SubreasonerCompletion.NothingEligible)]
+    [TestCase("ReasonerDone", SubreasonerCompletion.ReasonerDone)]
+    public void LoadsEachCompletionRuleByName(string doneWhen, SubreasonerCompletion rule)
+    {
+        string snippet = $"""
+                          <Action Type="Subreasoner" Name="Investigate" DoneWhen="{doneWhen}">
+                              <Reasoner Type="Sequence"/>
+                          </Action>
+                          """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        SubreasonerAction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.DoneWhen, Is.EqualTo(rule));
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
     [Test]
     public void RefusesACompletionRuleThatNamesNothing()
     {
@@ -553,6 +575,51 @@ public class SubreasonerActionSpec
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 1, the Action element's NothingEligibleCycleLimit is not 1 or more, it reads \"0\"",
+            }));
+        });
+    }
+
+    [Test]
+    public void LoadsANothingEligibleCycleLimitOfOne()
+    {
+        // 1 is the lowest limit the action takes, above the 0 that RefusesANothingEligibleCycleLimitBelowOne refuses.
+        const string snippet = """
+                               <Action Type="Subreasoner" Name="Investigate" DoneWhen="NothingEligible"
+                                       NothingEligibleCycleLimit="1">
+                                   <Reasoner Type="Sequence"/>
+                               </Action>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        SubreasonerAction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.NothingEligibleCycleLimit, Is.EqualTo(1));
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void RefusesANothingEligibleCycleLimitThatIsNotANumber()
+    {
+        const string snippet = """
+                               <Action Type="Subreasoner" Name="Investigate" DoneWhen="NothingEligible"
+                                       NothingEligibleCycleLimit="many">
+                                   <Reasoner Type="Sequence"/>
+                               </Action>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        SubreasonerAction loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Action element's NothingEligibleCycleLimit is not a whole number, it reads \"many\"",
             }));
         });
     }

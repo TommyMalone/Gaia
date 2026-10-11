@@ -336,6 +336,54 @@ public class CurveWeightFunctionSpec
         });
     }
 
+    [TestCase("Rank=\"5\"", "Rank=\"high\"",
+        "Line 1, the WeightFunction element's Rank is not a number, it reads \"high\"")]
+    [TestCase("<MultiplierCurve>", "<MultiplierCurve Linear=\"sometimes\">",
+        "Line 6, the MultiplierCurve element's Linear is not true or false, it reads \"sometimes\"")]
+    [TestCase("<Keyframe Input=\"10\"", "<Point Input=\"10\"",
+        "Line 4, the AddendCurve element does not take Point elements")]
+    [TestCase("Input=\"0\" Value=\"0\"", "Input=\"low\" Value=\"0\"",
+        "Line 3, the Keyframe element's Input is not a number, it reads \"low\"")]
+    [TestCase("Value=\"4\"", "Value=\"high\"",
+        "Line 4, the Keyframe element's Value is not a number, it reads \"high\"")]
+    [TestCase("InTangent=\"0\"", "InTangent=\"steep\"",
+        "Line 3, the Keyframe element's InTangent is not a number, it reads \"steep\"")]
+    [TestCase("OutTangent=\"1\"", "OutTangent=\"steep\"",
+        "Line 3, the Keyframe element's OutTangent is not a number, it reads \"steep\"")]
+    [TestCase("Linear=\"false\"", "Linear=\"sometimes\"",
+        "Line 2, the AddendCurve element's Linear is not true or false, it reads \"sometimes\"")]
+    public void RefusesEachMalformedPieceOfACurve(string piece, string malformedPiece, string refusal)
+    {
+        // A function that loads as written, each case making one of its pieces malformed. The keyframe and Linear
+        // pieces sit in the AddendCurve, which the function keeps as loaded, so a malformed piece let through there
+        // shows as a function that loads. A MultiplierCurve is read again for negative keyframes, and a malformed piece
+        // let through there throws in that read instead.
+        const string wellFormed = """
+                                  <WeightFunction Type="Curve" Rank="5">
+                                      <AddendCurve Linear="false">
+                                          <Keyframe Input="0" Value="0" InTangent="0" OutTangent="1"/>
+                                          <Keyframe Input="10" Value="4"/>
+                                      </AddendCurve>
+                                      <MultiplierCurve>
+                                          <Keyframe Input="0" Value="1"/>
+                                      </MultiplierCurve>
+                                  </WeightFunction>
+                                  """;
+        AiCreationData creationData =
+            LoadingSpecHelpers.ParseForLoad(wellFormed.Replace(piece, malformedPiece), _logSink);
+
+        // The factory refuses a stray child before Init runs, so each case loads through the factory.
+        bool wasCreated =
+            creationData.Factories.WeightFunctions.TryCreate(creationData, out WeightFunctionBase? loaded);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wasCreated, Is.False);
+            Assert.That(loaded, Is.Null);
+            Assert.That(_logSink.Entries[0], Is.EqualTo($"Error guard.xml {refusal}"));
+        });
+    }
+
     /// <summary>Builds a curve running straight from one value to another across inputs of 0 to 10.</summary>
     private static Curve BuildStraightLine(float valueAtZero, float valueAtTen)
     {
