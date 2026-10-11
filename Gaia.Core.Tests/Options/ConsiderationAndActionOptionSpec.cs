@@ -1,8 +1,10 @@
-﻿using Gaia.Core.Factories;
+﻿using Gaia.Core.Considerations;
+using Gaia.Core.Factories;
 using Gaia.Core.Options;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Strings;
 using Gaia.Core.Tests.Helpers;
+using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Tests.Options;
 
@@ -37,6 +39,28 @@ public class ConsiderationAndActionOptionSpec
             Assert.That(assembled.Name, Is.EqualTo(patrolName));
             Assert.That(assembled.Weight, Is.EqualTo(1f), "the default tuning is what makes a bare option selectable");
         });
+    }
+
+    [Test]
+    public void CountsATuningInAGroupBuiltInCode()
+    {
+        // The group's constructor fills it before AddConsideration hands it to the option, which is when the option's
+        // set records whether the group holds a Tuning.
+        AiString patrolName = "Patrol";
+        WeightValues tunedWeights = new(5f, 1f, float.MinValue);
+        TuningConsideration tuning = new(tunedWeights);
+        ConsiderationSetConsideration group = new([tuning]);
+
+        ConsiderationAndActionOption assembled = new(patrolName);
+        assembled.AddConsideration(group);
+
+        RuleBasedReasoner reasoner = new();
+        reasoner.AddOption(assembled);
+        reasoner.Enable();
+
+        assembled.Calculate();
+
+        Assert.That(assembled.Weight, Is.EqualTo(5f), "a default tuning beside the group would make it 6");
     }
 
     [Test]
@@ -84,6 +108,115 @@ public class ConsiderationAndActionOptionSpec
 
             Assert.That(loaded.Weight, Is.EqualTo(1f), "the ensured default tuning contributes an addend of 1");
             Assert.That(loaded.IsValid, Is.True);
+        });
+    }
+
+    [Test]
+    public void CountsATuningInsideAGroupAsItsOwn()
+    {
+        const string snippet = """
+                               <Option Type="ConsiderationAndAction" Name="Patrol">
+                                   <Consideration Type="ConsiderationSet">
+                                       <Consideration Type="Tuning" Addend="5"/>
+                                   </Consideration>
+                               </Option>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        ConsiderationAndActionOption loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+
+            loaded.Calculate();
+
+            Assert.That(loaded.Weight, Is.EqualTo(5f), "a default tuning beside the group would make it 6");
+            Assert.That(loaded.Considerations, Has.Count.EqualTo(1), "the group alone, with no default beside it");
+        });
+    }
+
+    [Test]
+    public void CountsATuningTwoGroupsDeep()
+    {
+        const string snippet = """
+                               <Option Type="ConsiderationAndAction" Name="Patrol">
+                                   <Consideration Type="ConsiderationSet">
+                                       <Consideration Type="ConsiderationSet">
+                                           <Consideration Type="Tuning" Addend="5"/>
+                                       </Consideration>
+                                   </Consideration>
+                               </Option>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        ConsiderationAndActionOption loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+
+            loaded.Calculate();
+
+            Assert.That(loaded.Weight, Is.EqualTo(5f), "a default tuning beside the outer group would make it 6");
+        });
+    }
+
+    [Test]
+    public void AddsTheDefaultBesideAnEmptyGroup()
+    {
+        // An empty group reports an addend of 0 and a multiplier of 1, so the option weighs 1 with the default and 0
+        // without it.
+        const string snippet = """
+                               <Option Type="ConsiderationAndAction" Name="Idle">
+                                   <Consideration Type="ConsiderationSet"/>
+                               </Option>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        ConsiderationAndActionOption loaded = new();
+
+        Assert.That(loaded.Init(creationData), Is.True);
+
+        loaded.Calculate();
+
+        ConsiderationSetConsideration group = (ConsiderationSetConsideration)loaded.Considerations[0];
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Weight, Is.EqualTo(1f), "the default's addend of 1 is the whole weight");
+            Assert.That(loaded.Considerations[^1], Is.InstanceOf<TuningConsideration>(), "the default after the group");
+            Assert.That(loaded.Considerations, Has.Count.EqualTo(2));
+            Assert.That(group.Considerations, Is.Empty, "the group gains no default of its own");
+        });
+    }
+
+    [Test]
+    public void AddsTheDefaultBesideAGroupThatHoldsNoTuning()
+    {
+        // The group holds a consideration that is not a Tuning, so the test fails if any group that holds something
+        // counts as holding a Tuning.
+        const string snippet = """
+                               <Option Type="ConsiderationAndAction" Name="Watch">
+                                   <Consideration Type="ConsiderationSet">
+                                       <Consideration Type="ExecutionHistory"/>
+                                   </Consideration>
+                               </Option>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        ConsiderationAndActionOption loaded = new();
+
+        Assert.That(loaded.Init(creationData), Is.True);
+
+        ConsiderationSetConsideration group = (ConsiderationSetConsideration)loaded.Considerations[0];
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Considerations[^1], Is.InstanceOf<TuningConsideration>(), "the default after the group");
+            Assert.That(loaded.Considerations, Has.Count.EqualTo(2));
+            Assert.That(group.Considerations[0], Is.InstanceOf<ExecutionHistoryConsideration>());
+            Assert.That(group.Considerations, Has.Count.EqualTo(1), "the group gains no default of its own");
         });
     }
 
@@ -153,6 +286,33 @@ public class ConsiderationAndActionOptionSpec
             {
                 "Warning  Line 1, the Option element's fixed values sum to a weight of 0 or less, a reasoner that selects by weight can never select it",
             }));
+        });
+    }
+
+    [Test]
+    public void LoadsAGroupedVetoWithNoWarning()
+    {
+        // The warning that an option's fixed values can never select it reads only the option's own list. It stops at
+        // the first consideration that is not a Tuning, so a veto written inside a group loads with no warning.
+        const string snippet = """
+                               <Option Type="ConsiderationAndAction" Name="Disabled">
+                                   <Consideration Type="ConsiderationSet">
+                                       <Consideration Type="Tuning" Multiplier="0"/>
+                                   </Consideration>
+                               </Option>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        ConsiderationAndActionOption loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+
+            loaded.Calculate();
+
+            Assert.That(loaded.Weight, Is.EqualTo(0f), "the grouped veto still vetoes");
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 }

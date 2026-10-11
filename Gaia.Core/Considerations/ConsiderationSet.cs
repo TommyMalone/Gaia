@@ -40,7 +40,11 @@ namespace Gaia.Core.Considerations
         /// <summary>The highest rank any consideration in the set reported.</summary>
         public float Rank { get; private set; } = float.MinValue;
 
-        /// <summary>True if this set already contains a <see cref="TuningConsideration" />.</summary>
+        /// <summary>True if this set holds a <see cref="TuningConsideration" />, directly or inside a group at any depth.</summary>
+        /// <remarks>
+        ///     Set as each consideration is added. A group is filled when it is made or loaded, before any set takes it, so
+        ///     Add sees everything the group holds.
+        /// </remarks>
         internal bool HasTuning { get; private set; }
 
         /// <summary>The considerations in the set, in the order they were added.</summary>
@@ -117,7 +121,7 @@ namespace Gaia.Core.Considerations
                 consideration.AttachTo(_option);
             }
 
-            if (consideration is TuningConsideration)
+            if (consideration is TuningConsideration or ConsiderationSetConsideration { HasTuning: true })
             {
                 // If considerations are ever allowed to be removed, a more robust method will be needed to tell
                 // whether a TuningConsideration exists.

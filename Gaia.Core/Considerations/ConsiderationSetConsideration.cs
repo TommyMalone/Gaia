@@ -46,6 +46,9 @@ namespace Gaia.Core.Considerations
         /// </remarks>
         public IReadOnlyList<ConsiderationBase> Considerations => _set.Considerations;
 
+        /// <summary>True if a <see cref="TuningConsideration" /> is among the considerations this one groups, at any depth.</summary>
+        internal bool HasTuning => _set.HasTuning;
+
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
