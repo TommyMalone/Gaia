@@ -65,6 +65,87 @@ public class CircleRegionSpec
     }
 
     [Test]
+    public void ContainsItsEdgeFarFromTheWorldsOriginOnceTurned()
+    {
+        // Twelve points around the disc's edge, one every 30 degrees.
+        List<Vector3> onTheBoundary = new();
+
+        for (int step = 0; step < 12; step++)
+        {
+            float angle = step * MathF.PI / 6f;
+
+            onTheBoundary.Add(new Vector3(5f * MathF.Cos(angle), 0f, 5f * MathF.Sin(angle)));
+        }
+
+        RegionSpecHelpers.AssertItsBoundaryHoldsFarFromTheWorldsOrigin(_circle, onTheBoundary);
+    }
+
+    [Test]
+    public void HoldsItsEdgeWithinAMillimeter()
+    {
+        Vector3 alongX = new(1f, 0f, 0f);
+        Vector3 againstZ = new(0f, 0f, -1f);
+
+        Assert.Multiple(() =>
+        {
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_circle, alongX * 5f, alongX);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_circle, againstZ * 5f, againstZ);
+        });
+    }
+
+    [Test]
+    public void HoldsAPositionExactlyTheTolerancePastItsEdge()
+    {
+        // At the world's origin and unturned, a position comes into the disc's plane unchanged, so this one, at the
+        // radius and the tolerance added in float, has exactly the squared length the disc compares with, which only an
+        // inclusive comparison holds.
+        Vector3 exactlyTheTolerancePast = new(5f + 0.001f, 0f, 0f);
+
+        _circle.Origin = Vector3.Zero;
+
+        Assert.That(_circle.IsInRegion(exactlyTheTolerancePast), Is.True);
+    }
+
+    [TestCase(100f, 100f, 100f)]
+    [TestCase(0.01f, 0.01f, 0.01f)]
+    [TestCase(8f, 0.5f, 2f)]
+    public void HoldsItsEdgeWithinAMillimeterInTheWorldAtAnyScale(float scaleX, float scaleY, float scaleZ)
+    {
+        // A distance from the axis mixes the plane's two axes, local X and Z, so the tolerance is taken along the one
+        // with the smaller scale, Z in each case here, and is 1 mm in the world along it.
+        Vector3 alongZ = new(0f, 0f, 1f);
+        Vector3 againstZ = new(0f, 0f, -1f);
+
+        _circle.Rotation = RegionSpecHelpers.AwkwardTurn;
+        _circle.Scale = new Vector3(scaleX, scaleY, scaleZ);
+
+        Assert.Multiple(() =>
+        {
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_circle, alongZ * 5f, alongZ);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_circle, againstZ * 5f, againstZ);
+        });
+    }
+
+    [Test]
+    public void HoldsItsEdgeWithinAMillimeterAlongXWhenXIsScaledLeast()
+    {
+        // The plane's smaller scale lies on X here, where HoldsItsEdgeWithinAMillimeterInTheWorldAtAnyScale has it on
+        // Z, so the tolerance taken along the plane's axis with the smaller scale is pinned on both, 1 mm in the world
+        // along X here.
+        Vector3 alongX = new(1f, 0f, 0f);
+        Vector3 againstX = new(-1f, 0f, 0f);
+
+        _circle.Rotation = RegionSpecHelpers.AwkwardTurn;
+        _circle.Scale = new Vector3(0.5f, 2f, 8f);
+
+        Assert.Multiple(() =>
+        {
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_circle, alongX * 5f, alongX);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_circle, againstX * 5f, againstX);
+        });
+    }
+
+    [Test]
     public void SamplesInsideItself()
     {
         RegionSpecHelpers.AssertEverySampleLandsInside(_circle);

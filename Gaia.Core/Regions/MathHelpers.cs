@@ -15,6 +15,22 @@ namespace Gaia.Core.Regions
         /// </remarks>
         internal const int MaxSampleAttempts = 32;
 
+        /// <summary>
+        ///     The square of how far a round shape reaches from its middle or its axis, its radius with its tolerance added,
+        ///     for the round shapes to compare a squared distance with.
+        /// </summary>
+        /// <remarks>
+        ///     The tolerance is the shape's own, in its own units, across the axes its distance mixes. It is added before
+        ///     squaring, so that it stays a length. The radius's size is taken first, so a negative radius reaches as far as a
+        ///     positive one does.
+        /// </remarks>
+        internal static float SquaredReach(float radius, float tolerance)
+        {
+            float reach = MathF.Abs(radius) + tolerance;
+
+            return reach * reach;
+        }
+
         /// <summary>Picks a value uniformly between two bounds.</summary>
         internal static float RandomInRange(IRandomSource randomSource, float minInclusive, float maxExclusive)
         {

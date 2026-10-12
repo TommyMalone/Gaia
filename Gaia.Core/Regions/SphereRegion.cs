@@ -25,21 +25,8 @@ namespace Gaia.Core.Regions
 
         internal static readonly ComponentDescription Description = Builder.Add(OriginTargetSlot).Build();
 
-        private float _radius;
-        private float _radiusSquared;
-
         /// <summary>How far the region reaches from its origin.</summary>
-        public float Radius
-        {
-            get => _radius;
-            set
-            {
-                _radius = value;
-
-                // Squared once here rather than on every containment test.
-                _radiusSquared = value * value;
-            }
-        }
+        public float Radius { get; set; }
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
@@ -65,7 +52,7 @@ namespace Gaia.Core.Regions
         /// <inheritdoc />
         protected override bool IsInShape(Vector3 local)
         {
-            return local.SquaredMagnitude <= _radiusSquared;
+            return local.SquaredMagnitude <= MathHelpers.SquaredReach(Radius, ToleranceInAnyDirection);
         }
 
         /// <inheritdoc />

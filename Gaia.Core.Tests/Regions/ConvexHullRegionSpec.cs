@@ -101,6 +101,76 @@ public class ConvexHullRegionSpec
     }
 
     [Test]
+    public void ContainsItsPlanesFarFromTheWorldsOriginOnceTurned()
+    {
+        // A point on each of the box's six walls and four of its corners, and three points on the wedge's diagonal
+        // and two of its corners.
+        Vector3[] onTheBoxsBoundary =
+        {
+            new(0f, 1f, 5f), new(10f, 2f, 15f), new(5f, 0f, 10f), new(5f, 3f, 10f), new(5f, 1f, 0f),
+            new(5f, 1f, 20f), new(0f, 0f, 0f), new(10f, 3f, 20f), new(10f, 0f, 0f), new(0f, 3f, 20f),
+        };
+        Vector3[] onTheWedgesBoundary =
+        {
+            new(2.5f, 1f, 7.5f), new(5f, 2f, 5f), new(7.5f, 0.5f, 2.5f), new(10f, 0f, 0f), new(0f, 3f, 10f),
+        };
+
+        RegionSpecHelpers.AssertItsBoundaryHoldsFarFromTheWorldsOrigin(_hullBox, onTheBoxsBoundary);
+        RegionSpecHelpers.AssertItsBoundaryHoldsFarFromTheWorldsOrigin(_hullWedge, onTheWedgesBoundary);
+    }
+
+    [Test]
+    public void HoldsItsPlanesWithinAMillimeter()
+    {
+        Vector3 alongX = new(1f, 0f, 0f);
+        Vector3 againstX = new(-1f, 0f, 0f);
+        Vector3 up = new(0f, 1f, 0f);
+        Vector3 outOfTheDiagonal = new Vector3(1f, 0f, 1f) / MathF.Sqrt(2f);
+
+        Assert.Multiple(() =>
+        {
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_hullBox, new Vector3(10f, 1f, 10f), alongX);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_hullBox, new Vector3(0f, 1f, 10f), againstX);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_hullBox, new Vector3(5f, 3f, 10f), up);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_hullWedge, new Vector3(5f, 1f, 5f),
+                outOfTheDiagonal);
+        });
+    }
+
+    [Test]
+    public void HoldsAPositionExactlyTheTolerancePastAPlane()
+    {
+        // The box hull stands at the world's origin, unturned, and its left wall faces against X through its own
+        // origin, so a position at -0.001 lies exactly the tolerance in front of that wall, worked in float, which the
+        // hull holds since it refuses only a position farther in front than that.
+        Vector3 exactlyTheTolerancePast = new(-0.001f, 1f, 5f);
+
+        Assert.That(_hullBox.IsInRegion(exactlyTheTolerancePast), Is.True);
+    }
+
+    [TestCase(100f, 100f, 100f)]
+    [TestCase(0.01f, 0.01f, 0.01f)]
+    [TestCase(8f, 0.5f, 2f)]
+    public void HoldsItsPlanesWithinAMillimeterInTheWorldAtAnyScale(float scaleX, float scaleY, float scaleZ)
+    {
+        // A distance from a plane mixes all three axes, so the tolerance is taken along the axis with the smallest
+        // scale, up in each case here, and is 1 mm in the world out from the ceiling and the floor.
+        Vector3 onTheCeiling = new(5f, 3f, 10f);
+        Vector3 onTheFloor = new(5f, 0f, 10f);
+        Vector3 up = new(0f, 1f, 0f);
+        Vector3 down = new(0f, -1f, 0f);
+
+        _hullBox.Rotation = RegionSpecHelpers.AwkwardTurn;
+        _hullBox.Scale = new Vector3(scaleX, scaleY, scaleZ);
+
+        Assert.Multiple(() =>
+        {
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_hullBox, onTheCeiling, up);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_hullBox, onTheFloor, down);
+        });
+    }
+
+    [Test]
     public void SamplesInsideItself()
     {
         RegionSpecHelpers.AssertEverySampleLandsInside(_hullBox);

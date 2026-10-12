@@ -67,6 +67,81 @@ public class CylinderRegionSpec
     }
 
     [Test]
+    public void ContainsItsSurfaceFarFromTheWorldsOriginOnceTurned()
+    {
+        // Six points around the side at its bottom, its middle and its top, and three points on each of its ends.
+        List<Vector3> onTheBoundary = new()
+        {
+            new Vector3(0f, 1.5f, 0f), new Vector3(2.2f, 1.5f, -1.3f), new Vector3(-3.1f, 1.5f, 2.4f),
+            new Vector3(0f, -1.5f, 0f), new Vector3(-0.6f, -1.5f, 4.1f), new Vector3(3.7f, -1.5f, -0.9f),
+        };
+
+        foreach (float height in new[] { -1.5f, 0f, 1.5f })
+        {
+            for (int step = 0; step < 6; step++)
+            {
+                float angle = step * MathF.PI / 3f;
+
+                onTheBoundary.Add(new Vector3(5f * MathF.Cos(angle), height, 5f * MathF.Sin(angle)));
+            }
+        }
+
+        RegionSpecHelpers.AssertItsBoundaryHoldsFarFromTheWorldsOrigin(_cylinder, onTheBoundary);
+    }
+
+    [Test]
+    public void HoldsItsSurfaceWithinAMillimeter()
+    {
+        Vector3 alongX = new(1f, 0f, 0f);
+        Vector3 up = new(0f, 1f, 0f);
+        Vector3 down = new(0f, -1f, 0f);
+
+        Assert.Multiple(() =>
+        {
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_cylinder, alongX * 5f, alongX);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_cylinder, up * 1.5f, up);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_cylinder, down * 1.5f, down);
+        });
+    }
+
+    [TestCase(5f + 0.001f, 0f)]
+    [TestCase(0f, 1.5f + 0.001f)]
+    public void HoldsAPositionExactlyTheTolerancePastItsSideOrAnEnd(float x, float y)
+    {
+        // At the world's origin and unturned, a position comes into the cylinder's own coordinates unchanged, so this
+        // one lies exactly where the cylinder's comparison of its side or its top falls, the radius or the half height
+        // and the tolerance added in float, which only an inclusive comparison holds.
+        Vector3 exactlyTheTolerancePast = new(x, y, 0f);
+
+        _cylinder.Origin = Vector3.Zero;
+
+        Assert.That(_cylinder.IsInRegion(exactlyTheTolerancePast), Is.True);
+    }
+
+    [TestCase(100f, 100f, 100f)]
+    [TestCase(0.01f, 0.01f, 0.01f)]
+    [TestCase(8f, 0.5f, 2f)]
+    public void HoldsItsSurfaceWithinAMillimeterInTheWorldAtAnyScale(float scaleX, float scaleY, float scaleZ)
+    {
+        // The top and the bottom take the tolerance along local Y. A distance from the axis mixes local X and Z, so it
+        // takes the tolerance along the one with the smaller scale, Z in each case here, and is 1 mm in the world along
+        // it.
+        Vector3 up = new(0f, 1f, 0f);
+        Vector3 down = new(0f, -1f, 0f);
+        Vector3 alongZ = new(0f, 0f, 1f);
+
+        _cylinder.Rotation = RegionSpecHelpers.AwkwardTurn;
+        _cylinder.Scale = new Vector3(scaleX, scaleY, scaleZ);
+
+        Assert.Multiple(() =>
+        {
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_cylinder, up * 1.5f, up);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_cylinder, down * 1.5f, down);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_cylinder, alongZ * 5f, alongZ);
+        });
+    }
+
+    [Test]
     public void SamplesInsideItself()
     {
         RegionSpecHelpers.AssertEverySampleLandsInside(_cylinder);

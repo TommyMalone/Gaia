@@ -56,6 +56,116 @@ public class SphereRegionSpec
     }
 
     [Test]
+    public void ContainsItsSurfaceFarFromTheWorldsOriginOnceTurned()
+    {
+        // Where each of the ball's own axes meets its surface, and where each of the eight diagonals between them does.
+        float alongADiagonal = 5f / MathF.Sqrt(3f);
+        List<Vector3> onTheBoundary = new()
+        {
+            new Vector3(5f, 0f, 0f), new Vector3(-5f, 0f, 0f), new Vector3(0f, 5f, 0f), new Vector3(0f, -5f, 0f),
+            new Vector3(0f, 0f, 5f), new Vector3(0f, 0f, -5f),
+        };
+
+        foreach (float x in new[] { -alongADiagonal, alongADiagonal })
+        {
+            foreach (float y in new[] { -alongADiagonal, alongADiagonal })
+            {
+                foreach (float z in new[] { -alongADiagonal, alongADiagonal })
+                {
+                    onTheBoundary.Add(new Vector3(x, y, z));
+                }
+            }
+        }
+
+        RegionSpecHelpers.AssertItsBoundaryHoldsFarFromTheWorldsOrigin(_sphere, onTheBoundary);
+    }
+
+    [Test]
+    public void HoldsItsSurfaceWithinAMillimeter()
+    {
+        Vector3 alongX = new(1f, 0f, 0f);
+        Vector3 up = new(0f, 1f, 0f);
+        Vector3 againstZ = new(0f, 0f, -1f);
+
+        Assert.Multiple(() =>
+        {
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_sphere, alongX * 5f, alongX);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_sphere, up * 5f, up);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_sphere, againstZ * 5f, againstZ);
+        });
+    }
+
+    [Test]
+    public void ReachesAsFarWithANegativeRadius()
+    {
+        // A negative radius reaches as far as its size, so the tolerance is added to that size. Added to the negative
+        // value, it would pull the surface in.
+        Vector3 alongX = new(1f, 0f, 0f);
+
+        _sphere.Radius = -5f;
+
+        RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_sphere, alongX * 5f, alongX);
+    }
+
+    [TestCase(100f, 100f, 100f)]
+    [TestCase(0.01f, 0.01f, 0.01f)]
+    [TestCase(8f, 0.5f, 2f)]
+    public void HoldsItsSurfaceWithinAMillimeterInTheWorldAtAnyScale(float scaleX, float scaleY, float scaleZ)
+    {
+        // A distance from the middle mixes all three axes, so the tolerance is taken along the axis with the smallest
+        // scale, up in each case here, and is 1 mm in the world along it. Along an axis scaled further it is more.
+        Vector3 up = new(0f, 1f, 0f);
+        Vector3 down = new(0f, -1f, 0f);
+
+        _sphere.Rotation = RegionSpecHelpers.AwkwardTurn;
+        _sphere.Scale = new Vector3(scaleX, scaleY, scaleZ);
+
+        Assert.Multiple(() =>
+        {
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_sphere, up * 5f, up);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_sphere, down * 5f, down);
+        });
+    }
+
+    [TestCase(0.5f, 2f, 8f, 1f, 0f, 0f)]
+    [TestCase(8f, 2f, 0.5f, 0f, 0f, 1f)]
+    public void HoldsItsSurfaceWithinAMillimeterAlongWhicheverAxisIsScaledLeast(
+        float scaleX,
+        float scaleY,
+        float scaleZ,
+        float axisX,
+        float axisY,
+        float axisZ)
+    {
+        // The smallest scale lies on X in the first case and on Z in the second, where
+        // HoldsItsSurfaceWithinAMillimeterInTheWorldAtAnyScale has it on up, so the tolerance taken along the axis with
+        // the smallest scale is pinned on all three axes, 1 mm in the world along each when it is the one scaled least.
+        Vector3 axis = new(axisX, axisY, axisZ);
+
+        _sphere.Rotation = RegionSpecHelpers.AwkwardTurn;
+        _sphere.Scale = new Vector3(scaleX, scaleY, scaleZ);
+
+        Assert.Multiple(() =>
+        {
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_sphere, axis * 5f, axis);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_sphere, axis * -5f, axis * -1f);
+        });
+    }
+
+    [Test]
+    public void HoldsAPositionExactlyTheTolerancePastItsSurface()
+    {
+        // At the world's origin and unturned, a position comes into the ball's own coordinates unchanged, so this one,
+        // at the radius and the tolerance added in float, has exactly the squared length the ball compares with, which
+        // only an inclusive comparison holds.
+        Vector3 exactlyTheTolerancePast = new(5f + 0.001f, 0f, 0f);
+
+        _sphere.Origin = Vector3.Zero;
+
+        Assert.That(_sphere.IsInRegion(exactlyTheTolerancePast), Is.True);
+    }
+
+    [Test]
     public void SamplesInsideItself()
     {
         RegionSpecHelpers.AssertEverySampleLandsInside(_sphere);

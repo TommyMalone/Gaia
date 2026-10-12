@@ -140,9 +140,11 @@ namespace Gaia.Core.Regions
                 return false;
             }
 
+            float tolerance = ToleranceInAnyDirection;
+
             foreach (Plane plane in _planes)
             {
-                if (plane.SignedDistance(local) > 0f)
+                if (plane.SignedDistance(local) > tolerance)
                 {
                     return false;
                 }

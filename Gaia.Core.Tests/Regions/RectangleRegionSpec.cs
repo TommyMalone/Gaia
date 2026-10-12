@@ -59,6 +59,76 @@ public class RectangleRegionSpec
     }
 
     [Test]
+    public void ContainsItsEdgesFarFromTheWorldsOriginOnceTurned()
+    {
+        // The rectangle's four corners, the middle of each of its four edges, and four points elsewhere on its edges.
+        Vector3[] onTheBoundary =
+        {
+            new(-5f, 0f, -10f), new(5f, 0f, -10f), new(-5f, 0f, 10f), new(5f, 0f, 10f), new(-5f, 0f, 0f),
+            new(5f, 0f, 0f), new(0f, 0f, -10f), new(0f, 0f, 10f), new(5f, 0f, 3.3f), new(-5f, 0f, -7.1f),
+            new(-1.7f, 0f, -10f), new(2.9f, 0f, 10f),
+        };
+
+        RegionSpecHelpers.AssertItsBoundaryHoldsFarFromTheWorldsOrigin(_rectangle, onTheBoundary);
+    }
+
+    [Test]
+    public void HoldsItsEdgesWithinAMillimeter()
+    {
+        Vector3[] outwardFromEachEdge =
+        {
+            new(1f, 0f, 0f), new(-1f, 0f, 0f), new(0f, 0f, 1f), new(0f, 0f, -1f),
+        };
+
+        Assert.Multiple(() =>
+        {
+            foreach (Vector3 outward in outwardFromEachEdge)
+            {
+                Vector3 middleOfTheEdge = new(outward.X * 5f, 0f, outward.Z * 10f);
+
+                RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_rectangle, middleOfTheEdge, outward);
+            }
+        });
+    }
+
+    [TestCase(5f + 0.001f, 0f)]
+    [TestCase(0f, 10f + 0.001f)]
+    public void HoldsAPositionExactlyTheTolerancePastAnEdge(float x, float z)
+    {
+        // At the world's origin and unturned, a position comes into the rectangle's plane unchanged, so this one's
+        // coordinate on its axis is exactly the sum the rectangle compares with, its extent and the tolerance added in
+        // float, which only an inclusive comparison holds.
+        Vector3 exactlyTheTolerancePast = new(x, 0f, z);
+
+        Assert.That(_rectangle.IsInRegion(exactlyTheTolerancePast), Is.True);
+    }
+
+    [TestCase(100f, 100f, 100f)]
+    [TestCase(0.01f, 0.01f, 0.01f)]
+    [TestCase(8f, 0.5f, 2f)]
+    public void HoldsItsEdgesWithinAMillimeterInTheWorldAtAnyScale(float scaleX, float scaleY, float scaleZ)
+    {
+        Vector3[] outwardFromEachEdge =
+        {
+            new(1f, 0f, 0f), new(-1f, 0f, 0f), new(0f, 0f, 1f), new(0f, 0f, -1f),
+        };
+
+        _rectangle.Rotation = RegionSpecHelpers.AwkwardTurn;
+        _rectangle.Scale = new Vector3(scaleX, scaleY, scaleZ);
+
+        Assert.Multiple(() =>
+        {
+            foreach (Vector3 outward in outwardFromEachEdge)
+            {
+                Vector3 middleOfTheEdge = new(outward.X * 5f, 0f, outward.Z * 10f);
+
+                RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_rectangle, middleOfTheEdge,
+                    outward);
+            }
+        });
+    }
+
+    [Test]
     public void SamplesInsideItself()
     {
         RegionSpecHelpers.AssertEverySampleLandsInside(_rectangle);

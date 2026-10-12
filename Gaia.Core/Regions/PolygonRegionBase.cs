@@ -12,9 +12,11 @@ namespace Gaia.Core.Regions
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         The footprint may be concave, which is what makes a polygon worth having over a rectangle. IsInFootprint is
-    ///         the PNPOLY even-odd crossing test. A ray cast from the point along X crosses the boundary an odd number of
-    ///         times if the point is inside. A point exactly on an edge can land either way, which no caller here depends on.
+    ///         The footprint may be concave, which is what makes a polygon worth having over a rectangle. IsInFootprint
+    ///         counts a point on an edge or at a corner as inside, and a point within 1 millimeter of one in the world too,
+    ///         which absorbs the rounding of bringing it into the shape's plane. Any other point is judged by the PNPOLY
+    ///         even-odd crossing test, in which a ray cast from the point along X crosses the boundary an odd number of times
+    ///         if the point is inside.
     ///     </para>
     ///     <para>
     ///         A random point is found by guessing inside the footprint's bounds and keeping the first guess inside the
@@ -109,6 +111,10 @@ namespace Gaia.Core.Regions
 
             bool isInside = false;
 
+            // Squared once for the walk rather than at every edge.
+            float tolerance = ToleranceInPlane;
+            float squaredTolerance = tolerance * tolerance;
+
             // Each edge runs from the previous corner to the current one. The previous index starts at the last corner
             // so that the first edge tested is the closing edge, from the last corner back around to the first.
             int previousCornerIndex = _corners.Count - 1;
@@ -117,6 +123,11 @@ namespace Gaia.Core.Regions
             {
                 Vector2 edgeStart = _corners[previousCornerIndex];
                 Vector2 edgeEnd = _corners[cornerIndex];
+
+                if (IsOnEdge(edgeStart, edgeEnd, point, squaredTolerance))
+                {
+                    return true;
+                }
 
                 if (EdgeCrossesRay(edgeStart, edgeEnd, point))
                 {
@@ -170,6 +181,27 @@ namespace Gaia.Core.Regions
 
             // The ray runs toward positive X, so only a crossing ahead of the point counts.
             return crossingX > point.X;
+        }
+
+        /// <summary>
+        ///     Tests whether a point lies on the edge between two corners, either corner included, or within a tolerance of
+        ///     it, which is given squared.
+        /// </summary>
+        private static bool IsOnEdge(Vector2 edgeStart, Vector2 edgeEnd, Vector2 point, float squaredTolerance)
+        {
+            Vector2 edge = edgeEnd - edgeStart;
+            Vector2 startToPoint = point - edgeStart;
+            float squaredEdgeLength = edge.SquaredMagnitude;
+
+            // Where the edge's nearest point to the point lies along it, from 0 at its start to 1 at its end. Held to
+            // that range, a point beyond either end is measured from the corner there. Two corners at the same place
+            // make an edge with no length, whose nearest point is that place.
+            float fractionAlongEdge = squaredEdgeLength > 0f
+                ? Math.Clamp(Vector2.Dot(startToPoint, edge) / squaredEdgeLength, 0f, 1f)
+                : 0f;
+            Vector2 nearestOnEdge = edgeStart + edge * fractionAlongEdge;
+
+            return Vector2.SquaredDistance(nearestOnEdge, point) <= squaredTolerance;
         }
     }
 }

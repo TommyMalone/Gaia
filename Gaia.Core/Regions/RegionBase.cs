@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Factories;
+﻿using System;
+using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Spatial;
@@ -32,6 +33,38 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6, Listing 8.6</seealso>
     public abstract class RegionBase : IAiComponent
     {
+        /// <summary>
+        ///     How far outside its boundary a point may lie and still count as inside, 1 millimeter in the world at any
+        ///     Scale.
+        /// </summary>
+        /// <remarks>
+        ///     <para>
+        ///         A point exactly on a boundary in the world is brought into the shape's own coordinates through the transform
+        ///         that places the shape. Each operation of that rounds in float, so the point can arrive a little outside the
+        ///         boundary and count as outside. A float's step, the gap between one float and the next, grows with the size of
+        ///         the coordinate it holds, and so does the drift. Worked out in float, at any Scale, a point on the boundary of a
+        ///         shape reaching less than about 500 meters from its own origin drifts less than a millimeter within about 8
+        ///         kilometers of the world's origin when the shape is turned, and within about 16 kilometers when it is not, or 32
+        ///         for a box or a rectangle. Farther out, or on a larger shape, a point on the boundary can drift past the
+        ///         tolerance and count as outside. A turn's axes, as Rotation.FromEulerAngles works them out, are not quite of
+        ///         length 1, which moves a point on a turned shape up to about a millimeter for each kilometer it lies from the
+        ///         shape's own origin. BoundaryToleranceOverDistanceSpec holds the boundaries of shapes at fixed places from 100
+        ///         meters to 32 kilometers from the world's origin, and says how far the points at each place drift.
+        ///     </para>
+        ///     <para>
+        ///         Each shape compares in its own coordinates, where the tolerance along one of its axes is this divided by the
+        ///         size of Scale on that axis. A comparison that mixes axes, a distance from a middle, an axis, a segment, a plane
+        ///         or an edge, divides by the smallest size of Scale among the axes it mixes, so the tolerance is never less than
+        ///         1 millimeter in the world along any of them, and is more along an axis scaled further.
+        ///     </para>
+        ///     <para>
+        ///         Unreal's math header defines THRESH_POINT_ON_PLANE, 0.10 centimeters, as a plane's thickness, the same
+        ///         millimeter, and neither Unreal's nor Unity's box test documents a tolerance. A shape a game writes picks its
+        ///         own.
+        ///     </para>
+        /// </remarks>
+        internal const float BoundaryTolerance = 0.001f;
+
         /// <summary>Describes the optional Origin attribute <see cref="Init" /> reads by.</summary>
         protected static readonly AttributeDescription OriginAttribute = AttributeDescription.Optional("Origin",
             "Origin", AttributeKind.Vector3, "(0, 0, 0)",
@@ -78,7 +111,12 @@ namespace Gaia.Core.Regions
         public Vector3 Scale
         {
             get => _transform.Scale;
-            set => _transform = new Transform(_transform.Origin, _transform.Rotation, value);
+            set
+            {
+                _transform = new Transform(_transform.Origin, _transform.Rotation, value);
+                ToleranceAlongAxes = new Vector3(ToleranceAlong(value.X), ToleranceAlong(value.Y),
+                    ToleranceAlong(value.Z));
+            }
         }
 
         /// <summary>The target whose position stands in for Origin while one is set, or null to place the shape at Origin.</summary>
@@ -90,6 +128,22 @@ namespace Gaia.Core.Regions
 
         /// <summary>Where the region draws the numbers that pick a random position.</summary>
         public IRandomSource RandomSource { get; set; } = new Xoshiro128RandomSource();
+
+        /// <summary>
+        ///     <see cref="BoundaryTolerance" /> in the shape's own units along each of its own axes, 1 millimeter in the
+        ///     world divided by the size of Scale on that axis, for a comparison along one axis.
+        /// </summary>
+        /// <remarks>Divided when Scale is set rather than on every containment test.</remarks>
+        internal Vector3 ToleranceAlongAxes { get; private set; } =
+            new(BoundaryTolerance, BoundaryTolerance, BoundaryTolerance);
+
+        /// <summary>
+        ///     <see cref="BoundaryTolerance" /> in the shape's own units for a comparison that mixes all three of its axes, a
+        ///     distance from its middle, its segment or a plane. It is the largest of ToleranceAlongAxes, 1 millimeter in the
+        ///     world divided by the smallest size of Scale, so it is never less than 1 millimeter in the world along any axis.
+        /// </summary>
+        internal float ToleranceInAnyDirection =>
+            MathF.Max(MathF.Max(ToleranceAlongAxes.X, ToleranceAlongAxes.Y), ToleranceAlongAxes.Z);
 
         /// <summary>Loads this region's configuration from the creation data's node.</summary>
         /// <remarks>
@@ -182,7 +236,8 @@ namespace Gaia.Core.Regions
         /// <summary>Tests whether a point in the shape's own coordinates is inside the shape.</summary>
         /// <remarks>
         ///     The point has been brought into the shape's own coordinates through the transform that places it, so the shape
-        ///     is tested as though it stood unturned at the world's origin.
+        ///     is tested as though it stood unturned at the world's origin. That step rounds, so every shape here counts a point
+        ///     no more than 1 millimeter outside its boundary in the world as inside, at any Scale.
         /// </remarks>
         protected abstract bool IsInShape(Vector3 local);
 
@@ -249,6 +304,17 @@ namespace Gaia.Core.Regions
             }
 
             return true;
+        }
+
+        /// <summary>Divides <see cref="BoundaryTolerance" /> by the size of one component of Scale.</summary>
+        /// <remarks>
+        ///     A zero component leaves the shape containing nothing, since IsInRegion and TryGetRandomPosition refuse it
+        ///     before asking the shape, so the shapes here never compare with the tolerance along it, and it is 0 rather than a
+        ///     division by zero.
+        /// </remarks>
+        private static float ToleranceAlong(float scale)
+        {
+            return scale == 0f ? 0f : BoundaryTolerance / MathF.Abs(scale);
         }
     }
 }

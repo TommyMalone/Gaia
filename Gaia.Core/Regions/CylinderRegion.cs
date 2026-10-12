@@ -29,21 +29,9 @@ namespace Gaia.Core.Regions
         internal static readonly ComponentDescription Description = Builder.Add(OriginTargetSlot).Build();
 
         private float _halfHeight;
-        private float _radius;
-        private float _radiusSquared;
 
         /// <summary>How far the region reaches from its axis.</summary>
-        public float Radius
-        {
-            get => _radius;
-            set
-            {
-                _radius = value;
-
-                // Squared once here rather than on every containment test.
-                _radiusSquared = value * value;
-            }
-        }
+        public float Radius { get; set; }
 
         /// <summary>How far the region reaches either side of its plane.</summary>
         /// <remarks>A negative value is stored as its size, so -1.5 reads back as 1.5.</remarks>
@@ -81,7 +69,9 @@ namespace Gaia.Core.Regions
         {
             Vector2 point = InPlane(local, out float height);
 
-            return MathF.Abs(height) <= HalfHeight && point.SquaredMagnitude <= _radiusSquared;
+            // Height is local Y, so the half height takes the tolerance along it.
+            return MathF.Abs(height) <= HalfHeight + ToleranceAlongAxes.Y &&
+                   point.SquaredMagnitude <= MathHelpers.SquaredReach(Radius, ToleranceInPlane);
         }
 
         /// <inheritdoc />

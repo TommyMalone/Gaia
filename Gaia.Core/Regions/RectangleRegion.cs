@@ -67,8 +67,9 @@ namespace Gaia.Core.Regions
         protected override bool IsInShape(Vector3 local)
         {
             Vector2 point = InPlane(local, out _);
+            Vector2 tolerance = InPlane(ToleranceAlongAxes, out _);
 
-            return MathF.Abs(point.X) <= Extents.X && MathF.Abs(point.Y) <= Extents.Y;
+            return MathF.Abs(point.X) <= Extents.X + tolerance.X && MathF.Abs(point.Y) <= Extents.Y + tolerance.Y;
         }
 
         /// <inheritdoc />

@@ -61,8 +61,10 @@ namespace Gaia.Core.Regions
         /// <inheritdoc />
         protected override bool IsInShape(Vector3 local)
         {
-            return MathF.Abs(local.X) <= Extents.X && MathF.Abs(local.Y) <= Extents.Y &&
-                   MathF.Abs(local.Z) <= Extents.Z;
+            Vector3 tolerance = ToleranceAlongAxes;
+
+            return MathF.Abs(local.X) <= Extents.X + tolerance.X && MathF.Abs(local.Y) <= Extents.Y + tolerance.Y &&
+                   MathF.Abs(local.Z) <= Extents.Z + tolerance.Z;
         }
 
         /// <inheritdoc />

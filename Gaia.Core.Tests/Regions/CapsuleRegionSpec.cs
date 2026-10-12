@@ -62,6 +62,79 @@ public class CapsuleRegionSpec
     }
 
     [Test]
+    public void ContainsItsSurfaceFarFromTheWorldsOriginOnceTurned()
+    {
+        // The segment runs from 3 below the middle to 3 above it. Six points around the side at its bottom, its
+        // middle and its top, the tip of each cap, and a point halfway down each cap.
+        float halfwayDownACap = 2f / MathF.Sqrt(2f);
+        List<Vector3> onTheBoundary = new()
+        {
+            new Vector3(0f, 5f, 0f), new Vector3(0f, -5f, 0f), new Vector3(halfwayDownACap, 3f + halfwayDownACap, 0f),
+            new Vector3(0f, -3f - halfwayDownACap, -halfwayDownACap),
+        };
+
+        foreach (float height in new[] { -3f, 0f, 3f })
+        {
+            for (int step = 0; step < 6; step++)
+            {
+                float angle = step * MathF.PI / 3f;
+
+                onTheBoundary.Add(new Vector3(2f * MathF.Cos(angle), height, 2f * MathF.Sin(angle)));
+            }
+        }
+
+        RegionSpecHelpers.AssertItsBoundaryHoldsFarFromTheWorldsOrigin(_capsule, onTheBoundary);
+    }
+
+    [Test]
+    public void HoldsItsSurfaceWithinAMillimeter()
+    {
+        Vector3 alongX = new(1f, 0f, 0f);
+        Vector3 up = new(0f, 1f, 0f);
+        Vector3 down = new(0f, -1f, 0f);
+
+        Assert.Multiple(() =>
+        {
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_capsule, alongX * 2f, alongX);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_capsule, up * 5f, up);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_capsule, down * 5f, down);
+        });
+    }
+
+    [Test]
+    public void HoldsAPositionExactlyTheTolerancePastItsSide()
+    {
+        // At the world's origin and unturned, a position comes into the capsule's own coordinates unchanged, so this
+        // one, beside the middle of the segment at the radius and the tolerance added in float, has exactly the squared
+        // distance the capsule compares with, which only an inclusive comparison holds.
+        Vector3 exactlyTheTolerancePast = new(2f + 0.001f, 0f, 0f);
+
+        _capsule.Origin = Vector3.Zero;
+
+        Assert.That(_capsule.IsInRegion(exactlyTheTolerancePast), Is.True);
+    }
+
+    [TestCase(100f, 100f, 100f)]
+    [TestCase(0.01f, 0.01f, 0.01f)]
+    [TestCase(8f, 0.5f, 2f)]
+    public void HoldsItsTipsWithinAMillimeterInTheWorldAtAnyScale(float scaleX, float scaleY, float scaleZ)
+    {
+        // A distance from the segment mixes all three axes, so the tolerance is taken along the axis with the smallest
+        // scale, up in each case here, and is 1 mm in the world out from either tip.
+        Vector3 up = new(0f, 1f, 0f);
+        Vector3 down = new(0f, -1f, 0f);
+
+        _capsule.Rotation = RegionSpecHelpers.AwkwardTurn;
+        _capsule.Scale = new Vector3(scaleX, scaleY, scaleZ);
+
+        Assert.Multiple(() =>
+        {
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_capsule, up * 5f, up);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_capsule, down * 5f, down);
+        });
+    }
+
+    [Test]
     public void SamplesInsideItself()
     {
         RegionSpecHelpers.AssertEverySampleLandsInside(_capsule);

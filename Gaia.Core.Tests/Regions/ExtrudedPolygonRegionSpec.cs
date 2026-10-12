@@ -51,6 +51,97 @@ public class ExtrudedPolygonRegionSpec
     }
 
     [Test]
+    public void ContainsEveryPointOnItsEdgesFromItsBottomToItsTop()
+    {
+        float[] bottomPlaneAndTop = { 0f, 1.5f, 3f };
+
+        Assert.Multiple(() =>
+        {
+            foreach (float height in bottomPlaneAndTop)
+            {
+                foreach (Vector2 boundaryPoint in RegionSpecHelpers.LShapedFootprintBoundaryPoints)
+                {
+                    Vector3 onTheBoundary = new(boundaryPoint.X, height, boundaryPoint.Y);
+
+                    Assert.That(_extrudedPolygon.IsInRegion(onTheBoundary), Is.True,
+                        $"{onTheBoundary} is on the boundary");
+                }
+            }
+        });
+    }
+
+    [Test]
+    public void ContainsItsSurfaceFarFromTheWorldsOriginOnceTurned()
+    {
+        // The L's twelve boundary points at its bottom, its plane and its top, and three points inside the L on its top
+        // and its bottom.
+        float[] bottomPlaneAndTop = { -1.5f, 0f, 1.5f };
+        List<Vector3> onTheBoundary = new()
+        {
+            new Vector3(2f, 1.5f, 2f), new Vector3(7.5f, 1.5f, 2.5f), new Vector3(2.5f, 1.5f, 7.5f),
+            new Vector3(2f, -1.5f, 2f), new Vector3(7.5f, -1.5f, 2.5f), new Vector3(2.5f, -1.5f, 7.5f),
+        };
+
+        foreach (float height in bottomPlaneAndTop)
+        {
+            onTheBoundary.AddRange(RegionSpecHelpers.LShapedFootprintBoundaryPoints.Select(point =>
+                new Vector3(point.X, height, point.Y)));
+        }
+
+        RegionSpecHelpers.AssertItsBoundaryHoldsFarFromTheWorldsOrigin(_extrudedPolygon, onTheBoundary);
+    }
+
+    [Test]
+    public void HoldsItsTopBottomAndEdgesWithinAMillimeter()
+    {
+        Vector3 up = new(0f, 1f, 0f);
+        Vector3 down = new(0f, -1f, 0f);
+        Vector3 right = new(1f, 0f, 0f);
+
+        Assert.Multiple(() =>
+        {
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_extrudedPolygon, new Vector3(2f, 1.5f, 2f), up);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_extrudedPolygon, new Vector3(2f, -1.5f, 2f),
+                down);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_extrudedPolygon, new Vector3(10f, 0f, 2.5f),
+                right);
+        });
+    }
+
+    [Test]
+    public void HoldsAPositionExactlyTheToleranceAboveItsTop()
+    {
+        // At the world's origin and unturned, a position comes into the shape's own coordinates unchanged, so this
+        // one's height, over a point inside the L, is exactly the sum the shape compares with, its half height and the
+        // tolerance added in float, which only an inclusive comparison holds.
+        Vector3 exactlyTheToleranceAbove = new(2f, 1.5f + 0.001f, 2f);
+
+        _extrudedPolygon.Origin = Vector3.Zero;
+
+        Assert.That(_extrudedPolygon.IsInRegion(exactlyTheToleranceAbove), Is.True);
+    }
+
+    [TestCase(100f, 100f, 100f)]
+    [TestCase(0.01f, 0.01f, 0.01f)]
+    [TestCase(8f, 0.5f, 2f)]
+    public void HoldsItsEndsWithinAMillimeterInTheWorldAtAnyScale(float scaleX, float scaleY, float scaleZ)
+    {
+        Vector3 onTheTop = new(2f, 1.5f, 2f);
+        Vector3 onTheBottom = new(2f, -1.5f, 2f);
+        Vector3 up = new(0f, 1f, 0f);
+        Vector3 down = new(0f, -1f, 0f);
+
+        _extrudedPolygon.Rotation = RegionSpecHelpers.AwkwardTurn;
+        _extrudedPolygon.Scale = new Vector3(scaleX, scaleY, scaleZ);
+
+        Assert.Multiple(() =>
+        {
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_extrudedPolygon, onTheTop, up);
+            RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_extrudedPolygon, onTheBottom, down);
+        });
+    }
+
+    [Test]
     public void SamplesInsideItself()
     {
         RegionSpecHelpers.AssertEverySampleLandsInside(_extrudedPolygon);

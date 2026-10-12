@@ -47,6 +47,81 @@ public class BoxRegionSpec
     }
 
     [Test]
+    public void ContainsItsFacesFarFromTheWorldsOriginOnceTurned()
+    {
+        // The box's eight corners, the middle of each of its six faces, and three points elsewhere on its faces.
+        Vector3[] onTheBoundary =
+        {
+            new(-5f, -1.5f, -10f), new(5f, -1.5f, -10f), new(-5f, 1.5f, -10f), new(5f, 1.5f, -10f),
+            new(-5f, -1.5f, 10f), new(5f, -1.5f, 10f), new(-5f, 1.5f, 10f), new(5f, 1.5f, 10f),
+            new(-5f, 0f, 0f), new(5f, 0f, 0f), new(0f, -1.5f, 0f), new(0f, 1.5f, 0f), new(0f, 0f, -10f),
+            new(0f, 0f, 10f), new(5f, 0.7f, -3.3f), new(-2.2f, 1.5f, 6.1f), new(1.9f, -0.4f, -10f),
+        };
+
+        RegionSpecHelpers.AssertItsBoundaryHoldsFarFromTheWorldsOrigin(_box, onTheBoundary);
+    }
+
+    [Test]
+    public void HoldsItsFacesWithinAMillimeter()
+    {
+        Vector3[] outwardFromEachFace =
+        {
+            new(1f, 0f, 0f), new(-1f, 0f, 0f), new(0f, 1f, 0f), new(0f, -1f, 0f), new(0f, 0f, 1f), new(0f, 0f, -1f),
+        };
+
+        Assert.Multiple(() =>
+        {
+            foreach (Vector3 outward in outwardFromEachFace)
+            {
+                Vector3 middleOfTheFace = new(outward.X * 5f, outward.Y * 1.5f, outward.Z * 10f);
+
+                RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutButNotTwo(_box, middleOfTheFace, outward);
+            }
+        });
+    }
+
+    [TestCase(100f, 100f, 100f)]
+    [TestCase(0.01f, 0.01f, 0.01f)]
+    [TestCase(8f, 0.5f, 2f)]
+    [TestCase(-2f, 0.5f, 8f)]
+    public void HoldsItsFacesWithinAMillimeterInTheWorldAtAnyScale(float scaleX, float scaleY, float scaleZ)
+    {
+        // A negative scale mirrors the box, and the tolerance along that axis is divided by the scale's size.
+        Vector3[] outwardFromEachFace =
+        {
+            new(1f, 0f, 0f), new(-1f, 0f, 0f), new(0f, 1f, 0f), new(0f, -1f, 0f), new(0f, 0f, 1f), new(0f, 0f, -1f),
+        };
+
+        _box.Rotation = RegionSpecHelpers.AwkwardTurn;
+        _box.Scale = new Vector3(scaleX, scaleY, scaleZ);
+
+        Assert.Multiple(() =>
+        {
+            foreach (Vector3 outward in outwardFromEachFace)
+            {
+                Vector3 middleOfTheFace = new(outward.X * 5f, outward.Y * 1.5f, outward.Z * 10f);
+
+                RegionSpecHelpers.AssertItHoldsHalfAMillimeterOutInTheWorldButNotTwo(_box, middleOfTheFace, outward);
+            }
+        });
+    }
+
+    [TestCase(5f + 0.001f, 0f, 0f)]
+    [TestCase(0f, 1.5f + 0.001f, 0f)]
+    [TestCase(0f, 0f, 10f + 0.001f)]
+    public void HoldsAPositionExactlyTheTolerancePastAFace(float x, float y, float z)
+    {
+        // At the world's origin and unturned, a position comes into the box's own coordinates unchanged, so this one's
+        // coordinate on its axis is exactly the sum the box compares with, its extent and the tolerance added in float,
+        // which only an inclusive comparison holds.
+        Vector3 exactlyTheTolerancePast = new(x, y, z);
+
+        _box.Origin = Vector3.Zero;
+
+        Assert.That(_box.IsInRegion(exactlyTheTolerancePast), Is.True);
+    }
+
+    [Test]
     public void SamplesInsideItself()
     {
         RegionSpecHelpers.AssertEverySampleLandsInside(_box);

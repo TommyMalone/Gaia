@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Factories;
+﻿using System;
+using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
 
 namespace Gaia.Core.Regions
@@ -13,6 +14,14 @@ namespace Gaia.Core.Regions
     /// </remarks>
     public abstract class PlanarRegionBase : RegionBase
     {
+        /// <summary>
+        ///     <see cref="RegionBase.BoundaryTolerance" /> in the shape's own units for a comparison that mixes the plane's
+        ///     two axes, local X and Z, a distance from the shape's axis or from an edge. It is the larger of ToleranceAlongAxes
+        ///     on those two, 1 millimeter in the world divided by the smaller size of Scale on them, so it is never less than 1
+        ///     millimeter in the world along either.
+        /// </summary>
+        internal float ToleranceInPlane => MathF.Max(ToleranceAlongAxes.X, ToleranceAlongAxes.Z);
+
         /// <summary>
         ///     Starts the description of a flat shape, carrying the Origin and Rotation attributes
         ///     <see cref="RegionBase.Init" /> reads by, so a shape adds what it reads of its own and nothing else.

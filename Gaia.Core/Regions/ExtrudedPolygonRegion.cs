@@ -52,7 +52,8 @@ namespace Gaia.Core.Regions
         {
             Vector2 point = InPlane(local, out float height);
 
-            return MathF.Abs(height) <= HalfHeight && IsInFootprint(point);
+            // Height is local Y, so the half height takes the tolerance along it.
+            return MathF.Abs(height) <= HalfHeight + ToleranceAlongAxes.Y && IsInFootprint(point);
         }
 
         /// <inheritdoc />

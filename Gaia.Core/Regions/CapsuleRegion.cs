@@ -35,9 +35,6 @@ namespace Gaia.Core.Regions
 
         internal static readonly ComponentDescription Description = Builder.Build();
 
-        private float _radius;
-        private float _radiusSquared;
-
         /// <summary>Half the capsule's full height along its own up, from its middle to the tip of either cap.</summary>
         /// <remarks>
         ///     A value under Radius leaves no segment, so the capsule is the ball of Radius and the tip of either cap is
@@ -46,17 +43,7 @@ namespace Gaia.Core.Regions
         public float HalfHeight { get; set; }
 
         /// <summary>How far the region reaches from the segment.</summary>
-        public float Radius
-        {
-            get => _radius;
-            set
-            {
-                _radius = value;
-
-                // Squared once here rather than on every containment test.
-                _radiusSquared = value * value;
-            }
-        }
+        public float Radius { get; set; }
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
@@ -81,7 +68,8 @@ namespace Gaia.Core.Regions
             float clampedY = Math.Clamp(local.Y, -segmentReach, segmentReach);
             Vector3 nearestOnSegment = new(0f, clampedY, 0f);
 
-            return Vector3.SquaredDistance(nearestOnSegment, local) <= _radiusSquared;
+            return Vector3.SquaredDistance(nearestOnSegment, local) <=
+                   MathHelpers.SquaredReach(Radius, ToleranceInAnyDirection);
         }
 
         /// <inheritdoc />
