@@ -11,13 +11,6 @@ namespace Gaia.Core.Considerations
     /// <seealso>"Modular AI", Section 8.6.2.4, Listing 8.10</seealso>
     public sealed class ConsiderationSet
     {
-        /// <summary>
-        ///     Describes the Consideration children <see cref="Init" /> reads by, for the description of the component whose
-        ///     children it loads.
-        /// </summary>
-        internal static readonly SlotDescription ConsiderationSlot = new("Consideration", "Consideration",
-            ConceptualAbstraction.Considerations, 0, SlotDescription.Unbounded);
-
         private readonly List<ConsiderationBase> _considerations = new();
 
         /// <summary>The option the set belongs to, once AttachTo has said which that is.</summary>
@@ -50,10 +43,10 @@ namespace Gaia.Core.Considerations
         /// <summary>The considerations in the set, in the order they were added.</summary>
         /// <remarks>
         ///     Internal, and read by the component that holds the set. <see cref="OptionBase" /> reads it for the load-time
-        ///     lint that judges whether an option's fixed values can ever select it, and <see cref="OptionBase.Considerations" />
-        ///     and <see cref="ConsiderationSetConsideration.Considerations" /> hand it to readers outside the library. Nothing on
-        ///     the cycle path reads it, so the enumerator an IReadOnlyList boxes is paid by the lint at load and by those readers,
-        ///     and not by a cycle.
+        ///     lint that judges whether an option's fixed values can ever select it, <see cref="OptionBase.Considerations" /> and
+        ///     <see cref="GroupConsiderationBase.Considerations" /> hand it to readers outside the library, and a group's
+        ///     CombineWeights may read it every cycle. A foreach over it boxes an enumerator and an indexed for does not, so a
+        ///     reader on the cycle path loops by index.
         /// </remarks>
         internal IReadOnlyList<ConsiderationBase> Considerations => _considerations;
 
@@ -92,7 +85,7 @@ namespace Gaia.Core.Considerations
                 WeightValues weights = consideration.Weights;
                 addend += weights.Addend;
                 multiplier *= weights.Multiplier;
-                rank = Math.Max(rank, weights.Rank);
+                rank = MathF.Max(rank, weights.Rank);
             }
 
             Addend = addend;
@@ -121,7 +114,7 @@ namespace Gaia.Core.Considerations
                 consideration.AttachTo(_option);
             }
 
-            if (consideration is TuningConsideration or ConsiderationSetConsideration { HasTuning: true })
+            if (consideration is TuningConsideration or GroupConsiderationBase { HasTuning: true })
             {
                 // If considerations are ever allowed to be removed, a more robust method will be needed to tell
                 // whether a TuningConsideration exists.

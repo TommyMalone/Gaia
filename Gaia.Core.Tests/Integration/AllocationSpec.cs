@@ -60,6 +60,10 @@ namespace Gaia.Core.Tests.Integration;
 ///         the target's walk of its list and the move of the hull's transform to the target's position. The case counts
 ///         the answers that land inside, so a region that answers nothing cannot pass as one that allocates nothing.
 ///     </para>
+///     <para>
+///         The group case calculates a group whose rule reads what it holds by index, a thousand times after the same
+///         warm-up, and counts what the rule read, so a rule that read nothing cannot pass as one that allocates nothing.
+///     </para>
 /// </remarks>
 [TestFixture]
 public class AllocationSpec
@@ -152,6 +156,33 @@ public class AllocationSpec
         }
 
         return GC.GetAllocatedBytesForCurrentThread() - bytesBefore;
+    }
+
+    /// <summary>Runs the warm-up, then measures the thread-local bytes a thousand further calculations of a group allocate.</summary>
+    /// <param name="group">The group to calculate.</param>
+    /// <param name="addendsRead">
+    ///     The sum of the addends its rule read in the measured calculations, which the failure message
+    ///     reports.
+    /// </param>
+    private static long MeasureGroupCalculations(RecordingGroupConsideration group, out float addendsRead)
+    {
+        for (int pass = 0; pass < WarmUpCycles; pass++)
+        {
+            group.Calculate();
+        }
+
+        float sumBefore = group.AddendSum;
+        long bytesBefore = GC.GetAllocatedBytesForCurrentThread();
+
+        for (int pass = 0; pass < MeasuredCycles; pass++)
+        {
+            group.Calculate();
+        }
+
+        long allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - bytesBefore;
+
+        addendsRead = group.AddendSum - sumBefore;
+        return allocatedBytes;
     }
 
     /// <summary>Runs the warm-up, then measures the thread-local bytes a thousand further cycles allocate.</summary>
@@ -299,5 +330,22 @@ public class AllocationSpec
             "every measured pass holds the lookout's position and finds a sample");
         Assert.That(allocatedBytes, Is.EqualTo(0),
             $"answering {answersInside} questions of a following region must not feed the collector");
+    }
+
+    [Test]
+    public void CombinesAGroupWithoutAllocating()
+    {
+        const float addendsPerCalculation = 3f;
+
+        StubConsideration first = new(new WeightValues(1f, 1f, 0f));
+        StubConsideration second = new(new WeightValues(2f, 1f, 0f));
+        RecordingGroupConsideration group = new([first, second]);
+
+        long allocatedBytes = MeasureGroupCalculations(group, out float addendsRead);
+
+        Assert.That(addendsRead, Is.EqualTo(addendsPerCalculation * MeasuredCycles),
+            "every measured calculation reads both addends by index");
+        Assert.That(allocatedBytes, Is.EqualTo(0),
+            $"combining a group whose rule read {addendsRead} in addends must not feed the collector");
     }
 }

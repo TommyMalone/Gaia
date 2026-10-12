@@ -64,6 +64,28 @@ public class ConsiderationAndActionOptionSpec
     }
 
     [Test]
+    public void CountsATuningInsideAGroupAGameDerives()
+    {
+        // The group derives the group base and answers with Totals, so it reports the Tuning's values unchanged, and
+        // the option's weight tells whether a default Tuning was added beside it.
+        AiString patrolName = "Patrol";
+        WeightValues tunedWeights = new(5f, 1f, float.MinValue);
+        TuningConsideration tuning = new(tunedWeights);
+        RecordingGroupConsideration group = new([tuning]);
+
+        ConsiderationAndActionOption assembled = new(patrolName);
+        assembled.AddConsideration(group);
+
+        RuleBasedReasoner reasoner = new();
+        reasoner.AddOption(assembled);
+        reasoner.Enable();
+
+        assembled.Calculate();
+
+        Assert.That(assembled.Weight, Is.EqualTo(5f), "a default tuning beside the game's group would make it 6");
+    }
+
+    [Test]
     public void LoadsItsConsiderationsAndActions()
     {
         const string snippet = """

@@ -29,7 +29,9 @@ namespace Gaia.Core.HostSpecs;
 ///     consideration adding the WeightFunction slot its base reads. PassesItsOptionToTheConsiderationsAGameGroupHolds
 ///     covers a game's own group, which passes its option to what it holds through OnAttach and AttachChild, and
 ///     PassesItsOptionThroughAGameGroupHeldByAnother covers a game's group held by another, where AttachChild runs the
-///     held group's OnAttach, so the option reaches what the held group holds.
+///     held group's OnAttach, so the option reaches what the held group holds. LoadsAGameGroupThatDerivesTheGroupBase
+///     covers a game's group built on GroupConsiderationBase, loaded through the shared slot, reading an attribute of its
+///     own, combining by its own rule and counting the Tuning it holds.
 /// </remarks>
 [TestFixture]
 public class GameDefinedConsiderationHostSpec
@@ -224,6 +226,55 @@ public class GameDefinedConsiderationHostSpec
         Assert.That(held.Option, Is.SameAs(patrol));
     }
 
+    [Test]
+    public void LoadsAGameGroupThatDerivesTheGroupBase()
+    {
+        ListLogSink logSink = new();
+
+        FactorySet factories = new();
+        factories.Considerations.Register("AnyOf", () => new HostAnyOfConsideration(),
+            HostAnyOfConsideration.Description);
+
+        // A master is supplied so the loader reports no rolled seed into the sink the test reads.
+        GaiaLoader loader = new(factories, new ManualTimeSource(), new FixedRandomSource(0f), logSink);
+
+        // The group's rule skips the vetoing first Tuning, so the option weighs the second Tuning's addend of 3.
+        // The shipped group's rule would weigh 0, and a default Tuning beside the group would make it 4.
+        const string configurationText = """
+                                         <Brain>
+                                             <Reasoner Type="RuleBased">
+                                                 <Option Type="ConsiderationAndAction" Name="Threatened">
+                                                     <Consideration Type="AnyOf" VetoWhenNoneAllow="false">
+                                                         <Consideration Type="Tuning" Addend="2" Multiplier="0"/>
+                                                         <Consideration Type="Tuning" Addend="3"/>
+                                                     </Consideration>
+                                                 </Option>
+                                             </Reasoner>
+                                         </Brain>
+                                         """;
+
+        bool isLoaded = loader.TryLoadBrain(configurationText, "threats.xml", out Brain? brain);
+
+        Assert.That(isLoaded, Is.True);
+        Assert.That(logSink.Entries, Is.Empty);
+
+        brain!.Enable();
+        brain.Update();
+
+        OptionBase threatened = brain.RootReasoner!.Options[0];
+        HostAnyOfConsideration group = (HostAnyOfConsideration)threatened.Considerations[0];
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(group.VetoWhenNoneAllow, Is.False, "the group read its own attribute");
+            Assert.That(group.Considerations[0].Option, Is.SameAs(threatened));
+            Assert.That(group.Considerations[1].Option, Is.SameAs(threatened));
+            Assert.That(threatened.Considerations, Has.Count.EqualTo(1), "no default Tuning beside the group");
+            Assert.That(threatened.Weight, Is.EqualTo(3f),
+                "the group allows the option through the Tuning that allows it");
+        });
+    }
+
     /// <summary>A game-defined consideration reading a distance the game writes, scored by whatever function it holds.</summary>
     private sealed class HostDistanceConsideration : WeightedConsiderationBase
     {
@@ -341,6 +392,80 @@ public class GameDefinedConsiderationHostSpec
             {
                 AttachChild(held, option);
             }
+        }
+    }
+
+    /// <summary>
+    ///     A game-defined group built on the group base, which allows its option when any consideration it holds does,
+    ///     ignoring a held consideration that vetoes.
+    /// </summary>
+    private sealed class HostAnyOfConsideration : GroupConsiderationBase
+    {
+        private static readonly DescriptionBuilder Builder =
+            new DescriptionBuilder(ConceptualAbstraction.Considerations,
+                "Allows its option when any consideration it holds does.").Add(ConsiderationSlot);
+
+        /// <summary>Describes the optional VetoWhenNoneAllow attribute OnGroupInit reads by.</summary>
+        private static readonly AttributeDescription VetoWhenNoneAllowAttribute = Builder.Optional("VetoWhenNoneAllow",
+            AttributeKind.Bool, "true",
+            "Whether the group vetoes its option when no consideration it holds allows it.");
+
+        /// <summary>Describes the group for the test that registers it, the Consideration slot its base reads and one attribute.</summary>
+        internal static readonly ComponentDescription Description = Builder.Build();
+
+        /// <summary>Whether the group vetoes its option when no consideration it holds allows it, as loaded.</summary>
+        internal bool VetoWhenNoneAllow { get; private set; } = true;
+
+        /// <summary>Takes an optional VetoWhenNoneAllow attribute.</summary>
+        protected override bool OnGroupInit(AiCreationData creationData)
+        {
+            SpecificationNode node = creationData.Node;
+
+            if (node.HasAttribute(VetoWhenNoneAllowAttribute.Name))
+            {
+                if (!node.ReadBool(VetoWhenNoneAllowAttribute.Name, out bool vetoWhenNoneAllow))
+                {
+                    return false;
+                }
+
+                VetoWhenNoneAllow = vetoWhenNoneAllow;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        ///     Combines the considerations that allow the option by the library's standard rule. When none allows it, the
+        ///     group vetoes or reports neutral values as VetoWhenNoneAllow says.
+        /// </summary>
+        protected override WeightValues CombineWeights()
+        {
+            float addend = 0f;
+            float multiplier = 1f;
+            float rank = float.MinValue;
+            bool anyAllows = false;
+
+            for (int index = 0; index < Considerations.Count; index++)
+            {
+                WeightValues weights = Considerations[index].Weights;
+
+                if (weights.Multiplier <= 0f)
+                {
+                    continue;
+                }
+
+                anyAllows = true;
+                addend += weights.Addend;
+                multiplier *= weights.Multiplier;
+                rank = MathF.Max(rank, weights.Rank);
+            }
+
+            if (anyAllows)
+            {
+                return new WeightValues(addend, multiplier, rank);
+            }
+
+            return VetoWhenNoneAllow ? WeightValues.Vetoed : WeightValues.Neutral;
         }
     }
 
