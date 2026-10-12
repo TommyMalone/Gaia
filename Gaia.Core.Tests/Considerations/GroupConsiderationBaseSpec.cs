@@ -12,7 +12,7 @@ namespace Gaia.Core.Tests.Considerations;
 /// <remarks>
 ///     The group is a <see cref="RecordingGroupConsideration" />, which records what it saw when the base asked it.
 ///     That the shipped group, rebuilt on the base, combines, selects and loads as before is covered in
-///     <see cref="ConsiderationSetConsiderationSpec" />.
+///     <see cref="GroupConsiderationSpec" />.
 /// </remarks>
 [TestFixture]
 public class GroupConsiderationBaseSpec

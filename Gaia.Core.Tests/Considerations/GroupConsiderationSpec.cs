@@ -7,8 +7,8 @@ using Gaia.Core.WeightFunctions;
 namespace Gaia.Core.Tests.Considerations;
 
 /// <summary>
-///     Covers how a <see cref="ConsiderationSetConsideration" /> combines what it groups, passes the lifecycle down
-///     and reports the considerations it groups.
+///     Covers how a <see cref="GroupConsideration" /> combines what it groups, passes the lifecycle down and reports
+///     the considerations it groups.
 /// </summary>
 /// <remarks>
 ///     The grouped considerations are stubs, so combining is asserted on values set by hand, and selection is
@@ -16,7 +16,7 @@ namespace Gaia.Core.Tests.Considerations;
 ///     to the group reaches the considerations inside it is covered in <see cref="OptionBaseSpec" />.
 /// </remarks>
 [TestFixture]
-public class ConsiderationSetConsiderationSpec
+public class GroupConsiderationSpec
 {
     [SetUp]
     public void BuildGroup()
@@ -28,7 +28,7 @@ public class ConsiderationSetConsiderationSpec
         _firstInner = new StubConsideration(firstReport);
         _secondInner = new StubConsideration(secondReport);
 
-        _group = new ConsiderationSetConsideration([_firstInner, _secondInner]);
+        _group = new GroupConsideration([_firstInner, _secondInner]);
     }
 
     private RecordingLogSink _logSink;
@@ -36,7 +36,7 @@ public class ConsiderationSetConsiderationSpec
     private StubConsideration _firstInner;
     private StubConsideration _secondInner;
 
-    private ConsiderationSetConsideration _group;
+    private GroupConsideration _group;
 
     [Test]
     public void CombinesWhatItsGroupedConsiderationsReport()
@@ -81,7 +81,7 @@ public class ConsiderationSetConsiderationSpec
     [Test]
     public void ContributesNothingWithAnEmptyGroup()
     {
-        ConsiderationSetConsideration emptyGroup = new([]);
+        GroupConsideration emptyGroup = new([]);
 
         emptyGroup.Calculate();
 
@@ -119,14 +119,14 @@ public class ConsiderationSetConsiderationSpec
     public void LoadsItsNestedConsiderations()
     {
         const string snippet = """
-                               <Consideration Type="ConsiderationSet">
+                               <Consideration Type="Group">
                                    <Consideration Type="Tuning" Addend="1"/>
                                    <Consideration Type="Tuning" Addend="2" Rank="3"/>
                                </Consideration>
                                """;
         AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
-        ConsiderationSetConsideration loaded = new();
+        GroupConsideration loaded = new();
 
         Assert.Multiple(() =>
         {
@@ -144,13 +144,13 @@ public class ConsiderationSetConsiderationSpec
     public void RefusesAGroupHoldingAConsiderationThatFailsToLoad()
     {
         const string snippet = """
-                               <Consideration Type="ConsiderationSet">
+                               <Consideration Type="Group">
                                    <Consideration Type="Unregistered"/>
                                </Consideration>
                                """;
         AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
-        ConsiderationSetConsideration loaded = new();
+        GroupConsideration loaded = new();
 
         Assert.Multiple(() =>
         {
@@ -168,14 +168,14 @@ public class ConsiderationSetConsiderationSpec
         // Each child's addend is its place in the document, so the addends read back show the order the considerations
         // are reported in.
         const string snippet = """
-                               <Consideration Type="ConsiderationSet">
+                               <Consideration Type="Group">
                                    <Consideration Type="Tuning" Addend="1"/>
                                    <Consideration Type="Tuning" Addend="2"/>
                                </Consideration>
                                """;
         AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
-        ConsiderationSetConsideration loaded = new();
+        GroupConsideration loaded = new();
 
         Assert.That(loaded.Init(creationData), Is.True);
 

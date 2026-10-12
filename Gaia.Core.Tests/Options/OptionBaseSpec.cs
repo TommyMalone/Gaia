@@ -46,16 +46,16 @@ public class OptionBaseSpec
     }
 
     [Test]
-    public void TellsTheConsiderationsInsideANestedSet()
+    public void TellsTheConsiderationsInsideANestedGroup()
     {
         StubConsideration innerConsideration = new(WeightValues.Neutral);
-        ConsiderationSetConsideration nestedSet = new([innerConsideration]);
+        GroupConsideration nestedGroup = new([innerConsideration]);
 
-        _option.AddConsideration(nestedSet);
+        _option.AddConsideration(nestedGroup);
 
         Assert.Multiple(() =>
         {
-            Assert.That(nestedSet.Option, Is.SameAs(_option));
+            Assert.That(nestedGroup.Option, Is.SameAs(_option));
             Assert.That(innerConsideration.Option, Is.SameAs(_option));
         });
     }

@@ -33,8 +33,6 @@ namespace Gaia.Core.Factories
 
             Considerations.Register("BooleanVariable", () => new BooleanVariableConsideration(),
                 BooleanVariableConsideration.Description);
-            Considerations.Register("ConsiderationSet", () => new ConsiderationSetConsideration(),
-                ConsiderationSetConsideration.Description);
             Considerations.Register("Distance", () => new DistanceConsideration(), DistanceConsideration.Description);
             Considerations.Register("EntityExists", () => new EntityExistsConsideration(),
                 EntityExistsConsideration.Description);
@@ -42,6 +40,7 @@ namespace Gaia.Core.Factories
                 ExecutionHistoryConsideration.Description);
             Considerations.Register("FloatVariable", () => new FloatVariableConsideration(),
                 FloatVariableConsideration.Description);
+            Considerations.Register("Group", () => new GroupConsideration(), GroupConsideration.Description);
             Considerations.Register("IntVariable", () => new IntVariableConsideration(),
                 IntVariableConsideration.Description);
             Considerations.Register("StringVariable", () => new StringVariableConsideration(),

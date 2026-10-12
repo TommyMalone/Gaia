@@ -71,8 +71,8 @@ public class FactorySetSpec
         {
             Assert.That(factories.Actions.Types, Is.EqualTo(Names("Pause", "Subreasoner")));
             Assert.That(factories.Considerations.Types,
-                Is.EqualTo(Names("BooleanVariable", "ConsiderationSet", "Distance", "EntityExists", "ExecutionHistory",
-                    "FloatVariable", "IntVariable", "StringVariable", "Tuning")));
+                Is.EqualTo(Names("BooleanVariable", "Distance", "EntityExists", "ExecutionHistory", "FloatVariable",
+                    "Group", "IntVariable", "StringVariable", "Tuning")));
             Assert.That(factories.Options.Types, Is.EqualTo(Names("ConsiderationAndAction")));
             Assert.That(factories.Reasoners.Types, Is.EqualTo(Names("DualUtility", "RuleBased", "Sequence")));
             Assert.That(factories.Regions.Types,
@@ -94,7 +94,7 @@ public class FactorySetSpec
             Assert.That(factories.Actions.TypeSpellings, Is.EqualTo(new[] { "Pause", "Subreasoner" }));
             Assert.That(factories.Considerations.TypeSpellings, Is.EqualTo(new[]
             {
-                "BooleanVariable", "ConsiderationSet", "Distance", "EntityExists", "ExecutionHistory", "FloatVariable",
+                "BooleanVariable", "Distance", "EntityExists", "ExecutionHistory", "FloatVariable", "Group",
                 "IntVariable", "StringVariable", "Tuning",
             }));
             Assert.That(factories.Options.TypeSpellings, Is.EqualTo(new[] { "ConsiderationAndAction" }));
@@ -207,7 +207,7 @@ public class FactorySetSpec
             ("StringVariable", VariableSnippet("StringVariable"), typeof(StringVariableConsideration)),
             ("EntityExists", VariableSnippet("EntityExists"), typeof(EntityExistsConsideration)),
             ("ExecutionHistory", """<Consideration Type="ExecutionHistory"/>""", typeof(ExecutionHistoryConsideration)),
-            ("ConsiderationSet", """<Consideration Type="ConsiderationSet"/>""", typeof(ConsiderationSetConsideration)),
+            ("Group", """<Consideration Type="Group"/>""", typeof(GroupConsideration)),
         };
 
         Assert.Multiple(() =>

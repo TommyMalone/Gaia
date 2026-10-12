@@ -49,7 +49,7 @@ public class ConsiderationAndActionOptionSpec
         AiString patrolName = "Patrol";
         WeightValues tunedWeights = new(5f, 1f, float.MinValue);
         TuningConsideration tuning = new(tunedWeights);
-        ConsiderationSetConsideration group = new([tuning]);
+        GroupConsideration group = new([tuning]);
 
         ConsiderationAndActionOption assembled = new(patrolName);
         assembled.AddConsideration(group);
@@ -138,7 +138,7 @@ public class ConsiderationAndActionOptionSpec
     {
         const string snippet = """
                                <Option Type="ConsiderationAndAction" Name="Patrol">
-                                   <Consideration Type="ConsiderationSet">
+                                   <Consideration Type="Group">
                                        <Consideration Type="Tuning" Addend="5"/>
                                    </Consideration>
                                </Option>
@@ -163,8 +163,8 @@ public class ConsiderationAndActionOptionSpec
     {
         const string snippet = """
                                <Option Type="ConsiderationAndAction" Name="Patrol">
-                                   <Consideration Type="ConsiderationSet">
-                                       <Consideration Type="ConsiderationSet">
+                                   <Consideration Type="Group">
+                                       <Consideration Type="Group">
                                            <Consideration Type="Tuning" Addend="5"/>
                                        </Consideration>
                                    </Consideration>
@@ -191,7 +191,7 @@ public class ConsiderationAndActionOptionSpec
         // without it.
         const string snippet = """
                                <Option Type="ConsiderationAndAction" Name="Idle">
-                                   <Consideration Type="ConsiderationSet"/>
+                                   <Consideration Type="Group"/>
                                </Option>
                                """;
         AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
@@ -202,7 +202,7 @@ public class ConsiderationAndActionOptionSpec
 
         loaded.Calculate();
 
-        ConsiderationSetConsideration group = (ConsiderationSetConsideration)loaded.Considerations[0];
+        GroupConsideration group = (GroupConsideration)loaded.Considerations[0];
 
         Assert.Multiple(() =>
         {
@@ -220,7 +220,7 @@ public class ConsiderationAndActionOptionSpec
         // counts as holding a Tuning.
         const string snippet = """
                                <Option Type="ConsiderationAndAction" Name="Watch">
-                                   <Consideration Type="ConsiderationSet">
+                                   <Consideration Type="Group">
                                        <Consideration Type="ExecutionHistory"/>
                                    </Consideration>
                                </Option>
@@ -231,7 +231,7 @@ public class ConsiderationAndActionOptionSpec
 
         Assert.That(loaded.Init(creationData), Is.True);
 
-        ConsiderationSetConsideration group = (ConsiderationSetConsideration)loaded.Considerations[0];
+        GroupConsideration group = (GroupConsideration)loaded.Considerations[0];
 
         Assert.Multiple(() =>
         {
@@ -318,7 +318,7 @@ public class ConsiderationAndActionOptionSpec
         // the first consideration that is not a Tuning, so a veto written inside a group loads with no warning.
         const string snippet = """
                                <Option Type="ConsiderationAndAction" Name="Disabled">
-                                   <Consideration Type="ConsiderationSet">
+                                   <Consideration Type="Group">
                                        <Consideration Type="Tuning" Multiplier="0"/>
                                    </Consideration>
                                </Option>
