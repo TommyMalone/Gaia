@@ -55,6 +55,19 @@ public class DecisionHistoryWriterSpec
     }
 
     [Test]
+    public void WritesNoneForTheRankOfAnOptionWithNoRank()
+    {
+        DecisionHistory history = new(4, 1);
+        RecordCycle(history, 7, 0.25f, "Idle", new DecisionRecord("Idle", float.MinValue, 1f, false));
+        StringWriter text = new();
+
+        _writer.Write(history, text);
+
+        Assert.That(Lines(text)[7], Is.EqualTo("record\tIdle\tnone\t1\tfalse"),
+            "an option no consideration ranked has no rank to write");
+    }
+
+    [Test]
     public void WritesALegendAndAReasonerLineForAHistoryThatHasRecordedNothing()
     {
         StringWriter text = new();

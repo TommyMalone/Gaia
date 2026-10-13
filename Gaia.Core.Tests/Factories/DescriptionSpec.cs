@@ -176,6 +176,34 @@ public class DescriptionSpec
     }
 
     [Test]
+    public void ListsTheGroupsBooleanOperatorsWithTheirDefault()
+    {
+        AttributeDescription booleanOperator =
+            AttributeOf(DescriptionOf(ConceptualAbstraction.Considerations, "Group")!, "BooleanOperator")!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(booleanOperator.Kind, Is.EqualTo(AttributeKind.Enumeration));
+            Assert.That(booleanOperator.Choices, Is.EqualTo(new[] { "And", "Or", "Not" }));
+            Assert.That(booleanOperator.DefaultText, Is.EqualTo("And"));
+        });
+    }
+
+    [Test]
+    public void ListsTheGroupsRankOperatorsWithTheirDefault()
+    {
+        AttributeDescription rankOperator =
+            AttributeOf(DescriptionOf(ConceptualAbstraction.Considerations, "Group")!, "RankOperator")!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(rankOperator.Kind, Is.EqualTo(AttributeKind.Enumeration));
+            Assert.That(rankOperator.Choices, Is.EqualTo(new[] { "Max", "Min", "Sum" }));
+            Assert.That(rankOperator.DefaultText, Is.EqualTo("Max"));
+        });
+    }
+
+    [Test]
     public void CarriesTheKindAVariableIsReadAs()
     {
         AttributeDescription floatVariable =

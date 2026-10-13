@@ -63,6 +63,9 @@ namespace Gaia.Core.Tests.Integration;
 ///     <para>
 ///         The group case calculates a group whose rule reads what it holds by index, a thousand times after the same
 ///         warm-up, and counts what the rule read, so a rule that read nothing cannot pass as one that allocates nothing.
+///         The case of groups under every operator runs the steady-state brain over two shipped groups, one under Or with
+///         Sum and one under Not with Min. It reads what each reported, so the walk of what a group holds is inside the
+///         window.
 ///     </para>
 /// </remarks>
 [TestFixture]
@@ -347,5 +350,42 @@ public class AllocationSpec
             "every measured calculation reads both addends by index");
         Assert.That(allocatedBytes, Is.EqualTo(0),
             $"combining a group whose rule read {addendsRead} in addends must not feed the collector");
+    }
+
+    [Test]
+    public void RunsACycleOfGroupsUnderEveryOperatorWithoutAllocating()
+    {
+        StubConsideration enemyVisible = new(new WeightValues(3f, 1f, 1f));
+        StubConsideration heardShot = new(new WeightValues(2f, 1f, 2f));
+        StubConsideration tookDamage = new(new WeightValues(4f, 0f, 9f));
+        GroupConsideration anyThreat = new([enemyVisible, heardShot, tookDamage])
+        {
+            BooleanOperator = BooleanOperator.Or,
+            RankOperator = RankOperator.Sum,
+        };
+
+        GroupConsideration calm = new([new StubConsideration(WeightValues.Vetoed)])
+        {
+            BooleanOperator = BooleanOperator.Not,
+            RankOperator = RankOperator.Min,
+        };
+
+        StubOption threatened = new([anyThreat], []) { Name = "Threatened" };
+        StubOption resting = new([calm], []) { Name = "Resting" };
+
+        DualUtilityReasoner reasoner = new() { RandomSource = new FixedRandomSource(0f) };
+        reasoner.AddOption(threatened);
+        reasoner.AddOption(resting);
+
+        long allocatedBytes = MeasureCycles(BuildMonitoredBrain(reasoner));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(anyThreat.Weights, Is.EqualTo(new WeightValues(5f, 1f, 3f)),
+                "the Or group combined the two threats that allow, its ranks summed");
+            Assert.That(calm.Weights.Multiplier, Is.EqualTo(1f), "the Not group turned its vetoing consideration");
+            Assert.That(allocatedBytes, Is.EqualTo(0),
+                "a warm cycle of groups under every operator must not feed the collector");
+        });
     }
 }
