@@ -386,6 +386,7 @@ namespace Gaia.Core.DataStores
         /// </remarks>
         private void ReportAnyTypeMismatch(AiString name, DataStoreValueType requestedValueType)
         {
+            // Stryker disable once all : a mutant of an out variable's condition used after the if does not compile
             if (_valueTypes == null || !_valueTypes.TryGetValue(name, out DataStoreValueType storedValueType))
             {
                 return;

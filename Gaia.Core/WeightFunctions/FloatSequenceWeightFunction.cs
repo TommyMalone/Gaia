@@ -193,6 +193,7 @@ namespace Gaia.Core.WeightFunctions
 
             if (hasRange)
             {
+                // Stryker disable once all : a mutant of an out variable's condition used after the if does not compile
                 if (!entryNode.ReadFloat(ThresholdMinAttribute.Name, out thresholdMin) ||
                     !entryNode.ReadFloat(ThresholdMaxAttribute.Name, out thresholdMax))
                 {
@@ -208,6 +209,7 @@ namespace Gaia.Core.WeightFunctions
             }
             else
             {
+                // Stryker disable once all : a mutant of an out variable's condition used after the if does not compile
                 if (!entryNode.ReadFloat(ThresholdAttribute.Name, out float threshold))
                 {
                     return false;
@@ -224,6 +226,7 @@ namespace Gaia.Core.WeightFunctions
                 return false;
             }
 
+            // Stryker disable once all : a mutant of an out variable's condition used after the if does not compile
             if (!WeightValues.TryRead(entryNode, out WeightValues weights))
             {
                 return false;

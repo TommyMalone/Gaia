@@ -201,6 +201,7 @@ namespace Gaia.Core.Options
 
             foreach (ConsiderationBase consideration in _considerations.Considerations)
             {
+                // Stryker disable once all : a mutant of a pattern whose variable is used after the if does not compile
                 if (consideration is not TuningConsideration tuning)
                 {
                     return;
