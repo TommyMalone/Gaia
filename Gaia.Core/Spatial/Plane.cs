@@ -13,7 +13,7 @@ namespace Gaia.Core.Spatial
         /// <summary>The unit vector pointing out of the front of the plane.</summary>
         public Vector3 Normal { get; }
 
-        /// <summary>How far the plane lies from the origin, measured along Normal.</summary>
+        /// <summary>How far the plane lies from the origin, measured along Normal. This is the negative of Unity's Plane.distance.</summary>
         public float Distance { get; }
 
         /// <summary>Creates a plane from a normal and a distance, scaling both down by the normal's length.</summary>

@@ -310,6 +310,91 @@ public class SphereRegionSpec
     }
 
     [Test]
+    public void LoadsItsScaleAndAbsoluteScale()
+    {
+        // The ellipsoid above, loaded. (0, 1.9, 0) comes in at 0.95 up and (1.9, 0, 0) at 1.9 along its right.
+        const string snippet = """<Region Type="Sphere" Radius="1" Scale="(1, 2, 1)" AbsoluteScale="true"/>""";
+        Vector3 nearTheStretchedTop = new(0f, 1.9f, 0f);
+        Vector3 asFarAlongItsRight = new(1.9f, 0f, 0f);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        bool wasCreated = creationData.Factories.Regions.TryCreate(creationData, out RegionBase? loaded);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wasCreated, Is.True);
+            Assert.That(loaded?.Scale, Is.EqualTo(new Vector3(1f, 2f, 1f)));
+            Assert.That(loaded?.AbsoluteScale, Is.True);
+            Assert.That(loaded?.AbsoluteRotation, Is.False);
+            Assert.That(loaded?.IsInRegion(nearTheStretchedTop), Is.True);
+            Assert.That(loaded?.IsInRegion(asFarAlongItsRight), Is.False);
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void RefusesAMalformedScaleFlagOrTarget()
+    {
+        // Each read reports what it could not read, so the load stops there rather than placing the ball with a value
+        // that was never written. A Scale written as one number, as a uniform scale might be, is the likeliest.
+        (string snippet, string[] reports)[] catalog =
+        {
+            ("<Region Type=\"Sphere\" Radius=\"1\" Scale=\"2\"/>", new[]
+            {
+                "Error guard.xml Line 1, the Region element's Scale is not a tuple like (0, 1.5, 300), it reads \"2\"",
+            }),
+            ("<Region Type=\"Sphere\" Radius=\"1\" AbsoluteRotation=\"yes\"/>", new[]
+            {
+                "Error guard.xml Line 1, the Region element's AbsoluteRotation is not true or false, it reads \"yes\"",
+            }),
+            ("<Region Type=\"Sphere\" Radius=\"1\" AbsoluteScale=\"yes\"/>", new[]
+            {
+                "Error guard.xml Line 1, the Region element's AbsoluteScale is not true or false, it reads \"yes\"",
+            }),
+            ("<Region Type=\"Sphere\" Radius=\"1\">\n    <OriginTarget Type=\"Position\"/>\n</Region>", new[]
+            {
+                "Error guard.xml Line 2, the OriginTarget element has no Position attribute",
+                "Error guard.xml Line 2, the OriginTarget element's type Position failed to initialize",
+            }),
+        };
+
+        Assert.Multiple(() =>
+        {
+            foreach ((string snippet, string[] reports) in catalog)
+            {
+                RecordingLogSink logSink = new();
+                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+                SphereRegion loaded = new();
+
+                Assert.That(loaded.Init(creationData), Is.False, snippet);
+                Assert.That(logSink.Entries, Is.EqualTo(reports), snippet);
+            }
+        });
+    }
+
+    [Test]
+    public void HoldsAMillimeterPastItsSurfaceAtALoadedScale()
+    {
+        // Scaled to 2, the ball's surface is 2 from its middle, and the tolerance of 1 millimeter in the world is
+        // half a millimeter in its own units. A tolerance left at 1 millimeter in its own units would hold 2
+        // millimeters past the surface in the world, and (2.0015, 0, 0) with it.
+        const string snippet = """<Region Type="Sphere" Radius="1" Scale="(2, 2, 2)"/>""";
+        Vector3 halfAMillimeterPast = new(2.0005f, 0f, 0f);
+        Vector3 oneAndAHalfMillimetersPast = new(2.0015f, 0f, 0f);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        SphereRegion loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.IsInRegion(halfAMillimeterPast), Is.True);
+            Assert.That(loaded.IsInRegion(oneAndAHalfMillimetersPast), Is.False);
+        });
+    }
+
+    [Test]
     public void ContainsTheSameBallWhateverItsRotation()
     {
         // A turn about all three axes leaves rounding in every coordinate of a position brought in, so each

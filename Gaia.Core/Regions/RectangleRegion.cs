@@ -13,7 +13,7 @@ namespace Gaia.Core.Regions
     public sealed class RectangleRegion : PlanarRegionBase
     {
         private static readonly DescriptionBuilder Builder =
-            DescribeFlatShape("A rectangle on the ground, which ignores height.");
+            DescribeShape("A rectangle on the ground, which ignores height.");
 
         private static readonly AttributeDescription ExtentsAttribute = Builder.Required("Extents",
             AttributeKind.Vector2,

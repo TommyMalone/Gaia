@@ -53,10 +53,10 @@ namespace Gaia.Core.Regions
             AttributeKind.Vector3, "Which way the plane faces, pointing out of the volume.");
 
         private static readonly AttributeDescription DistanceAttribute = PlaneBuilder.Required("Distance",
-            AttributeKind.Float, "How far along its normal the plane sits from the world's origin.");
+            AttributeKind.Float,
+            "How far the plane sits from the hull's Origin along its normal, in the hull's own coordinates. The Normal's length does not change it. This is the negative of Unity's Plane.distance.");
 
-        private static readonly DescriptionBuilder Builder = new(ConceptualAbstraction.Regions,
-            "A volume bounded by planes.");
+        private static readonly DescriptionBuilder Builder = DescribeShape("A volume bounded by planes.");
 
         private static readonly SlotDescription PlaneSlot = Builder.Slot("Plane", PlaneBuilder.Build(), MinPlaneCount,
             SlotDescription.Unbounded);
@@ -82,9 +82,16 @@ namespace Gaia.Core.Regions
         {
             SpecificationNode node = creationData.Node;
 
-            // Every child is a Plane, since the factory refused anything else against the description.
+            // The factory refused any child the description does not name, and Init has loaded the OriginTarget, so
+            // only the Plane children are read here.
             foreach (SpecificationNode child in node.Children)
             {
+                if (child.Name != PlaneSlot.Name)
+                {
+                    continue;
+                }
+
+                // Stryker disable once all : a mutant of an out variable's condition used after the if does not compile
                 if (!child.ReadVector3(NormalAttribute.Name, out Vector3 normal) ||
                     !child.ReadFloat(DistanceAttribute.Name, out float distance))
                 {
@@ -98,7 +105,9 @@ namespace Gaia.Core.Regions
                     return false;
                 }
 
-                AddPlane(new Plane(normal, distance));
+                // The Normal is brought to unit length here, so the plane stands at the Distance written. The Plane
+                // constructor would otherwise divide the Distance by the Normal's length as well.
+                AddPlane(new Plane(normal / normal.Magnitude, distance));
             }
 
             // Refused here rather than left to the factory's count of the slot, since the sentence gives the reason

@@ -247,6 +247,30 @@ public class CircleRegionSpec
     }
 
     [Test]
+    public void LoadsItsAbsoluteRotation()
+    {
+        // The design's circle under a drone that banks and pitches as it flies, moving with it and never tilting with
+        // it.
+        const string snippet = """
+                               <Region Type="Circle" Radius="3" AbsoluteRotation="true">
+                                   <OriginTarget Type="Self"/>
+                               </Region>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        bool wasCreated = creationData.Factories.Regions.TryCreate(creationData, out RegionBase? loaded);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wasCreated, Is.True);
+            Assert.That(loaded?.AbsoluteRotation, Is.True);
+            Assert.That(loaded?.AbsoluteScale, Is.False);
+            Assert.That(loaded?.OriginTarget, Is.InstanceOf<SelfTarget>());
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
     public void RefusesANodeMissingItsRadius()
     {
         const string snippet = """

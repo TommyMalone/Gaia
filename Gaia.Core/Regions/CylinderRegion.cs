@@ -2,7 +2,6 @@
 using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
 using Gaia.Core.Specifications;
-using Gaia.Core.Targets;
 
 namespace Gaia.Core.Regions
 {
@@ -17,16 +16,16 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class CylinderRegion : PlanarRegionBase
     {
-        private static readonly DescriptionBuilder Builder = DescribeFlatShape("A cylinder standing on the ground.");
+        private static readonly DescriptionBuilder Builder = DescribeShape("An upright cylinder around its Origin.");
 
         private static readonly AttributeDescription RadiusAttribute = Builder.Required("Radius", AttributeKind.Float,
             "How far the cylinder reaches from its axis.");
 
         private static readonly AttributeDescription HalfHeightAttribute = Builder.Required("HalfHeight",
             AttributeKind.Float,
-            "How far the cylinder reaches either side of its plane. A negative value is read as its size.");
+            "How far the cylinder reaches either side of its plane, which runs through Origin at its middle. A negative value is read as its size.");
 
-        internal static readonly ComponentDescription Description = Builder.Add(OriginTargetSlot).Build();
+        internal static readonly ComponentDescription Description = Builder.Build();
 
         private float _halfHeight;
 
@@ -44,13 +43,6 @@ namespace Gaia.Core.Regions
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            if (!LoadOriginTarget(creationData, out TargetBase? originTarget))
-            {
-                return false;
-            }
-
-            OriginTarget = originTarget;
-
             SpecificationNode node = creationData.Node;
 
             if (!node.ReadFloat(RadiusAttribute.Name, out float radius) ||

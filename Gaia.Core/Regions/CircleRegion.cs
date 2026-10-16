@@ -1,6 +1,5 @@
 ﻿using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
-using Gaia.Core.Targets;
 
 namespace Gaia.Core.Regions
 {
@@ -9,26 +8,19 @@ namespace Gaia.Core.Regions
     public sealed class CircleRegion : PlanarRegionBase
     {
         private static readonly DescriptionBuilder Builder =
-            DescribeFlatShape("A disc on the ground, which ignores height.");
+            DescribeShape("A disc on the ground, which ignores height.");
 
         private static readonly AttributeDescription RadiusAttribute = Builder.Required("Radius", AttributeKind.Float,
             "How far the disc reaches from its middle.");
 
-        internal static readonly ComponentDescription Description = Builder.Add(OriginTargetSlot).Build();
+        internal static readonly ComponentDescription Description = Builder.Build();
 
-        /// <summary>How far the region reaches from its axis.</summary>
+        /// <summary>How far the region reaches from its middle.</summary>
         public float Radius { get; set; }
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            if (!LoadOriginTarget(creationData, out TargetBase? originTarget))
-            {
-                return false;
-            }
-
-            OriginTarget = originTarget;
-
             if (!creationData.Node.ReadFloat(RadiusAttribute.Name, out float radius))
             {
                 return false;

@@ -54,16 +54,22 @@ namespace Gaia.Core.Regions
 
         /// <summary>Loads the footprint's corners from the node's Corner children.</summary>
         /// <remarks>
-        ///     Every child is a Corner, since the factory refused anything else against the description. A Corner with no
-        ///     Position fails the read here. The factory refuses fewer than three corners once the shape's Init returns, since a
-        ///     footprint without area contains nothing and can only have been a mistake.
+        ///     Only the Corner children are read, so an OriginTarget beside them, which Init has loaded, is left alone. A
+        ///     Corner with no Position fails the read here. The factory refuses fewer than three corners once the shape's Init
+        ///     returns, since a footprint without area contains nothing and can only have been a mistake.
         /// </remarks>
-        internal bool LoadFootprint(AiCreationData creationData)
+        /// <returns>True when the corners loaded. False after reporting what went wrong.</returns>
+        protected bool LoadFootprint(AiCreationData creationData)
         {
             SpecificationNode node = creationData.Node;
 
             foreach (SpecificationNode child in node.Children)
             {
+                if (child.Name != CornerSlot.Name)
+                {
+                    continue;
+                }
+
                 if (!child.ReadVector2(PositionAttribute.Name, out Vector2 corner))
                 {
                     return false;
@@ -93,12 +99,12 @@ namespace Gaia.Core.Regions
 
         /// <summary>
         ///     Starts the description of a footprint shape, carrying the Corner children <see cref="LoadFootprint" /> reads
-        ///     by on top of the flat shape's attributes, so a shape adds what it reads of its own and nothing else.
+        ///     by on top of what DescribeShape carries, so a shape adds what it reads of its own and nothing else.
         /// </summary>
         /// <param name="summary">One line saying what the shape is, in a designer's words.</param>
         protected static DescriptionBuilder DescribeFootprint(string summary)
         {
-            return DescribeFlatShape(summary).Add(CornerSlot);
+            return DescribeShape(summary).Add(CornerSlot);
         }
 
         /// <summary>Tests whether a point of the plane is inside the footprint.</summary>

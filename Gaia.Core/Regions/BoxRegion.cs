@@ -9,9 +9,7 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class BoxRegion : RegionBase
     {
-        private static readonly DescriptionBuilder Builder =
-            new DescriptionBuilder(ConceptualAbstraction.Regions, "A box that can be placed and turned.")
-                .Add(OriginAttribute).Add(RotationAttribute);
+        private static readonly DescriptionBuilder Builder = DescribeShape("A box that can be placed and turned.");
 
         private static readonly AttributeDescription ExtentsAttribute = Builder.Required("Extents",
             AttributeKind.Vector3,

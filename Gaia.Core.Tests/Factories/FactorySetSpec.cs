@@ -60,6 +60,40 @@ public class FactorySetSpec
             creationData.Factories.WeightFunctions.TryCreate(creationData, out _),
     };
 
+    /// <summary>A target written as a region's OriginTarget child, which loads with no Self.</summary>
+    private const string OriginTargetChild = "    <OriginTarget Type=\"Position\" Position=\"(0, 0, 0)\"/>\n";
+
+    /// <summary>The three corners of the smallest loadable footprint, written as Corner children.</summary>
+    private const string FootprintCorners = "    <Corner Position=\"(0, 0)\"/>\n" +
+                                            "    <Corner Position=\"(10, 0)\"/>\n" +
+                                            "    <Corner Position=\"(0, 10)\"/>\n";
+
+    /// <summary>The six planes of a box reaching 1 from its middle each way, the hull the sweeps load.</summary>
+    private const string HullPlanes = "    <Plane Normal=\"(1, 0, 0)\" Distance=\"1\"/>\n" +
+                                      "    <Plane Normal=\"(-1, 0, 0)\" Distance=\"1\"/>\n" +
+                                      "    <Plane Normal=\"(0, 1, 0)\" Distance=\"1\"/>\n" +
+                                      "    <Plane Normal=\"(0, -1, 0)\" Distance=\"1\"/>\n" +
+                                      "    <Plane Normal=\"(0, 0, 1)\" Distance=\"1\"/>\n" +
+                                      "    <Plane Normal=\"(0, 0, -1)\" Distance=\"1\"/>\n";
+
+    /// <summary>
+    ///     Each built-in region with the attributes and children of an element that loads it, and the type it builds,
+    ///     which the sweeps over the regions load.
+    /// </summary>
+    private static readonly (string typeName, string attributes, string ownChildren, Type componentType)[]
+        BuiltInRegions =
+        {
+            ("Circle", " Origin=\"(0, 0, 0)\" Radius=\"5\"", "", typeof(CircleRegion)),
+            ("Rectangle", " Origin=\"(5, 0, 5)\" Extents=\"(5, 5)\"", "", typeof(RectangleRegion)),
+            ("Polygon", "", FootprintCorners, typeof(PolygonRegion)),
+            ("Sphere", " Origin=\"(0, 0, 0)\" Radius=\"5\"", "", typeof(SphereRegion)),
+            ("Box", " Origin=\"(5, 5, 5)\" Extents=\"(5, 5, 5)\"", "", typeof(BoxRegion)),
+            ("Cylinder", " Origin=\"(0, 0, 0)\" Radius=\"5\" HalfHeight=\"1.5\"", "", typeof(CylinderRegion)),
+            ("Capsule", " Origin=\"(0, 0, 0)\" Radius=\"2\" HalfHeight=\"5\"", "", typeof(CapsuleRegion)),
+            ("ExtrudedPolygon", " HalfHeight=\"1.5\"", FootprintCorners, typeof(ExtrudedPolygonRegion)),
+            ("ConvexHull", "", HullPlanes, typeof(ConvexHullRegion)),
+        };
+
     private RecordingLogSink _logSink;
 
     [Test]
@@ -254,27 +288,11 @@ public class FactorySetSpec
     [Test]
     public void BuildsEveryBuiltInRegionByItsTypeName()
     {
-        (string typeName, string snippet, Type componentType)[] catalog =
-        {
-            ("Circle", """<Region Type="Circle" Origin="(0, 0, 0)" Radius="5"/>""", typeof(CircleRegion)),
-            ("Rectangle", """<Region Type="Rectangle" Origin="(5, 0, 5)" Extents="(5, 5)"/>""",
-                typeof(RectangleRegion)),
-            ("Polygon", FootprintSnippet("Polygon", ""), typeof(PolygonRegion)),
-            ("Sphere", """<Region Type="Sphere" Origin="(0, 0, 0)" Radius="5"/>""", typeof(SphereRegion)),
-            ("Box", """<Region Type="Box" Origin="(5, 5, 5)" Extents="(5, 5, 5)"/>""", typeof(BoxRegion)),
-            ("Cylinder", """<Region Type="Cylinder" Origin="(0, 0, 0)" Radius="5" HalfHeight="1.5"/>""",
-                typeof(CylinderRegion)),
-            ("Capsule", """<Region Type="Capsule" Origin="(0, 0, 0)" Radius="2" HalfHeight="5"/>""",
-                typeof(CapsuleRegion)),
-            ("ExtrudedPolygon", FootprintSnippet("ExtrudedPolygon", " HalfHeight=\"1.5\""),
-                typeof(ExtrudedPolygonRegion)),
-            ("ConvexHull", HullSnippet(), typeof(ConvexHullRegion)),
-        };
-
         Assert.Multiple(() =>
         {
-            foreach ((string typeName, string snippet, Type componentType) in catalog)
+            foreach ((string typeName, string attributes, string ownChildren, Type componentType) in BuiltInRegions)
             {
+                string snippet = RegionSnippet(typeName, attributes, ownChildren);
                 AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 
                 bool created = creationData.Factories.Regions.TryCreate(creationData, out RegionBase? region);
@@ -282,6 +300,45 @@ public class FactorySetSpec
                 Assert.That(created, Is.True, typeName);
                 Assert.That(region, Is.InstanceOf(componentType), typeName);
                 Assert.That(_logSink.Entries, Is.Empty, typeName);
+            }
+        });
+    }
+
+    [Test]
+    public void LoadsAnOriginTargetOnEveryRegion()
+    {
+        // The target is written first, as the design's wedge writes it, so a reader of the shape's own children that
+        // stops at the first child that is not its own reads none of them.
+        AssertEachLoadsItsOriginTarget(BuiltInRegions, OriginTargetChild, "");
+    }
+
+    [Test]
+    public void LoadsAnOriginTargetWrittenAfterTheShapesOwnChildren()
+    {
+        // The tool adds a child after the others, so a target added to a hull or a footprint that has its planes or
+        // corners is saved after them. A reader that looks only at the first child for the target finds none.
+        AssertEachLoadsItsOriginTarget(BuiltInRegions.Where(region => region.ownChildren.Length > 0), "",
+            OriginTargetChild);
+    }
+
+    [Test]
+    public void RefusesAZeroScaleOnEveryRegion()
+    {
+        // The zero is the last component, so a refusal that tests the first two alone lets every shape through.
+        Assert.Multiple(() =>
+        {
+            foreach ((string typeName, string attributes, string ownChildren, Type _) in BuiltInRegions)
+            {
+                string snippet = RegionSnippet(typeName, attributes + " Scale=\"(1, 1, 0)\"", ownChildren);
+                RecordingLogSink logSink = new();
+                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+                Assert.That(creationData.Factories.Regions.TryCreate(creationData, out _), Is.False, typeName);
+                Assert.That(logSink.Entries, Is.EqualTo(new[]
+                {
+                    "Error guard.xml Line 1, the Region element's Scale attribute has a zero component, which leaves the shape containing nothing",
+                    $"Error guard.xml Line 1, the Region element's type {typeName} failed to initialize",
+                }), typeName);
             }
         });
     }
@@ -460,9 +517,9 @@ public class FactorySetSpec
     [Test]
     public void RefusesAMissingRequiredAttributeInEveryRegion()
     {
-        // Origin is optional on every shape that takes one, so a bare round shape names Radius. The capsule and the
-        // cylinder name HalfHeight once given a Radius, the extruded polygon names HalfHeight, and the box and the
-        // rectangle name Extents.
+        // Origin, Rotation, Scale and the two flags are optional on every shape, so a bare round shape names Radius.
+        // The capsule and the cylinder name HalfHeight once given a Radius, the extruded polygon names HalfHeight, and
+        // the box and the rectangle name Extents.
         AssertMissingAttributeRefused("Region", new[]
         {
             ("Box", "", "Extents"), ("Capsule", "", "Radius"), ("Capsule", " Radius=\"2\"", "HalfHeight"),
@@ -562,31 +619,49 @@ public class FactorySetSpec
                """;
     }
 
-    /// <summary>Builds the smallest loadable snippet for a footprint region of the given type.</summary>
-    private static string FootprintSnippet(string typeName, string extraAttributes)
+    /// <summary>
+    ///     Loads each region with an OriginTarget child written before or after its own children, as given, and asserts
+    ///     that it holds the target, the hull its six planes and each footprint its three corners, with nothing reported.
+    /// </summary>
+    private static void AssertEachLoadsItsOriginTarget(
+        IEnumerable<(string typeName, string attributes, string ownChildren, Type componentType)> regions,
+        string childFirst,
+        string childLast)
     {
-        return $"""
-                <Region Type="{typeName}"{extraAttributes}>
-                    <Corner Position="(0, 0)"/>
-                    <Corner Position="(10, 0)"/>
-                    <Corner Position="(0, 10)"/>
-                </Region>
-                """;
+        Assert.Multiple(() =>
+        {
+            foreach ((string typeName, string attributes, string ownChildren, Type _) in regions)
+            {
+                string snippet = RegionSnippet(typeName, attributes, childFirst + ownChildren + childLast);
+                RecordingLogSink logSink = new();
+                AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, logSink);
+
+                bool created = creationData.Factories.Regions.TryCreate(creationData, out RegionBase? region);
+
+                Assert.That(created, Is.True, typeName);
+                Assert.That(region?.OriginTarget, Is.InstanceOf<PositionTarget>(), typeName);
+
+                if (region is ConvexHullRegion hull)
+                {
+                    Assert.That(hull.LocalPlanes, Has.Count.EqualTo(6), typeName);
+                }
+
+                if (region is PolygonRegionBase footprint)
+                {
+                    Assert.That(footprint.Corners, Has.Count.EqualTo(3), typeName);
+                }
+
+                Assert.That(logSink.Entries, Is.Empty, typeName);
+            }
+        });
     }
 
-    /// <summary>Builds the smallest loadable snippet for a convex hull, a unit box of six planes.</summary>
-    private static string HullSnippet()
+    /// <summary>Builds a Region element of the given type, holding the given children, or none when they are empty.</summary>
+    private static string RegionSnippet(string typeName, string attributes, string children)
     {
-        return """
-               <Region Type="ConvexHull">
-                   <Plane Normal="(1, 0, 0)" Distance="1"/>
-                   <Plane Normal="(-1, 0, 0)" Distance="1"/>
-                   <Plane Normal="(0, 1, 0)" Distance="1"/>
-                   <Plane Normal="(0, -1, 0)" Distance="1"/>
-                   <Plane Normal="(0, 0, 1)" Distance="1"/>
-                   <Plane Normal="(0, 0, -1)" Distance="1"/>
-               </Region>
-               """;
+        return children.Length == 0
+            ? $"<Region Type=\"{typeName}\"{attributes}/>"
+            : $"<Region Type=\"{typeName}\"{attributes}>\n{children}</Region>";
     }
 
     /// <summary>Builds the smallest loadable snippet for a variable consideration of the given type.</summary>

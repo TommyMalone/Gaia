@@ -22,18 +22,18 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class CapsuleRegion : RegionBase
     {
-        private static readonly DescriptionBuilder Builder =
-            new DescriptionBuilder(ConceptualAbstraction.Regions, "A cylinder with a rounded top and bottom.").Add(
-                OriginAttribute);
+        private static readonly DescriptionBuilder Builder = DescribeShape("A cylinder with a rounded top and bottom.");
 
         private static readonly AttributeDescription RadiusAttribute = Builder.Required("Radius", AttributeKind.Float,
-            "How far the region reaches from the segment.");
+            "How far the region reaches from the segment. A negative value is read as its size.");
 
         private static readonly AttributeDescription HalfHeightAttribute = Builder.Required("HalfHeight",
             AttributeKind.Float,
             "Half the capsule's height, from its middle to the tip of either cap. A value under Radius makes the capsule the ball of Radius.");
 
         internal static readonly ComponentDescription Description = Builder.Build();
+
+        private float _radius;
 
         /// <summary>Half the capsule's full height along its own up, from its middle to the tip of either cap.</summary>
         /// <remarks>
@@ -43,7 +43,12 @@ namespace Gaia.Core.Regions
         public float HalfHeight { get; set; }
 
         /// <summary>How far the region reaches from the segment.</summary>
-        public float Radius { get; set; }
+        /// <remarks>A negative value is stored as its size, so -1 reads back as 1.</remarks>
+        public float Radius
+        {
+            get => _radius;
+            set => _radius = MathF.Abs(value);
+        }
 
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)

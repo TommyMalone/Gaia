@@ -3,7 +3,7 @@ using Gaia.Core.Spatial;
 
 namespace Gaia.Core.Regions
 {
-    /// <summary>A footprint of any shape in its own plane, which ignores height.</summary>
+    /// <summary>A footprint of any shape in its own plane, one ring of corners in either winding, which ignores height.</summary>
     /// <remarks>A random position lies in the footprint's own plane.</remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class PolygonRegion : PolygonRegionBase

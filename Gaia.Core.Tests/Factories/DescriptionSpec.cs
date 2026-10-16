@@ -106,12 +106,8 @@ public class DescriptionSpec
     {
         ComponentDescription sphere = DescriptionOf(ConceptualAbstraction.Regions, "Sphere")!;
 
-        Assert.Multiple(() =>
-        {
-            Assert.That(sphere.Attributes[0].Spelling, Is.EqualTo("Origin"));
-            Assert.That(sphere.Attributes[1].Spelling, Is.EqualTo("Radius"));
-            Assert.That(sphere.Attributes, Has.Count.EqualTo(2));
-        });
+        Assert.That(sphere.Attributes.Select(attribute => attribute.Spelling),
+            Is.EqualTo(new[] { "Origin", "Rotation", "Scale", "AbsoluteRotation", "AbsoluteScale", "Radius" }));
     }
 
     [Test]
@@ -121,10 +117,15 @@ public class DescriptionSpec
 
         Assert.Multiple(() =>
         {
-            Assert.That(SlotOf(polygon, "Corner"), Is.Not.Null, "the footprint base reads Corner children");
             Assert.That(AttributeOf(polygon, "Origin"), Is.Not.Null, "the region base reads Origin");
             Assert.That(AttributeOf(polygon, "Rotation"), Is.Not.Null, "the region base reads Rotation");
-            Assert.That(polygon.Attributes, Has.Count.EqualTo(2), "a polygon reads no attribute of its own");
+            Assert.That(AttributeOf(polygon, "Scale"), Is.Not.Null, "the region base reads Scale");
+            Assert.That(AttributeOf(polygon, "AbsoluteRotation"), Is.Not.Null,
+                "the region base reads AbsoluteRotation");
+            Assert.That(AttributeOf(polygon, "AbsoluteScale"), Is.Not.Null, "the region base reads AbsoluteScale");
+            Assert.That(polygon.Attributes, Has.Count.EqualTo(5), "a polygon reads no attribute of its own");
+            Assert.That(polygon.Slots.Select(slot => slot.Spelling), Is.EqualTo(new[] { "OriginTarget", "Corner" }),
+                "the region base reads the OriginTarget child and the footprint base the Corner children");
         });
     }
 
@@ -326,6 +327,31 @@ public class DescriptionSpec
                 "<Region Type=\"Circle\" Radius=\"1\"/>", loaded => loaded.Origin);
             AssertAssignsItsDefault(ConceptualAbstraction.Regions, "Circle", "Rotation", circle,
                 "<Region Type=\"Circle\" Radius=\"1\"/>", loaded => loaded.Rotation);
+            AssertAssignsItsDefault(ConceptualAbstraction.Regions, "Box", "Origin", new BoxRegion(),
+                BareRegionSnippet("Box"), loaded => loaded.Origin);
+            AssertAssignsItsDefault(ConceptualAbstraction.Regions, "Box", "Rotation", new BoxRegion(),
+                BareRegionSnippet("Box"), loaded => loaded.Rotation);
+            AssertAssignsItsDefault(ConceptualAbstraction.Regions, "ConvexHull", "Origin", new ConvexHullRegion(),
+                BareRegionSnippet("ConvexHull"), loaded => loaded.Origin);
+            AssertAssignsItsDefault(ConceptualAbstraction.Regions, "ConvexHull", "Rotation", new ConvexHullRegion(),
+                BareRegionSnippet("ConvexHull"), loaded => loaded.Rotation);
+            AssertAssignsItsDefault(ConceptualAbstraction.Regions, "Capsule", "Rotation", new CapsuleRegion(),
+                BareRegionSnippet("Capsule"), loaded => loaded.Rotation);
+            AssertAssignsItsDefault(ConceptualAbstraction.Regions, "Sphere", "Rotation", new SphereRegion(),
+                BareRegionSnippet("Sphere"), loaded => loaded.Rotation);
+
+            // A new shape already holds (1, 1, 1) and false, so for these three the row holds the default the
+            // description states rather than the reads, which have rows of their own.
+            foreach ((string type, Func<RegionBase> create, string _) in BareRegions)
+            {
+                AssertAssignsItsDefault(ConceptualAbstraction.Regions, type, "Scale", create(), BareRegionSnippet(type),
+                    loaded => loaded.Scale);
+                AssertAssignsItsDefault(ConceptualAbstraction.Regions, type, "AbsoluteRotation", create(),
+                    BareRegionSnippet(type), loaded => loaded.AbsoluteRotation);
+                AssertAssignsItsDefault(ConceptualAbstraction.Regions, type, "AbsoluteScale", create(),
+                    BareRegionSnippet(type), loaded => loaded.AbsoluteScale);
+            }
+
             AssertAssignsItsDefault(ConceptualAbstraction.Targets, "ByName", "Store", byName,
                 "<Target Type=\"ByName\" List=\"Contacts\" Entity=\"Wolf\"/>",
                 loaded => ReferenceEquals(loaded.DataStore, brainBlackboard) ? "Brain" : "World", creationData =>
@@ -347,6 +373,42 @@ public class DescriptionSpec
                 "<WeightFunction Type=\"Constant\"/>", loaded => loaded.Weights.Multiplier == 0f);
         });
     }
+
+    /// <summary>
+    ///     Each built-in region, how to make one and the smallest element that loads it, writing none of the attributes
+    ///     its bases read.
+    /// </summary>
+    private static readonly (string type, Func<RegionBase> create, string snippet)[] BareRegions =
+    {
+        ("Box", () => new BoxRegion(), "<Region Type=\"Box\" Extents=\"(1, 1, 1)\"/>"),
+        ("Capsule", () => new CapsuleRegion(), "<Region Type=\"Capsule\" Radius=\"1\" HalfHeight=\"1\"/>"),
+        ("Sphere", () => new SphereRegion(), "<Region Type=\"Sphere\" Radius=\"1\"/>"),
+        ("ConvexHull", () => new ConvexHullRegion(), """
+                                                     <Region Type="ConvexHull">
+                                                         <Plane Normal="(1, 0, 0)" Distance="1"/>
+                                                         <Plane Normal="(0, 1, 0)" Distance="1"/>
+                                                         <Plane Normal="(0, 0, 1)" Distance="1"/>
+                                                         <Plane Normal="(-1, -1, -1)" Distance="1"/>
+                                                     </Region>
+                                                     """),
+        ("Circle", () => new CircleRegion(), "<Region Type=\"Circle\" Radius=\"1\"/>"),
+        ("Cylinder", () => new CylinderRegion(), "<Region Type=\"Cylinder\" Radius=\"1\" HalfHeight=\"1\"/>"),
+        ("Rectangle", () => new RectangleRegion(), "<Region Type=\"Rectangle\" Extents=\"(1, 1)\"/>"),
+        ("Polygon", () => new PolygonRegion(), """
+                                               <Region Type="Polygon">
+                                                   <Corner Position="(0, 0)"/>
+                                                   <Corner Position="(1, 0)"/>
+                                                   <Corner Position="(0, 1)"/>
+                                               </Region>
+                                               """),
+        ("ExtrudedPolygon", () => new ExtrudedPolygonRegion(), """
+                                                               <Region Type="ExtrudedPolygon" HalfHeight="1">
+                                                                   <Corner Position="(0, 0)"/>
+                                                                   <Corner Position="(1, 0)"/>
+                                                                   <Corner Position="(0, 1)"/>
+                                                               </Region>
+                                                               """),
+    };
 
     /// <summary>A distance between two fixed positions, with IgnoreHeight left unwritten.</summary>
     private const string DistanceSnippet = """
@@ -448,6 +510,12 @@ public class DescriptionSpec
         Assert.That(component.Init(creationData), Is.True, $"the {type.Text} snippet loads");
         Assert.That(read(component), Is.EqualTo(ReadDefault(described)),
             $"the {type.Text} element's {spelling} default \"{described.DefaultText}\" is not what it assigns when {spelling} is absent");
+    }
+
+    /// <summary>The smallest element that loads the built-in region of the given type, from BareRegions.</summary>
+    private static string BareRegionSnippet(string type)
+    {
+        return BareRegions.Single(region => region.type == type).snippet;
     }
 
     /// <summary>Every attribute in the description and in the inline descriptions beneath it.</summary>

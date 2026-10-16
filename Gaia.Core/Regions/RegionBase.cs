@@ -67,26 +67,37 @@ namespace Gaia.Core.Regions
         internal const float BoundaryTolerance = 0.001f;
 
         /// <summary>Describes the optional Origin attribute <see cref="Init" /> reads by.</summary>
-        protected static readonly AttributeDescription OriginAttribute = AttributeDescription.Optional("Origin",
-            "Origin", AttributeKind.Vector3, "(0, 0, 0)",
+        private static readonly AttributeDescription OriginAttribute = AttributeDescription.Optional("Origin", "Origin",
+            AttributeKind.Vector3, "(0, 0, 0)",
             "Where the shape's (0, 0, 0) is, in its parent transform's coordinates while it follows an OriginTarget, or else in the world.");
 
-        /// <summary>
-        ///     Describes the optional OriginTarget child <see cref="LoadOriginTarget" /> reads by, for the description of
-        ///     every shape that calls it.
-        /// </summary>
-        /// <remarks>
-        ///     Circle, Cylinder and Sphere read this child and the other six shapes do not. Two of the three are flat and the
-        ///     third is not, so the slot cannot ride DescribeFlatShape, which gives every flat shape its Origin and Rotation
-        ///     attributes, and each shape that reads it adds the slot to its own description.
-        /// </remarks>
-        protected static readonly SlotDescription OriginTargetSlot = new("OriginTarget", "OriginTarget",
-            ConceptualAbstraction.Targets, 0, 1);
-
         /// <summary>Describes the optional Rotation attribute <see cref="Init" /> reads by.</summary>
-        protected static readonly AttributeDescription RotationAttribute = AttributeDescription.Optional("Rotation",
+        private static readonly AttributeDescription RotationAttribute = AttributeDescription.Optional("Rotation",
             "Rotation", AttributeKind.Rotation, "(0, 0, 0)",
-            "How the shape is turned, as pitch, yaw and roll in degrees, pitch positive toward the ground, yaw positive to the right and roll positive raising its right side, relative to its parent transform while it follows an OriginTarget, or else in the world.");
+            "How the shape is turned, as pitch, yaw and roll in degrees, pitch positive toward the ground, yaw positive to the right and roll positive raising its right side, relative to its parent transform while it follows an OriginTarget without AbsoluteRotation, or else in the world.");
+
+        /// <summary>Describes the optional Scale attribute <see cref="Init" /> reads by.</summary>
+        private static readonly AttributeDescription ScaleAttribute = AttributeDescription.Optional("Scale", "Scale",
+            AttributeKind.Vector3, "(1, 1, 1)",
+            "How the shape is stretched along its own right, up and forward, multiplied by its parent transform's scale while it follows an OriginTarget without AbsoluteScale. An uneven Scale stretches a round shape into an ellipse or an ellipsoid, and a negative component mirrors the shape.");
+
+        /// <summary>Describes the optional AbsoluteRotation attribute <see cref="Init" /> reads by.</summary>
+        private static readonly AttributeDescription AbsoluteRotationAttribute = AttributeDescription.Optional(
+            "AbsoluteRotation", "AbsoluteRotation", AttributeKind.Bool, "false",
+            "Whether the shape keeps its Rotation relative to the world while it follows an OriginTarget, rather than turning with its parent transform.");
+
+        /// <summary>Describes the optional AbsoluteScale attribute <see cref="Init" /> reads by.</summary>
+        private static readonly AttributeDescription AbsoluteScaleAttribute = AttributeDescription.Optional(
+            "AbsoluteScale", "AbsoluteScale", AttributeKind.Bool, "false",
+            "Whether the shape keeps its Scale as its whole scale while it follows an OriginTarget, rather than stretching with its parent transform.");
+
+        /// <summary>Describes the optional OriginTarget child <see cref="Init" /> loads, which DescribeShape gives every shape.</summary>
+        /// <remarks>
+        ///     Init reads only the child of this name, so a hull's Plane children and a footprint's Corner children are read
+        ///     beside it as what they are.
+        /// </remarks>
+        private static readonly SlotDescription OriginTargetSlot = new("OriginTarget", "OriginTarget",
+            ConceptualAbstraction.Targets, 0, 1);
 
         private Vector3 _ownTolerance = new(BoundaryTolerance, BoundaryTolerance, BoundaryTolerance);
 
@@ -118,7 +129,9 @@ namespace Gaia.Core.Regions
         /// </summary>
         /// <remarks>
         ///     A zero component of Scale, or of the target's scale while the shape follows it without AbsoluteScale, leaves
-        ///     the shape containing nothing and its sampling failing.
+        ///     the shape containing nothing and its sampling failing. An uneven Scale stretches a round shape, a sphere into an
+        ///     ellipsoid and a circle or a cylinder into an ellipse across, where Unity's and Unreal's round colliders stay round.
+        ///     A negative component mirrors the shape along that axis, as both engines mirror a placed object.
         /// </remarks>
         public Vector3 Scale
         {
@@ -188,9 +201,10 @@ namespace Gaia.Core.Regions
 
         /// <summary>Loads this region's configuration from the creation data's node.</summary>
         /// <remarks>
-        ///     Every region samples through the creation data's random source and is placed by the Origin and Rotation
-        ///     attributes where its element declares them, so the base takes the source and reads both before OnInit, keeping the
-        ///     default for whichever is absent.
+        ///     Every region samples through the creation data's random source, is placed by its Origin, Rotation and Scale
+        ///     attributes and its two absolute flags, and may follow an OriginTarget child, so the base takes the source, reads
+        ///     the five attributes and loads the child before OnInit, keeping the default for whichever is absent. A Scale with a
+        ///     zero component is refused with its line.
         /// </remarks>
         /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>
         public bool Init(AiCreationData creationData)
@@ -201,6 +215,9 @@ namespace Gaia.Core.Regions
 
             Vector3 origin = Vector3.Zero;
             Rotation rotation = Rotation.Identity;
+            Vector3 scale = new(1f, 1f, 1f);
+            bool absoluteRotation = false;
+            bool absoluteScale = false;
 
             if (node.HasAttribute(OriginAttribute.Name) && !node.ReadVector3(OriginAttribute.Name, out origin))
             {
@@ -212,8 +229,60 @@ namespace Gaia.Core.Regions
                 return false;
             }
 
-            _transform = new Transform(origin, rotation, _transform.Scale);
+            if (node.HasAttribute(ScaleAttribute.Name))
+            {
+                if (!node.ReadVector3(ScaleAttribute.Name, out scale))
+                {
+                    return false;
+                }
+
+                if (scale.X == 0f || scale.Y == 0f || scale.Z == 0f)
+                {
+                    creationData.ReportError(
+                        $"Line {node.LineNumber}, the {node.NameSpelling} element's Scale attribute has a zero component, which leaves the shape containing nothing");
+                    return false;
+                }
+            }
+
+            if (node.HasAttribute(AbsoluteRotationAttribute.Name) &&
+                !node.ReadBool(AbsoluteRotationAttribute.Name, out absoluteRotation))
+            {
+                return false;
+            }
+
+            if (node.HasAttribute(AbsoluteScaleAttribute.Name) &&
+                !node.ReadBool(AbsoluteScaleAttribute.Name, out absoluteScale))
+            {
+                return false;
+            }
+
+            if (!LoadOriginTarget(creationData, out TargetBase? originTarget))
+            {
+                return false;
+            }
+
+            Origin = origin;
+            Rotation = rotation;
+            Scale = scale;
+            AbsoluteRotation = absoluteRotation;
+            AbsoluteScale = absoluteScale;
+            OriginTarget = originTarget;
+
             return OnInit(creationData);
+        }
+
+        /// <summary>
+        ///     Starts the description of a shape, carrying the Origin, Rotation, Scale, AbsoluteRotation and AbsoluteScale
+        ///     attributes and the OriginTarget child that <see cref="Init" /> reads, so a shape adds what it reads of its own and
+        ///     nothing else.
+        /// </summary>
+        /// <remarks>They are recorded first, so they come before the shape's own attributes and children in its description.</remarks>
+        /// <param name="summary">One line saying what the shape is, in a designer's words.</param>
+        protected static DescriptionBuilder DescribeShape(string summary)
+        {
+            return new DescriptionBuilder(ConceptualAbstraction.Regions, summary).Add(OriginAttribute)
+                .Add(RotationAttribute).Add(ScaleAttribute).Add(AbsoluteRotationAttribute).Add(AbsoluteScaleAttribute)
+                .Add(OriginTargetSlot);
         }
 
         /// <summary>Loads the derived region's own configuration.</summary>
@@ -227,15 +296,15 @@ namespace Gaia.Core.Regions
             return true;
         }
 
-        /// <summary>Loads the node's OriginTarget child, if it has one, for the shapes whose element takes one.</summary>
+        /// <summary>Loads the node's OriginTarget child, if it has one.</summary>
         /// <remarks>
-        ///     The factory has already refused any other child and a second OriginTarget against the shape's description, so
-        ///     every child met here is the one OriginTarget.
+        ///     The factory has already refused a second OriginTarget against the shape's description. Every other child is
+        ///     the shape's own and is left to it.
         /// </remarks>
         /// <param name="creationData">The creation data whose node carries the OriginTarget child, and whose factories build it.</param>
         /// <param name="originTarget">The loaded target, or null when the node has no OriginTarget child.</param>
-        /// <returns>True when the children loaded. False after reporting what went wrong.</returns>
-        protected static bool LoadOriginTarget(AiCreationData creationData, out TargetBase? originTarget)
+        /// <returns>True when the OriginTarget child loaded, or there is none. False after reporting what went wrong.</returns>
+        private static bool LoadOriginTarget(AiCreationData creationData, out TargetBase? originTarget)
         {
             SpecificationNode node = creationData.Node;
 
@@ -243,6 +312,11 @@ namespace Gaia.Core.Regions
 
             foreach (SpecificationNode child in node.Children)
             {
+                if (child.Name != OriginTargetSlot.Name)
+                {
+                    continue;
+                }
+
                 if (!creationData.Factories.Targets.TryCreate(creationData.ForChild(child), out originTarget))
                 {
                     return false;

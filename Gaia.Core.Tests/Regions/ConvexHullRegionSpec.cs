@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Factories;
+﻿using Gaia.Core.Entities;
+using Gaia.Core.Factories;
 using Gaia.Core.Regions;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Spatial;
@@ -317,6 +318,74 @@ public class ConvexHullRegionSpec
             {
                 "Error guard.xml Line 2, the Plane element's Normal has no length",
             }));
+        });
+    }
+
+    [Test]
+    public void LoadsAWedgeThatFollowsItsTarget()
+    {
+        // The design's wedge, 60 degrees wide, 20 deep and 3 high in front of the actor, from its feet to 3 above them.
+        // The actor stands at (100, 0, 0) turned a quarter right, so the wedge opens along the world's X. (110, 1, 0)
+        // comes in 10 along the wedge's forward, behind every plane. (90, 1, 0) comes in 10 behind the actor, 5 in
+        // front of both side planes. With the actor's turn ignored, (110, 1, 0) would come in 10 along the wedge's
+        // right, outside.
+        const string snippet = """
+                               <Region Type="ConvexHull" Origin="(0, 1.5, 0)">
+                                   <OriginTarget Type="Self"/>
+                                   <Plane Normal="(1, 0, -0.577)" Distance="0"/>
+                                   <Plane Normal="(-1, 0, -0.577)" Distance="0"/>
+                                   <Plane Normal="(0, 0, 1)" Distance="20"/>
+                                   <Plane Normal="(0, 1, 0)" Distance="1.5"/>
+                                   <Plane Normal="(0, -1, 0)" Distance="1.5"/>
+                               </Region>
+                               """;
+        Vector3 inFrontOfTheActor = new(110f, 1f, 0f);
+        Vector3 behindTheActor = new(90f, 1f, 0f);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+        creationData.Self = new Actor
+        {
+            Position = new Vector3(100f, 0f, 0f),
+            Rotation = Rotation.FromEulerAngles(0f, 90f, 0f),
+        };
+
+        bool wasCreated = creationData.Factories.Regions.TryCreate(creationData, out RegionBase? loaded);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wasCreated, Is.True);
+            Assert.That(loaded?.IsInRegion(inFrontOfTheActor), Is.True);
+            Assert.That(loaded?.IsInRegion(behindTheActor), Is.False);
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void LoadsADistanceAsWrittenWhateverTheNormalsLength()
+    {
+        // The diagonal's Normal is 1.414 long. Read as written, its plane stands 10 out along the unit normal, where
+        // dividing the Distance by the Normal's length would stand it 7.07 out. (6, 0, 6) lies 8.49 along the normal,
+        // between the two. (8, 0, 8) lies 11.31 along it. The other four planes close a prism 1 either side of y = 0,
+        // so both points are 1 from the floor and the ceiling and 6 or more from the two planes through the origin.
+        const string snippet = """
+                               <Region Type="ConvexHull">
+                                   <Plane Normal="(1, 0, 1)" Distance="10"/>
+                                   <Plane Normal="(-1, 0, 0)" Distance="0"/>
+                                   <Plane Normal="(0, 0, -1)" Distance="0"/>
+                                   <Plane Normal="(0, 1, 0)" Distance="1"/>
+                                   <Plane Normal="(0, -1, 0)" Distance="1"/>
+                               </Region>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        ConvexHullRegion loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.LocalPlanes[0].Distance, Is.EqualTo(10f).Within(0.001f));
+            Assert.That(loaded.IsInRegion(new Vector3(6f, 0f, 6f)), Is.True, "behind the plane at 10");
+            Assert.That(loaded.IsInRegion(new Vector3(8f, 0f, 8f)), Is.False, "past the plane at 10");
+            Assert.That(_logSink.Entries, Is.Empty);
         });
     }
 

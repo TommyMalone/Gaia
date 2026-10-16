@@ -17,11 +17,11 @@ namespace Gaia.Core.Regions
     public sealed class ExtrudedPolygonRegion : PolygonRegionBase
     {
         private static readonly DescriptionBuilder Builder =
-            DescribeFootprint("A footprint of any shape given a height.");
+            DescribeFootprint("A footprint of any shape given a height, with its Origin halfway up.");
 
         private static readonly AttributeDescription HalfHeightAttribute = Builder.Required("HalfHeight",
             AttributeKind.Float,
-            "How far the shape reaches either side of its plane. A negative value is read as its size.");
+            "How far the shape reaches either side of its plane, which runs through Origin halfway up, so a room 3 high on a floor at 0 has Origin y 1.5 and HalfHeight 1.5. A negative value is read as its size.");
 
         internal static readonly ComponentDescription Description = Builder.Build();
 

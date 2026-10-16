@@ -324,6 +324,25 @@ public class PolygonRegionSpec
     }
 
     [Test]
+    public void MirrorsUnderANegativeScale()
+    {
+        // A Scale of -1 along its right mirrors the L, so its lower right quarter lies left of Origin. (-8, 0, 2) comes
+        // in at (8, 0, 2), inside that quarter. (8, 0, 2) comes in at (-8, 0, 2), outside the L, though a Scale read as
+        // its size would hold it.
+        Vector3 inTheMirroredQuarter = new(-8f, 0f, 2f);
+        Vector3 whereTheQuarterLiesUnmirrored = new(8f, 0f, 2f);
+
+        PolygonRegion mirrored = new() { Scale = new Vector3(-1f, 1f, 1f) };
+        RegionSpecHelpers.AddLShapedFootprint(mirrored);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(mirrored.IsInRegion(inTheMirroredQuarter), Is.True);
+            Assert.That(mirrored.IsInRegion(whereTheQuarterLiesUnmirrored), Is.False);
+        });
+    }
+
+    [Test]
     public void LoadsItsCornersFromCornerElements()
     {
         const string snippet = """

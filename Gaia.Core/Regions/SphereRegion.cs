@@ -1,7 +1,6 @@
 ﻿using Gaia.Core.Factories;
 using Gaia.Core.Spatial;
 using Gaia.Core.Specifications;
-using Gaia.Core.Targets;
 
 namespace Gaia.Core.Regions
 {
@@ -17,13 +16,12 @@ namespace Gaia.Core.Regions
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class SphereRegion : RegionBase
     {
-        private static readonly DescriptionBuilder Builder =
-            new DescriptionBuilder(ConceptualAbstraction.Regions, "A ball.").Add(OriginAttribute);
+        private static readonly DescriptionBuilder Builder = DescribeShape("A ball.");
 
         private static readonly AttributeDescription RadiusAttribute = Builder.Required("Radius", AttributeKind.Float,
             "How far the ball reaches from its middle.");
 
-        internal static readonly ComponentDescription Description = Builder.Add(OriginTargetSlot).Build();
+        internal static readonly ComponentDescription Description = Builder.Build();
 
         /// <summary>How far the region reaches from its origin.</summary>
         public float Radius { get; set; }
@@ -31,13 +29,6 @@ namespace Gaia.Core.Regions
         /// <inheritdoc />
         protected override bool OnInit(AiCreationData creationData)
         {
-            if (!LoadOriginTarget(creationData, out TargetBase? originTarget))
-            {
-                return false;
-            }
-
-            OriginTarget = originTarget;
-
             SpecificationNode node = creationData.Node;
 
             if (!node.ReadFloat(RadiusAttribute.Name, out float radius))

@@ -1,11 +1,16 @@
 ﻿using Gaia.Core.Blackboards;
+using Gaia.Core.Brains;
 using Gaia.Core.Considerations;
 using Gaia.Core.Curves;
 using Gaia.Core.Entities;
+using Gaia.Core.Factories;
 using Gaia.Core.Regions;
 using Gaia.Core.Services.Random;
+using Gaia.Core.Services.Time;
 using Gaia.Core.Spatial;
+using Gaia.Core.Specifications;
 using Gaia.Core.Targets;
+using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.HostSpecs;
 
@@ -541,6 +546,47 @@ public class GeometryHostSpec
     }
 
     [Test]
+    public void LoadsTheCornersOfAGameDefinedFootprint()
+    {
+        // The footprint describes itself through DescribeFootprint and loads its corners through LoadFootprint, as the
+        // shipped footprints do.
+        const string region = """
+                              <Region Type="Triangle">
+                                  <Corner Position="(0, 0)"/>
+                                  <Corner Position="(10, 0)"/>
+                                  <Corner Position="(0, 10)"/>
+                              </Region>
+                              """;
+
+        RegionBase loaded = LoadThroughAGameConsideration(region);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded, Is.InstanceOf<HostFootprintRegion>());
+            Assert.That(loaded.IsInRegion(new Vector3(2f, 0f, 2f)), Is.True);
+            Assert.That(loaded.IsInRegion(new Vector3(9f, 0f, 9f)), Is.False, "beyond the diagonal edge");
+        });
+    }
+
+    [Test]
+    public void LoadsTheTransformOfAGameDefinedShape()
+    {
+        // The ball describes itself through DescribeShape alone and writes no OnInit, so its Origin and Scale are the
+        // base's reads. (11.5, 0, 0) comes in at 0.75 along its right and (12.5, 0, 0) at 1.25. With Scale unread,
+        // (11.5, 0, 0) would come in at 1.5, and with Origin unread at 5.75.
+        const string region = """<Region Type="UnitBall" Origin="(10, 0, 0)" Scale="(2, 2, 2)"/>""";
+
+        RegionBase loaded = LoadThroughAGameConsideration(region);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded, Is.InstanceOf<HostUnitBallRegion>());
+            Assert.That(loaded.IsInRegion(new Vector3(11.5f, 0f, 0f)), Is.True);
+            Assert.That(loaded.IsInRegion(new Vector3(12.5f, 0f, 0f)), Is.False);
+        });
+    }
+
+    [Test]
     public void PointsATargetAndReadsItBack()
     {
         Vector3 vantagePosition = new(3f, 10f, 4f);
@@ -614,6 +660,145 @@ public class GeometryHostSpec
             Assert.That(response.Keyframes, Has.Count.EqualTo(2));
             Assert.That(response.Evaluate(1f), Is.EqualTo(2f).Within(0.0001f));
         });
+    }
+
+    /// <summary>
+    ///     Loads a brain whose one option holds a game consideration with the given Region element, through factories
+    ///     that register the game's two shapes, and hands back the region the consideration built.
+    /// </summary>
+    /// <remarks>
+    ///     A host builds a region from a file only inside a component of its own, since the creation data's constructor
+    ///     is internal, so the consideration is what puts the region under a loaded parent.
+    /// </remarks>
+    private static RegionBase LoadThroughAGameConsideration(string regionElement)
+    {
+        ListLogSink logSink = new();
+        List<string> selections = new();
+
+        FactorySet factories = new();
+        factories.Regions.Register("Triangle", () => new HostFootprintRegion(), HostFootprintRegion.Description);
+        factories.Regions.Register("UnitBall", () => new HostUnitBallRegion(), HostUnitBallRegion.Description);
+        factories.Considerations.Register("InRegion", () => new HostRegionConsideration(),
+            HostRegionConsideration.Description);
+        factories.Actions.Register("Record", () => new HostRecordAction(selections), HostRecordAction.Description);
+
+        // A master is supplied so the loader reports no rolled seed into the sink the test reads.
+        GaiaLoader loader = new(factories, new ManualTimeSource(), new FixedRandomSource(0f), logSink);
+
+        string configurationText = $"""
+                                    <Brain>
+                                        <Reasoner Type="RuleBased">
+                                            <Option Type="ConsiderationAndAction" Name="Hold">
+                                                <Consideration Type="InRegion">
+                                    {regionElement}
+                                                </Consideration>
+                                                <Action Type="Record" Name="Hold"/>
+                                            </Option>
+                                        </Reasoner>
+                                    </Brain>
+                                    """;
+
+        bool isLoaded = loader.TryLoadBrain(configurationText, "regions.xml", out Brain? brain);
+
+        Assert.That(isLoaded, Is.True);
+        Assert.That(logSink.Entries, Is.Empty);
+
+        return ((HostRegionConsideration)brain!.RootReasoner!.Options[0].Considerations[0]).Region!;
+    }
+
+    /// <summary>A game-defined consideration that builds one region from its Region child and reports neutral values.</summary>
+    private sealed class HostRegionConsideration : ConsiderationBase
+    {
+        private static readonly DescriptionBuilder Builder = new(ConceptualAbstraction.Considerations,
+            "Holds one region the game asks.");
+
+        /// <summary>Describes the Region child OnInit builds.</summary>
+        private static readonly SlotDescription RegionSlot = Builder.Slot("Region", ConceptualAbstraction.Regions, 1,
+            1);
+
+        /// <summary>Describes the consideration for the tests that register it.</summary>
+        internal static readonly ComponentDescription Description = Builder.Build();
+
+        /// <summary>The region built from the Region child.</summary>
+        public RegionBase? Region { get; private set; }
+
+        /// <inheritdoc />
+        public override void Calculate()
+        {
+            Weights = WeightValues.Neutral;
+        }
+
+        /// <summary>Builds the Region child, which the factory has already held to one.</summary>
+        protected override bool OnInit(AiCreationData creationData)
+        {
+            foreach (SpecificationNode child in creationData.Node.Children)
+            {
+                if (!creationData.Factories.Regions.TryCreate(creationData.ForChild(child), out RegionBase? region))
+                {
+                    return false;
+                }
+
+                Region = region;
+            }
+
+            return true;
+        }
+    }
+
+    /// <summary>A game-defined footprint, which describes and loads its corners through the base.</summary>
+    private sealed class HostFootprintRegion : PolygonRegionBase
+    {
+        /// <summary>Describes the footprint for the tests that register it.</summary>
+        internal static readonly ComponentDescription Description =
+            DescribeFootprint("A footprint of the game's own, which ignores height.").Build();
+
+        /// <inheritdoc />
+        protected override bool OnInit(AiCreationData creationData)
+        {
+            return LoadFootprint(creationData);
+        }
+
+        /// <inheritdoc />
+        protected override bool IsInShape(Vector3 local)
+        {
+            return IsInFootprint(InPlane(local, out _));
+        }
+
+        /// <inheritdoc />
+        protected override bool TryGetRandomLocalPosition(out Vector3 local)
+        {
+            if (!TryGetRandomFootprintPoint(out Vector2 point))
+            {
+                local = Vector3.Zero;
+
+                return false;
+            }
+
+            local = OutOfPlane(point, 0f);
+
+            return true;
+        }
+    }
+
+    /// <summary>A game-defined ball of radius 1 in its own coordinates, which describes itself through the base alone.</summary>
+    private sealed class HostUnitBallRegion : RegionBase
+    {
+        /// <summary>Describes the ball for the tests that register it, with nothing of its own.</summary>
+        internal static readonly ComponentDescription Description = DescribeShape("A ball of radius 1.").Build();
+
+        /// <inheritdoc />
+        protected override bool IsInShape(Vector3 local)
+        {
+            return local.SquaredMagnitude <= 1f;
+        }
+
+        /// <inheritdoc />
+        protected override bool TryGetRandomLocalPosition(out Vector3 local)
+        {
+            Vector3 reach = new(1f, 1f, 1f);
+
+            return TryRejectionSample(Vector3.Zero - reach, reach, out local);
+        }
     }
 
     /// <summary>

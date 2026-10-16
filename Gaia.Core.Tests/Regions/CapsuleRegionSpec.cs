@@ -277,4 +277,28 @@ public class CapsuleRegionSpec
             Assert.That(sawAboveTheHalfHeight, Is.True, "a sample lies above y = 1");
         });
     }
+
+    [Test]
+    public void ReadsANegativeRadiusAsItsSize()
+    {
+        // Stored as given, a Radius of -1 would lengthen the segment to HalfHeight minus -1, 3 either side of the
+        // middle, so the capsule would reach 4 up its axis while its sample box reaches 2. Read as its size, it
+        // reaches 2, as a capsule of Radius 1 does.
+        Vector3 nearTheTip = new(0f, 1.9f, 0f);
+        Vector3 pastTheTip = new(0f, 2.1f, 0f);
+
+        CapsuleRegion capsule = new()
+        {
+            HalfHeight = 2f,
+            Radius = -1f,
+        };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(capsule.Radius, Is.EqualTo(1f));
+            Assert.That(capsule.IsInRegion(nearTheTip), Is.True);
+            Assert.That(capsule.IsInRegion(pastTheTip), Is.False,
+                "a Radius of -1 stored as given reaches 4 up its axis");
+        });
+    }
 }

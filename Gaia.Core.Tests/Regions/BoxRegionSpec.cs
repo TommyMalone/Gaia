@@ -223,6 +223,24 @@ public class BoxRegionSpec
     }
 
     [Test]
+    public void RefusesAZeroScale()
+    {
+        const string snippet = """<Region Type="Box" Scale="(0, 1, 1)" Extents="(1, 1, 1)"/>""";
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        BoxRegion loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error guard.xml Line 1, the Region element's Scale attribute has a zero component, which leaves the shape containing nothing",
+            }));
+        });
+    }
+
+    [Test]
     public void ReadsANegativeExtentAsItsSize()
     {
         Vector3 withinTheFlippedExtent = new(0.9f, 0f, 0f);
