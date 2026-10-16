@@ -70,7 +70,10 @@ namespace Gaia.Core.Spatial
         /// <summary>The world direction of local Z, the rotation's Forward, unit length whatever Scale is.</summary>
         public Vector3 Forward { get; }
 
-        /// <summary>The same transform moved to another origin, which is how a target's position stands in for a configured one.</summary>
+        /// <summary>
+        ///     The same transform moved to another origin, keeping its rotation, its scale and the directions already
+        ///     computed.
+        /// </summary>
         public Transform WithOrigin(Vector3 origin)
         {
             return new Transform(origin, this);
@@ -95,14 +98,27 @@ namespace Gaia.Core.Spatial
         /// <remarks>
         ///     The local origin is carried out as ToWorld(Vector3) carries a point, so this transform's turn and scale swing
         ///     and stretch it around Origin. The rotation is this transform's Rotation times the local one, which turns by this
-        ///     transform first and then by the local rotation about this transform's axes. The scales multiply axis by axis, which
-        ///     is exact when this transform's scale is uniform or the local transform is unturned inside it, and otherwise
-        ///     stretches the local transform along its own axes where an exact composition would shear it.
+        ///     transform first and then by the local rotation about this transform's axes. Where Scale has a negative component,
+        ///     the local rotation is first mirrored by its signs, so a flipped transform mirrors the local turn as it mirrors the
+        ///     local origin. The scales multiply axis by axis, which is exact when this transform's scale is the same size along
+        ///     every axis, whatever its signs, or the local transform is unturned inside it, and otherwise stretches the local
+        ///     transform along its own axes where an exact composition would shear it.
         /// </remarks>
         public Transform ToWorld(Transform local)
         {
             Vector3 origin = ToWorld(local.Origin);
-            Rotation rotation = Rotation * local.Rotation;
+            Rotation turn = local.Rotation;
+
+            if (Scale.X < 0f || Scale.Y < 0f || Scale.Z < 0f)
+            {
+                float signX = Scale.X < 0f ? -1f : 1f;
+                float signY = Scale.Y < 0f ? -1f : 1f;
+                float signZ = Scale.Z < 0f ? -1f : 1f;
+
+                turn = new Rotation(turn.X * signY * signZ, turn.Y * signX * signZ, turn.Z * signX * signY, turn.W);
+            }
+
+            Rotation rotation = Rotation * turn;
             Vector3 scale = new(Scale.X * local.Scale.X, Scale.Y * local.Scale.Y, Scale.Z * local.Scale.Z);
 
             return new Transform(origin, rotation, scale);

@@ -238,6 +238,33 @@ public class SphereRegionSpec
     }
 
     [Test]
+    public void FollowsItsOriginTargetAsItMoves()
+    {
+        // The target's transform is read at every query rather than once when the target is set, so the ball is around
+        // the target's new position once the target has moved.
+        const string snippet = """
+                               <Region Type="Sphere" Radius="5">
+                                   <OriginTarget Type="Position" Position="(100, 0, 100)"/>
+                               </Region>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+        Vector3 nearTheFirstPosition = new(102f, 0f, 102f);
+        Vector3 nearTheSecondPosition = new(202f, 0f, 202f);
+
+        SphereRegion loaded = new();
+        Assert.That(loaded.Init(creationData), Is.True);
+
+        PositionTarget target = (PositionTarget)loaded.OriginTarget!;
+        target.Position = new Vector3(200f, 0f, 200f);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.IsInRegion(nearTheSecondPosition), Is.True);
+            Assert.That(loaded.IsInRegion(nearTheFirstPosition), Is.False, "where the target stood when it was loaded");
+        });
+    }
+
+    [Test]
     public void RefusesASecondOriginTarget()
     {
         const string snippet = """

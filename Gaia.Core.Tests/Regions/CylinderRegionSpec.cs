@@ -201,23 +201,28 @@ public class CylinderRegionSpec
     }
 
     [Test]
-    public void FollowsItsOriginTarget()
+    public void CarriesItsOriginAsAnOffsetFromItsTarget()
     {
-        Vector3 nearFirstTargetPosition = new(102f, 0f, 100f);
-        Vector3 nearSecondTargetPosition = new(202f, 0f, 200f);
+        // The fixture's Origin of (10, 1.5, 10) is an offset from the target, so the cylinder's middle is at
+        // (110, 1.5, 110). The target's own position is 14 from the cylinder's axis, outside the cylinder of radius 5.
+        Vector3 nearTheOffsetMiddle = new(112f, 1.5f, 110f);
+        Vector3 besideTheTarget = new(102f, 0f, 100f);
+        Vector3 nearTheSecondOffsetMiddle = new(212f, 1.5f, 210f);
 
         PositionTarget target = new() { Position = new Vector3(100f, 0f, 100f) };
         _cylinder.OriginTarget = target;
 
         Assert.Multiple(() =>
         {
-            Assert.That(_cylinder.IsInRegion(InitialOrigin), Is.False, "the initial origin no longer applies");
-            Assert.That(_cylinder.IsInRegion(nearFirstTargetPosition), Is.True);
+            Assert.That(_cylinder.IsInRegion(InitialOrigin), Is.False, "Origin alone no longer places the cylinder");
+            Assert.That(_cylinder.IsInRegion(nearTheOffsetMiddle), Is.True);
+            Assert.That(_cylinder.IsInRegion(besideTheTarget), Is.False,
+                "the target's position does not replace Origin");
         });
 
         target.Position = new Vector3(200f, 0f, 200f);
 
-        Assert.That(_cylinder.IsInRegion(nearSecondTargetPosition), Is.True);
+        Assert.That(_cylinder.IsInRegion(nearTheSecondOffsetMiddle), Is.True);
     }
 
     [Test]

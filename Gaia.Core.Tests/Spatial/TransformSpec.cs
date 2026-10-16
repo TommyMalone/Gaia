@@ -158,6 +158,30 @@ public class TransformSpec
         AssertNearly(placed.Scale, multipliedScale);
     }
 
+    [TestCase(-1f, 1f, 1f)]
+    [TestCase(1f, -1f, 1f)]
+    [TestCase(1f, 1f, -1f)]
+    public void MirrorsTheLocalTurnUnderAFlippedScale(float scaleX, float scaleY, float scaleZ)
+    {
+        // A local point carried out through the placed transform must land where the parent carries the local
+        // transform's answer, the product of the two conversions, which the rows above pin one at a time. The parent is
+        // flipped along one axis in each case and turned, the local transform is turned about all three axes, and the
+        // point lies off every local axis. So a sign taken from the wrong axis, or dropped, moves the point by more
+        // than 2 in at least one case, and the local turn kept unmirrored moves it by more than 2 in every case.
+        Vector3 parentOrigin = new(10f, 2f, 0f);
+        Vector3 flippedScale = new(scaleX, scaleY, scaleZ);
+        Transform parent = new(parentOrigin, Rotation.FromEulerAngles(0f, 30f, 0f), flippedScale);
+
+        Vector3 localOrigin = new(1f, 2f, 3f);
+        Transform local = new(localOrigin, Rotation.FromEulerAngles(20f, 35f, 10f));
+
+        Vector3 point = new(1f, 2f, 4f);
+
+        Transform placed = parent.ToWorld(local);
+
+        AssertNearly(placed.ToWorld(point), parent.ToWorld(local.ToWorld(point)));
+    }
+
     [Test]
     public void EqualsAnotherTransformWithTheSameParts()
     {

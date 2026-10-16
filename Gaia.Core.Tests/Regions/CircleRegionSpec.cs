@@ -186,23 +186,27 @@ public class CircleRegionSpec
     }
 
     [Test]
-    public void FollowsItsOriginTarget()
+    public void CarriesItsOriginAsAnOffsetFromItsTarget()
     {
-        Vector3 nearFirstTargetPosition = new(102f, 0f, 100f);
-        Vector3 nearSecondTargetPosition = new(202f, 0f, 200f);
+        // The fixture's Origin of (10, 0, 10) is an offset from the target, so the disc's middle is at (110, 0, 110).
+        // The target's own position is 14 from that middle, outside the disc of radius 5.
+        Vector3 nearTheOffsetMiddle = new(112f, 0f, 110f);
+        Vector3 besideTheTarget = new(102f, 0f, 100f);
+        Vector3 nearTheSecondOffsetMiddle = new(212f, 0f, 210f);
 
         PositionTarget target = new() { Position = new Vector3(100f, 0f, 100f) };
         _circle.OriginTarget = target;
 
         Assert.Multiple(() =>
         {
-            Assert.That(_circle.IsInRegion(InitialOrigin), Is.False, "the initial origin no longer applies");
-            Assert.That(_circle.IsInRegion(nearFirstTargetPosition), Is.True);
+            Assert.That(_circle.IsInRegion(InitialOrigin), Is.False, "Origin alone no longer places the disc");
+            Assert.That(_circle.IsInRegion(nearTheOffsetMiddle), Is.True);
+            Assert.That(_circle.IsInRegion(besideTheTarget), Is.False, "the target's position does not replace Origin");
         });
 
         target.Position = new Vector3(200f, 0f, 200f);
 
-        Assert.That(_circle.IsInRegion(nearSecondTargetPosition), Is.True);
+        Assert.That(_circle.IsInRegion(nearTheSecondOffsetMiddle), Is.True);
     }
 
     [Test]

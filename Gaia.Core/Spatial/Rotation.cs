@@ -66,7 +66,7 @@ namespace Gaia.Core.Spatial
         /// </remarks>
         /// <param name="pitch">The turn around X in degrees, positive toward the ground.</param>
         /// <param name="yaw">The turn around Y in degrees, positive to the right.</param>
-        /// <param name="roll">The turn around Z in degrees.</param>
+        /// <param name="roll">The turn around Z in degrees, positive raising the right side.</param>
         public static Rotation FromEulerAngles(float pitch, float yaw, float roll)
         {
             float halfPitch = pitch * DegreesToRadians * 0.5f;
@@ -100,7 +100,7 @@ namespace Gaia.Core.Spatial
         ///     </para>
         ///     <para>The arithmetic is the cited conversion, with its axes relabeled to the order above.</para>
         /// </remarks>
-        /// <returns>Pitch, yaw and roll in degrees.</returns>
+        /// <returns>Pitch, yaw and roll in degrees, pitch from -90 to 90 and yaw and roll from -180 to 180.</returns>
         /// <seealso>
         ///     Conversion between quaternions and Euler angles, described at
         ///     https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles

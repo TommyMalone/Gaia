@@ -5,11 +5,6 @@ using Gaia.Core.Targets;
 namespace Gaia.Core.Regions
 {
     /// <summary>A disc in its own plane, which ignores height.</summary>
-    /// <remarks>
-    ///     The disc is around Origin, or around OriginTarget's position while one is configured, so that a region can
-    ///     follow a character. An OriginTarget whose <see cref="TargetBase.TryGetPosition" /> fails leaves the region
-    ///     containing nothing.
-    /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class CircleRegion : PlanarRegionBase
     {

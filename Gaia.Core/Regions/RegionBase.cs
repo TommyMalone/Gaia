@@ -17,8 +17,8 @@ namespace Gaia.Core.Regions
     ///     </para>
     ///     <para>
     ///         Every shape is described in its own coordinates, as the same shape standing unturned at the world's origin
-    ///         would be, and Origin, Rotation and Scale place it in the world. While the shape follows OriginTarget, the
-    ///         target's position stands in for Origin.
+    ///         would be, and Origin, Rotation and Scale place it in the world, or inside its target's transform while it
+    ///         follows OriginTarget.
     ///     </para>
     ///     <para>
     ///         RandomSource is injected the same way it is for <see cref="DualUtilityReasoner" />, so a test can make
@@ -53,9 +53,10 @@ namespace Gaia.Core.Regions
         ///     </para>
         ///     <para>
         ///         Each shape compares in its own coordinates, where the tolerance along one of its axes is this divided by the
-        ///         size of Scale on that axis. A comparison that mixes axes, a distance from a middle, an axis, a segment, a plane
-        ///         or an edge, divides by the smallest size of Scale among the axes it mixes, so the tolerance is never less than
-        ///         1 millimeter in the world along any of them, and is more along an axis scaled further.
+        ///         size of its scale in the world on that axis, Scale multiplied by its target's while it stretches with one. A
+        ///         comparison that mixes axes, a distance from a middle, an axis, a segment, a plane or an edge, divides by the
+        ///         smallest size of that scale among the axes it mixes, so the tolerance is never less than 1 millimeter in the
+        ///         world along any of them, and is more along an axis scaled further.
         ///     </para>
         ///     <para>
         ///         Unreal's math header defines THRESH_POINT_ON_PLANE, 0.10 centimeters, as a plane's thickness, the same
@@ -68,7 +69,7 @@ namespace Gaia.Core.Regions
         /// <summary>Describes the optional Origin attribute <see cref="Init" /> reads by.</summary>
         protected static readonly AttributeDescription OriginAttribute = AttributeDescription.Optional("Origin",
             "Origin", AttributeKind.Vector3, "(0, 0, 0)",
-            "Where the shape's (0, 0, 0) is in the world, unless an OriginTarget stands in.");
+            "Where the shape's (0, 0, 0) is, in its parent transform's coordinates while it follows an OriginTarget, or else in the world.");
 
         /// <summary>
         ///     Describes the optional OriginTarget child <see cref="LoadOriginTarget" /> reads by, for the description of
@@ -85,13 +86,15 @@ namespace Gaia.Core.Regions
         /// <summary>Describes the optional Rotation attribute <see cref="Init" /> reads by.</summary>
         protected static readonly AttributeDescription RotationAttribute = AttributeDescription.Optional("Rotation",
             "Rotation", AttributeKind.Rotation, "(0, 0, 0)",
-            "How the shape is turned from the world's axes, as pitch, yaw and roll in degrees, pitch positive toward the ground and yaw positive to the right.");
+            "How the shape is turned, as pitch, yaw and roll in degrees, pitch positive toward the ground, yaw positive to the right and roll positive raising its right side, relative to its parent transform while it follows an OriginTarget, or else in the world.");
+
+        private Vector3 _ownTolerance = new(BoundaryTolerance, BoundaryTolerance, BoundaryTolerance);
 
         private Transform _transform = Transform.Identity;
 
         /// <summary>
-        ///     Where the shape's (0, 0, 0) is in the world, unless OriginTarget's position stands in for it. The world's
-        ///     origin until it is set.
+        ///     Where the shape's (0, 0, 0) is, in its target's coordinates while it follows OriginTarget, or else in the
+        ///     world. The world's origin until it is set.
         /// </summary>
         public Vector3 Origin
         {
@@ -99,30 +102,63 @@ namespace Gaia.Core.Regions
             set => _transform = _transform.WithOrigin(value);
         }
 
-        /// <summary>How the shape is turned, relative to the world. No turn until it is set.</summary>
+        /// <summary>
+        ///     How the shape is turned, relative to the world, or to its target while it follows OriginTarget without
+        ///     AbsoluteRotation. No turn until it is set.
+        /// </summary>
         public Rotation Rotation
         {
             get => _transform.Rotation;
             set => _transform = new Transform(_transform.Origin, value, _transform.Scale);
         }
 
-        /// <summary>How far one of the shape's own units stretches along its right, up and forward. (1, 1, 1) until it is set.</summary>
-        /// <remarks>A zero component of Scale leaves the shape containing nothing and its sampling failing.</remarks>
+        /// <summary>
+        ///     How far one of the shape's own units stretches along its right, up and forward, multiplied by its target's
+        ///     scale while it follows OriginTarget without AbsoluteScale. (1, 1, 1) until it is set.
+        /// </summary>
+        /// <remarks>
+        ///     A zero component of Scale, or of the target's scale while the shape follows it without AbsoluteScale, leaves
+        ///     the shape containing nothing and its sampling failing.
+        /// </remarks>
         public Vector3 Scale
         {
             get => _transform.Scale;
             set
             {
                 _transform = new Transform(_transform.Origin, _transform.Rotation, value);
-                ToleranceAlongAxes = new Vector3(ToleranceAlong(value.X), ToleranceAlong(value.Y),
-                    ToleranceAlong(value.Z));
+                _ownTolerance = TolerancesFor(value);
+                ToleranceAlongAxes = _ownTolerance;
             }
         }
 
-        /// <summary>The target whose position stands in for Origin while one is set, or null to place the shape at Origin.</summary>
+        /// <summary>
+        ///     Whether the shape keeps Rotation relative to the world while it follows OriginTarget, rather than turning with
+        ///     the target. False until it is set.
+        /// </summary>
         /// <remarks>
-        ///     While it is set, the target's position is read at every query, and the shape keeps its own Rotation and Scale.
-        ///     A target that cannot answer leaves the shape containing nothing and its sampling failing.
+        ///     The target's turn still carries Origin around the target, so only the shape's own orientation is kept. Without
+        ///     a target it changes nothing. A cylinder or a capsule around a character sets it to stay upright while the character
+        ///     leans. A round shape loses nothing by it, since a turn about its own up leaves it as it was.
+        /// </remarks>
+        public bool AbsoluteRotation { get; set; }
+
+        /// <summary>
+        ///     Whether the shape keeps Scale as its whole scale while it follows OriginTarget, rather than stretching with
+        ///     the target. False until it is set.
+        /// </summary>
+        /// <remarks>
+        ///     The target's scale still stretches Origin's offset from the target, so only the shape's own size is kept.
+        ///     Without a target it changes nothing.
+        /// </remarks>
+        public bool AbsoluteScale { get; set; }
+
+        /// <summary>The target the shape follows, or null to place the shape in the world.</summary>
+        /// <remarks>
+        ///     While it is set, the target's transform is read at every query and the shape's own is placed inside it, so the
+        ///     shape turns by the target's rotation and then by its own about the target's axes, and the two scales multiply axis
+        ///     by axis. A target mirrored by a negative scale mirrors the shape's offset, and its turn as well unless
+        ///     AbsoluteRotation keeps it. A target that cannot answer leaves the shape containing nothing and its sampling
+        ///     failing.
         /// </remarks>
         public TargetBase? OriginTarget { get; set; }
 
@@ -131,16 +167,21 @@ namespace Gaia.Core.Regions
 
         /// <summary>
         ///     <see cref="BoundaryTolerance" /> in the shape's own units along each of its own axes, 1 millimeter in the
-        ///     world divided by the size of Scale on that axis, for a comparison along one axis.
+        ///     world divided by the size of the shape's scale in the world on that axis, for a comparison along one axis.
         /// </summary>
-        /// <remarks>Divided when Scale is set rather than on every containment test.</remarks>
+        /// <remarks>
+        ///     Divided when Scale is set, and again at each query while the shape stretches with a target, whose scale can
+        ///     change between queries, so a shape reads it inside IsInShape or TryGetRandomLocalPosition and keeps nothing worked
+        ///     out from it.
+        /// </remarks>
         internal Vector3 ToleranceAlongAxes { get; private set; } =
             new(BoundaryTolerance, BoundaryTolerance, BoundaryTolerance);
 
         /// <summary>
         ///     <see cref="BoundaryTolerance" /> in the shape's own units for a comparison that mixes all three of its axes, a
         ///     distance from its middle, its segment or a plane. It is the largest of ToleranceAlongAxes, 1 millimeter in the
-        ///     world divided by the smallest size of Scale, so it is never less than 1 millimeter in the world along any axis.
+        ///     world divided by the smallest size of the shape's scale in the world, so it is never less than 1 millimeter in the
+        ///     world along any axis.
         /// </summary>
         internal float ToleranceInAnyDirection =>
             MathF.Max(MathF.Max(ToleranceAlongAxes.X, ToleranceAlongAxes.Y), ToleranceAlongAxes.Z);
@@ -212,6 +253,7 @@ namespace Gaia.Core.Regions
         }
 
         /// <summary>Tests whether a position is inside the region.</summary>
+        /// <remarks>A position on the shape's boundary counts as inside.</remarks>
         public bool IsInRegion(Vector3 position)
         {
             return TryGetWorldTransform(out Transform world) && IsInShape(world.ToLocal(position));
@@ -271,12 +313,16 @@ namespace Gaia.Core.Regions
         }
 
         /// <summary>
-        ///     Finds the transform that places the shape at the time of the call, the stored one, or the stored one moved to
-        ///     OriginTarget's position while a target is set.
+        ///     Finds the transform that places the shape at the time of the call, the stored one, or the stored one placed
+        ///     inside OriginTarget's transform while a target is set, keeping the shape's own rotation under AbsoluteRotation and
+        ///     its own scale under AbsoluteScale.
         /// </summary>
         /// <remarks>
-        ///     It fails when the target cannot answer, and when a component of the scale is zero, before ToLocal divides by
-        ///     that zero. Either leaves the shape containing nothing and its sampling failing.
+        ///     It fails when the target cannot answer, and when a component of the world scale is zero, before ToLocal
+        ///     divides by that zero. A zero there comes from the shape's own Scale, or from the target's scale while the shape
+        ///     stretches with it. Either failure leaves the shape containing nothing and its sampling failing. On success it sets
+        ///     ToleranceAlongAxes from the world scale, so a shape that stretches with its target holds 1 millimeter in the world
+        ///     past its boundary and not 1 millimeter multiplied by the target's scale.
         /// </remarks>
         private bool TryGetWorldTransform(out Transform world)
         {
@@ -286,14 +332,20 @@ namespace Gaia.Core.Regions
             }
             else
             {
-                if (!OriginTarget.TryGetPosition(out Vector3 targetPosition))
+                if (!OriginTarget.TryGetTransform(out Transform target))
                 {
                     world = default;
 
                     return false;
                 }
 
-                world = _transform.WithOrigin(targetPosition);
+                world = target.ToWorld(_transform);
+
+                if (AbsoluteRotation || AbsoluteScale)
+                {
+                    world = new Transform(world.Origin, AbsoluteRotation ? _transform.Rotation : world.Rotation,
+                        AbsoluteScale ? _transform.Scale : world.Scale);
+                }
             }
 
             if (world.Scale.X == 0f || world.Scale.Y == 0f || world.Scale.Z == 0f)
@@ -303,10 +355,18 @@ namespace Gaia.Core.Regions
                 return false;
             }
 
+            ToleranceAlongAxes = OriginTarget != null && !AbsoluteScale ? TolerancesFor(world.Scale) : _ownTolerance;
+
             return true;
         }
 
-        /// <summary>Divides <see cref="BoundaryTolerance" /> by the size of one component of Scale.</summary>
+        /// <summary>Divides <see cref="BoundaryTolerance" /> by the size of each component of a scale.</summary>
+        private static Vector3 TolerancesFor(Vector3 scale)
+        {
+            return new Vector3(ToleranceAlong(scale.X), ToleranceAlong(scale.Y), ToleranceAlong(scale.Z));
+        }
+
+        /// <summary>Divides <see cref="BoundaryTolerance" /> by the size of one component of a scale.</summary>
         /// <remarks>
         ///     A zero component leaves the shape containing nothing, since IsInRegion and TryGetRandomPosition refuse it
         ///     before asking the shape, so the shapes here never compare with the tolerance along it, and it is 0 rather than a

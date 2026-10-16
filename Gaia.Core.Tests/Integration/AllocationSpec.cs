@@ -56,9 +56,9 @@ namespace Gaia.Core.Tests.Integration;
 ///     <para>
 ///         The region case asks a hull that follows a ByName target whether a position is inside it and for a random
 ///         position, a thousand times after the same warm-up. A sample guesses until one lands behind every plane, so the
-///         measured passes run the rejection loop, the walk of the planes and the read of the cached bounds. They also run
-///         the target's walk of its list and the move of the hull's transform to the target's position. The case counts
-///         the answers that land inside, so a region that answers nothing cannot pass as one that allocates nothing.
+///         measured passes run the target's walk of its list, the composition, the rejection loop, the walk of the planes
+///         and the read of the cached bounds. The case counts the answers that land inside, so a region that answers
+///         nothing cannot pass as one that allocates nothing.
 ///     </para>
 ///     <para>
 ///         The group case calculates a group whose rule reads what it holds by index, a thousand times after the same
