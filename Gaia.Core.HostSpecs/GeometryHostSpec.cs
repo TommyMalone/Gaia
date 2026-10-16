@@ -113,6 +113,30 @@ public class GeometryHostSpec
     }
 
     [Test]
+    public void TurnsAHandBuiltSector()
+    {
+        // A quarter turn right opens the sector along the world's X. (20, 0, 3) comes in 16.7 degrees left of its
+        // forward, and (10, 0, 15) straight to its left, where the unturned sector would hold it straight ahead.
+        Vector3 aheadOnceTurned = new(20f, 0f, 3f);
+        Vector3 aheadUnturned = new(10f, 0f, 15f);
+
+        SectorRegion fieldOfView = new()
+        {
+            Origin = new Vector3(10f, 0f, 0f),
+            Rotation = Rotation.FromEulerAngles(0f, 90f, 0f),
+            Angle = 60f,
+            Range = 20f,
+            HalfHeight = 1.5f,
+        };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(fieldOfView.IsInRegion(aheadOnceTurned), Is.True, "ahead along the world's X once turned");
+            Assert.That(fieldOfView.IsInRegion(aheadUnturned), Is.False, "where it would lie ahead unturned");
+        });
+    }
+
+    [Test]
     public void LaysACapsuleAlongATiltedAxis()
     {
         // HalfHeight 5 and Radius 1 leave a segment reaching 4 from the middle. Pitched 45 degrees, the capsule's up

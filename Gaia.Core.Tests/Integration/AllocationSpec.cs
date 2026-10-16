@@ -336,6 +336,47 @@ public class AllocationSpec
     }
 
     [Test]
+    public void AsksASectorThatFollowsATargetWithoutAllocating()
+    {
+        const int answersPerPass = 2;
+
+        Vector3 lookoutPosition = new(50f, 0f, 50f);
+
+        Contact lookout = new()
+        {
+            Name = "Lookout",
+            Position = lookoutPosition,
+        };
+
+        StubDataStore store = new();
+        store.SetEntityList("Contacts", [lookout]);
+
+        ByNameTarget lookoutTarget = new()
+        {
+            DataStore = store,
+            ListName = "Contacts",
+            EntityName = "Lookout",
+        };
+
+        // The target carries the sector's Origin, where its two straight sides meet, to the lookout.
+        SectorRegion fieldOfView = new()
+        {
+            Angle = 60f,
+            Range = 20f,
+            HalfHeight = 1.5f,
+            OriginTarget = lookoutTarget,
+            RandomSource = new Xoshiro128RandomSource(7),
+        };
+
+        long allocatedBytes = MeasureRegionQueries(fieldOfView, lookoutPosition, out int answersInside);
+
+        Assert.That(answersInside, Is.EqualTo(answersPerPass * MeasuredCycles),
+            "every measured pass holds the lookout's position and finds a sample");
+        Assert.That(allocatedBytes, Is.EqualTo(0),
+            $"answering {answersInside} questions of a following sector must not feed the collector");
+    }
+
+    [Test]
     public void CombinesAGroupWithoutAllocating()
     {
         const float addendsPerCalculation = 3f;

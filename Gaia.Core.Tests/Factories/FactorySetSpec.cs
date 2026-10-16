@@ -31,7 +31,7 @@ public class FactorySetSpec
     }
 
     /// <summary>How many types the constructor registers, which the sweeps over every type hold themselves to.</summary>
-    private const int BuiltInTypeCount = 32;
+    private const int BuiltInTypeCount = 33;
 
     /// <summary>The element name a sweep writes for each abstraction, which is the name the reports print.</summary>
     private static readonly Dictionary<ConceptualAbstraction, string> ElementNames = new()
@@ -89,6 +89,7 @@ public class FactorySetSpec
             ("Sphere", " Origin=\"(0, 0, 0)\" Radius=\"5\"", "", typeof(SphereRegion)),
             ("Box", " Origin=\"(5, 5, 5)\" Extents=\"(5, 5, 5)\"", "", typeof(BoxRegion)),
             ("Cylinder", " Origin=\"(0, 0, 0)\" Radius=\"5\" HalfHeight=\"1.5\"", "", typeof(CylinderRegion)),
+            ("Sector", " Angle=\"60\" Range=\"20\" HalfHeight=\"1.5\"", "", typeof(SectorRegion)),
             ("Capsule", " Origin=\"(0, 0, 0)\" Radius=\"2\" HalfHeight=\"5\"", "", typeof(CapsuleRegion)),
             ("ExtrudedPolygon", " HalfHeight=\"1.5\"", FootprintCorners, typeof(ExtrudedPolygonRegion)),
             ("ConvexHull", "", HullPlanes, typeof(ConvexHullRegion)),
@@ -111,7 +112,7 @@ public class FactorySetSpec
             Assert.That(factories.Reasoners.Types, Is.EqualTo(Names("DualUtility", "RuleBased", "Sequence")));
             Assert.That(factories.Regions.Types,
                 Is.EqualTo(Names("Box", "Capsule", "Circle", "ConvexHull", "Cylinder", "ExtrudedPolygon", "Polygon",
-                    "Rectangle", "Sphere")));
+                    "Rectangle", "Sector", "Sphere")));
             Assert.That(factories.Targets.Types, Is.EqualTo(Names("ByName", "Position", "Self")));
             Assert.That(factories.WeightFunctions.Types,
                 Is.EqualTo(Names("Constant", "Boolean", "String", "FloatSequence", "Curve")));
@@ -137,7 +138,7 @@ public class FactorySetSpec
             Assert.That(factories.Regions.TypeSpellings, Is.EqualTo(new[]
             {
                 "Box", "Capsule", "Circle", "ConvexHull", "Cylinder", "ExtrudedPolygon", "Polygon", "Rectangle",
-                "Sphere",
+                "Sector", "Sphere",
             }));
             Assert.That(factories.Targets.TypeSpellings, Is.EqualTo(new[] { "ByName", "Position", "Self" }));
             Assert.That(factories.WeightFunctions.TypeSpellings,
@@ -518,13 +519,15 @@ public class FactorySetSpec
     public void RefusesAMissingRequiredAttributeInEveryRegion()
     {
         // Origin, Rotation, Scale and the two flags are optional on every shape, so a bare round shape names Radius.
-        // The capsule and the cylinder name HalfHeight once given a Radius, the extruded polygon names HalfHeight, and
-        // the box and the rectangle name Extents.
+        // The capsule and the cylinder name HalfHeight once given a Radius, the extruded polygon names HalfHeight, the
+        // box and the rectangle name Extents, and the sector names Angle, then Range, then HalfHeight.
         AssertMissingAttributeRefused("Region", new[]
         {
             ("Box", "", "Extents"), ("Capsule", "", "Radius"), ("Capsule", " Radius=\"2\"", "HalfHeight"),
             ("Circle", "", "Radius"), ("Cylinder", "", "Radius"), ("Cylinder", " Radius=\"5\"", "HalfHeight"),
-            ("ExtrudedPolygon", "", "HalfHeight"), ("Rectangle", "", "Extents"), ("Sphere", "", "Radius"),
+            ("ExtrudedPolygon", "", "HalfHeight"), ("Rectangle", "", "Extents"), ("Sector", "", "Angle"),
+            ("Sector", " Angle=\"60\"", "Range"), ("Sector", " Angle=\"60\" Range=\"20\"", "HalfHeight"),
+            ("Sphere", "", "Radius"),
         }, creationData => creationData.Factories.Regions.TryCreate(creationData, out _));
     }
 

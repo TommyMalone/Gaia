@@ -62,6 +62,7 @@ namespace Gaia.Core.Factories
             Regions.Register("ExtrudedPolygon", () => new ExtrudedPolygonRegion(), ExtrudedPolygonRegion.Description);
             Regions.Register("Polygon", () => new PolygonRegion(), PolygonRegion.Description);
             Regions.Register("Rectangle", () => new RectangleRegion(), RectangleRegion.Description);
+            Regions.Register("Sector", () => new SectorRegion(), SectorRegion.Description);
             Regions.Register("Sphere", () => new SphereRegion(), SphereRegion.Description);
 
             Targets.Register("ByName", () => new ByNameTarget(), ByNameTarget.Description);
