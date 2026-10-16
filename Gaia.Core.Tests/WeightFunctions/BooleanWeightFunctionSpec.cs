@@ -12,7 +12,7 @@ public class BooleanWeightFunctionSpec
     public void BuildWeightFunction()
     {
         _logSink = new RecordingLogSink();
-        _trueWeights = new WeightValues(2f, 1f, float.MinValue);
+        _trueWeights = new WeightValues(2f, 1f, WeightValues.NoRank);
         _falseWeights = WeightValues.Vetoed;
 
         _weightFunction = new BooleanWeightFunction(_trueWeights, _falseWeights);
@@ -62,7 +62,7 @@ public class BooleanWeightFunctionSpec
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.True);
-            Assert.That(loaded.CalculateBool(true), Is.EqualTo(new WeightValues(2f, 1f, float.MinValue)));
+            Assert.That(loaded.CalculateBool(true), Is.EqualTo(new WeightValues(2f, 1f, WeightValues.NoRank)));
             Assert.That(loaded.CalculateBool(false), Is.EqualTo(WeightValues.Vetoed));
             Assert.That(_logSink.Entries, Is.Empty);
         });

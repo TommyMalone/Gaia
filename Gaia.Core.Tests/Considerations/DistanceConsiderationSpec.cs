@@ -228,7 +228,7 @@ public class DistanceConsiderationSpec
             loaded.Calculate();
 
             // With height ignored, the measured distance is 100, inside the loaded 50 to 300 band.
-            Assert.That(loaded.Weights, Is.EqualTo(new WeightValues(1f, 1f, float.MinValue)));
+            Assert.That(loaded.Weights, Is.EqualTo(new WeightValues(1f, 1f, WeightValues.NoRank)));
             Assert.That(_logSink.Entries, Is.Empty);
         });
     }

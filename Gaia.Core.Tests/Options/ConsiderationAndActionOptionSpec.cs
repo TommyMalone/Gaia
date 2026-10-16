@@ -47,7 +47,7 @@ public class ConsiderationAndActionOptionSpec
         // The group's constructor fills it before AddConsideration hands it to the option, which is when the option's
         // set records whether the group holds a Tuning.
         AiString patrolName = "Patrol";
-        WeightValues tunedWeights = new(5f, 1f, float.MinValue);
+        WeightValues tunedWeights = new(5f, 1f, WeightValues.NoRank);
         TuningConsideration tuning = new(tunedWeights);
         GroupConsideration group = new([tuning]);
 
@@ -69,7 +69,7 @@ public class ConsiderationAndActionOptionSpec
         // The group derives the group base and answers with Totals, so it reports the Tuning's values unchanged, and
         // the option's weight tells whether a default Tuning was added beside it.
         AiString patrolName = "Patrol";
-        WeightValues tunedWeights = new(5f, 1f, float.MinValue);
+        WeightValues tunedWeights = new(5f, 1f, WeightValues.NoRank);
         TuningConsideration tuning = new(tunedWeights);
         RecordingGroupConsideration group = new([tuning]);
 

@@ -58,7 +58,7 @@ public class DecisionHistoryWriterSpec
     public void WritesNoneForTheRankOfAnOptionWithNoRank()
     {
         DecisionHistory history = new(4, 1);
-        RecordCycle(history, 7, 0.25f, "Idle", new DecisionRecord("Idle", float.MinValue, 1f, false));
+        RecordCycle(history, 7, 0.25f, "Idle", new DecisionRecord("Idle", WeightValues.NoRank, 1f, false));
         StringWriter text = new();
 
         _writer.Write(history, text);

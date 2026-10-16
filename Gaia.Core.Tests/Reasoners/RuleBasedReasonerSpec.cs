@@ -45,8 +45,8 @@ public class RuleBasedReasonerSpec
         // Done the moment it is selected, for the tests about an option that finishes.
         _instantlyDoneAction = new RecordAction("InstantlyDone", _executed);
 
-        _lightWeight = new WeightValues(1f, 1f, float.MinValue);
-        _heavyWeight = new WeightValues(100f, 1f, float.MinValue);
+        _lightWeight = new WeightValues(1f, 1f, WeightValues.NoRank);
+        _heavyWeight = new WeightValues(100f, 1f, WeightValues.NoRank);
 
         _lowRank = new WeightValues(1f, 1f, 0f);
         _highRank = new WeightValues(1f, 1f, 10f);

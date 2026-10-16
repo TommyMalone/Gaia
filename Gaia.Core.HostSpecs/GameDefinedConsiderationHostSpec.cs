@@ -442,7 +442,7 @@ public class GameDefinedConsiderationHostSpec
         {
             float addend = 0f;
             float multiplier = 1f;
-            float rank = float.MinValue;
+            float rank = WeightValues.NoRank;
             bool anyAllows = false;
 
             for (int index = 0; index < Considerations.Count; index++)

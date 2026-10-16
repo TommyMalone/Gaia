@@ -290,7 +290,7 @@ public class GroupConsiderationSpec
     [Test]
     public void VetoesUnderNotWhenAConsiderationOnlyWeakensTheOption()
     {
-        StubConsideration weakening = new(new WeightValues(0f, 0.5f, float.MinValue));
+        StubConsideration weakening = new(new WeightValues(0f, 0.5f, WeightValues.NoRank));
         GroupConsideration group = GroupOf(BooleanOperator.Not, RankOperator.Max, weakening);
 
         group.Calculate();
@@ -312,12 +312,12 @@ public class GroupConsiderationSpec
     [Test]
     public void CountsAHeldTuningAsAllowingUnderOr()
     {
-        StubConsideration vetoing = new(new WeightValues(3f, 0f, float.MinValue));
+        StubConsideration vetoing = new(new WeightValues(3f, 0f, WeightValues.NoRank));
         GroupConsideration group = GroupOf(BooleanOperator.Or, RankOperator.Max, new TuningConsideration(), vetoing);
 
         group.Calculate();
 
-        Assert.That(group.Weights, Is.EqualTo(new WeightValues(1f, 1f, float.MinValue)),
+        Assert.That(group.Weights, Is.EqualTo(new WeightValues(1f, 1f, WeightValues.NoRank)),
             "the Tuning's multiplier of 1 allows, so the vetoing stub is left out");
     }
 
@@ -412,7 +412,7 @@ public class GroupConsiderationSpec
 
         group.Calculate();
 
-        Assert.That(group.Weights.Rank, Is.EqualTo(float.MinValue));
+        Assert.That(group.Weights.Rank, Is.EqualTo(WeightValues.NoRank));
     }
 
     [Test]
@@ -550,7 +550,7 @@ public class GroupConsiderationSpec
 
         group!.Calculate();
 
-        Assert.That(group.Weights, Is.EqualTo(new WeightValues(2f, 1f, float.MinValue)));
+        Assert.That(group.Weights, Is.EqualTo(new WeightValues(2f, 1f, WeightValues.NoRank)));
     }
 
     /// <summary>Builds a group in code over the given considerations, its operators set as loading would set them.</summary>

@@ -13,7 +13,7 @@ public class FloatSequenceWeightFunctionSpec
     public void BuildWeightFunction()
     {
         _logSink = new RecordingLogSink();
-        _inRangeWeights = new WeightValues(2f, 1f, float.MinValue);
+        _inRangeWeights = new WeightValues(2f, 1f, WeightValues.NoRank);
 
         _weightFunction = new FloatSequenceWeightFunction(WeightValues.Vetoed);
 
@@ -230,7 +230,7 @@ public class FloatSequenceWeightFunctionSpec
         {
             Assert.That(loaded.Init(creationData), Is.True);
             Assert.That(loaded.CalculateFloat(40f), Is.EqualTo(WeightValues.Vetoed), "below the first threshold");
-            Assert.That(loaded.CalculateFloat(100f), Is.EqualTo(new WeightValues(1f, 1f, float.MinValue)),
+            Assert.That(loaded.CalculateFloat(100f), Is.EqualTo(new WeightValues(1f, 1f, WeightValues.NoRank)),
                 "between the thresholds");
             Assert.That(loaded.CalculateFloat(400f), Is.EqualTo(WeightValues.Vetoed), "above both, the default");
             Assert.That(_logSink.Entries, Is.Empty);

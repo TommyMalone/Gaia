@@ -80,7 +80,7 @@ namespace Gaia.Core.WeightFunctions
         public Curve? MultiplierCurve { get; internal set; }
 
         /// <summary>The rank to report, whatever the input.</summary>
-        public float Rank { get; internal set; } = float.MinValue;
+        public float Rank { get; internal set; } = WeightValues.NoRank;
 
         /// <inheritdoc />
         public override bool ConvertsFloat => true;

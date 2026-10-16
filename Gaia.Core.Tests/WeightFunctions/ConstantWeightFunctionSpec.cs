@@ -97,7 +97,7 @@ public class ConstantWeightFunctionSpec
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.True);
-            Assert.That(loaded.Weights, Is.EqualTo(new WeightValues(5f, 0f, float.MinValue)),
+            Assert.That(loaded.Weights, Is.EqualTo(new WeightValues(5f, 0f, WeightValues.NoRank)),
                 "the veto is the multiplier, and the addend beside it is kept as written");
             Assert.That(_logSink.Entries, Is.Empty);
         });

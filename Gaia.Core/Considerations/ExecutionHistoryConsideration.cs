@@ -65,7 +65,7 @@ namespace Gaia.Core.Considerations
 
         /// <summary>The rank the option had when it was most recently selected.</summary>
         /// <remarks>Retention needs the rank the option won with, so Select reads Option.Rank and keeps it here.</remarks>
-        public float RankWhenLastSelected { get; private set; } = float.MinValue;
+        public float RankWhenLastSelected { get; private set; } = WeightValues.NoRank;
 
         /// <summary>How much of RankWhenLastSelected is kept while Option's actions run, from 0 for none to 1 for all of it.</summary>
         /// <remarks>
@@ -206,7 +206,7 @@ namespace Gaia.Core.Considerations
             _selectedTime = TimeSource.CurrentTime;
 
             // Option.Calculate ran this cycle, so Option.Rank is the one it was selected at.
-            RankWhenLastSelected = Option?.Rank ?? float.MinValue;
+            RankWhenLastSelected = Option?.Rank ?? WeightValues.NoRank;
 
             // Any of the four can be a FloatSequenceWeightFunction, which rolls fresh thresholds on Select, so
             // selection reaches all of them.

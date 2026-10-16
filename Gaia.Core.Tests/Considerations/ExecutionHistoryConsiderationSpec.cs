@@ -33,10 +33,10 @@ public class ExecutionHistoryConsiderationSpec
         _timeSource = new ManualTimeSource();
         _logSink = new RecordingLogSink();
 
-        _whileRunningWeights = new WeightValues(1f, 1f, float.MinValue);
-        _finishedWeights = new WeightValues(2f, 1f, float.MinValue);
-        _neverRunWeights = new WeightValues(3f, 1f, float.MinValue);
-        _sinceLastRunWeights = new WeightValues(4f, 1f, float.MinValue);
+        _whileRunningWeights = new WeightValues(1f, 1f, WeightValues.NoRank);
+        _finishedWeights = new WeightValues(2f, 1f, WeightValues.NoRank);
+        _neverRunWeights = new WeightValues(3f, 1f, WeightValues.NoRank);
+        _sinceLastRunWeights = new WeightValues(4f, 1f, WeightValues.NoRank);
 
         _whileRunningWeightFunction = new RecordingWeightFunction { Result = _whileRunningWeights };
         _finishedWeightFunction = new RecordingWeightFunction { Result = _finishedWeights };
@@ -218,7 +218,7 @@ public class ExecutionHistoryConsiderationSpec
     [Test]
     public void RetainsNothingFromAnOptionSelectedAtRankZero()
     {
-        // Rank 0 is the rank guard.xml gives Patrol. The WhileRunning function reports a rank of float.MinValue, so
+        // Rank 0 is the rank guard.xml gives Patrol. The WhileRunning function reports no rank, WeightValues.NoRank, so
         // even a kept rank of 0 would raise it. Only a rank above 0 is kept.
         WeightValues rankZero = new(0f, 1f, 0f);
         _rankConsideration.Set(rankZero);

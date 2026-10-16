@@ -5,8 +5,9 @@
     ///     RankOperator attribute.
     /// </summary>
     /// <remarks>
-    ///     A consideration that reports no rank, float.MinValue, is left out, and a group none of whose considerations
-    ///     reports one reports no rank. Under Or the ranks read are those of the considerations Or counts.
+    ///     A consideration that reports no rank, <see cref="WeightFunctions.WeightValues.NoRank" />, is left out, and a
+    ///     group none of whose considerations reports one reports no rank. Under Or the ranks read are those of the
+    ///     considerations Or counts.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.6.2.4</seealso>
     public enum RankOperator

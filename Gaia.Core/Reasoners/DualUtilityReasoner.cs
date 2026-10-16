@@ -2,6 +2,7 @@
 using Gaia.Core.Options;
 using Gaia.Core.Services.Random;
 using Gaia.Core.Specifications;
+using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Reasoners
 {
@@ -71,8 +72,9 @@ namespace Gaia.Core.Reasoners
         protected override void Think()
         {
             // 1. Eliminate the options with a weight of zero.
-            // 2. Find the highest rank category, and eliminate options that don't belong to it.
-            float highestRank = float.MinValue;
+            // 2. Find the highest rank category, and eliminate options that don't belong to it. The search starts at no
+            //    rank, so when no valid option reports a rank, every option is in the top category.
+            float highestRank = WeightValues.NoRank;
             foreach (OptionBase option in MutableOptions)
             {
                 if (option.IsValid && option.Rank > highestRank)

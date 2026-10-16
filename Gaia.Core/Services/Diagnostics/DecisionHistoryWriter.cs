@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
+using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Services.Diagnostics
 {
@@ -37,7 +38,7 @@ namespace Gaia.Core.Services.Diagnostics
     ///         Floats are written to nine significant digits, which is what reads back as the same float on every runtime
     ///         this assembly loads on. Everywhere else the library prints a float the way the invariant culture would, which
     ///         is shorter to read. A dump is compared against another run, so a rounded number here would hide the difference
-    ///         it was taken to find. An option with no rank, which holds float.MinValue, has its rank written as none.
+    ///         it was taken to find. An option with no rank, <see cref="WeightValues.NoRank" />, has its rank written as none.
     ///     </para>
     /// </remarks>
     public sealed class DecisionHistoryWriter
@@ -108,7 +109,7 @@ namespace Gaia.Core.Services.Diagnostics
                 {
                     DecisionRecord record = history.GetRecord(age, optionIndex);
                     string option = record.OptionName.Text;
-                    string rank = record.Rank == float.MinValue ? "none" : Number(record.Rank);
+                    string rank = record.Rank == WeightValues.NoRank ? "none" : Number(record.Rank);
                     string passedScreening = record.PassedScreening ? "true" : "false";
 
                     writer.Write(FormattableString.Invariant(

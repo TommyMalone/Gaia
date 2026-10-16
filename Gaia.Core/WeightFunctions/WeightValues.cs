@@ -34,7 +34,7 @@ namespace Gaia.Core.WeightFunctions
         ///     those whose weight is above 0 and decides between those on weight alone, so rank settles which options are eligible
         ///     rather than scoring them. A <see cref="Reasoners.RuleBasedReasoner" /> or <see cref="Reasoners.SequenceReasoner" />
         ///     never reads rank. An option of higher rank beats every option beneath it however little it weighs. The identity is
-        ///     float.MinValue.
+        ///     <see cref="NoRank" />.
         /// </remarks>
         public float Rank { get; }
 
@@ -46,11 +46,17 @@ namespace Gaia.Core.WeightFunctions
             Rank = rank;
         }
 
+        /// <summary>
+        ///     The rank of a consideration or an option that has none. It is float.MinValue, beneath every rank a designer or
+        ///     a game would write.
+        /// </summary>
+        public const float NoRank = float.MinValue;
+
         /// <summary>Contributes nothing, being the identity value for all three.</summary>
-        public static readonly WeightValues Neutral = new(0f, 1f, float.MinValue);
+        public static readonly WeightValues Neutral = new(0f, 1f, NoRank);
 
         /// <summary>Vetoes the option, whatever the rest of its considerations report.</summary>
-        public static readonly WeightValues Vetoed = new(0f, 0f, float.MinValue);
+        public static readonly WeightValues Vetoed = new(0f, 0f, NoRank);
 
         private static readonly AttributeDescription AddendAttribute = AttributeDescription.Optional("Addend", "Addend",
             AttributeKind.Float, Number(Neutral.Addend),
@@ -86,13 +92,10 @@ namespace Gaia.Core.WeightFunctions
         ///     Describes the four attributes TryRead reads over the given defaults, for an element whose identity is not
         ///     Neutral.
         /// </summary>
-        /// <remarks>
-        ///     The lowest rank is float.MinValue, which is no text a designer would write, so a rank at that value is
-        ///     described as having no default.
-        /// </remarks>
+        /// <remarks>A rank of <see cref="NoRank" /> is no text a designer would write, so it is described as having no default.</remarks>
         internal static IReadOnlyList<AttributeDescription> DescribeAttributes(WeightValues defaults)
         {
-            string? rankText = defaults.Rank == float.MinValue ? null : Number(defaults.Rank);
+            string? rankText = defaults.Rank == NoRank ? null : Number(defaults.Rank);
 
             return new[]
             {

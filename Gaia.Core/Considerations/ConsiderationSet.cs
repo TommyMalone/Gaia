@@ -31,7 +31,7 @@ namespace Gaia.Core.Considerations
         public float Weight => Addend * Multiplier;
 
         /// <summary>The highest rank any consideration in the set reported.</summary>
-        public float Rank { get; private set; } = float.MinValue;
+        public float Rank { get; private set; } = WeightValues.NoRank;
 
         /// <summary>True if this set holds a <see cref="TuningConsideration" />, directly or inside a group at any depth.</summary>
         /// <remarks>
@@ -76,7 +76,7 @@ namespace Gaia.Core.Considerations
         {
             float addend = 0f;
             float multiplier = 1f;
-            float rank = float.MinValue;
+            float rank = WeightValues.NoRank;
 
             foreach (ConsiderationBase consideration in _considerations)
             {

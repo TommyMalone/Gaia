@@ -6,6 +6,7 @@ using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Log;
 using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
+using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Options
 {
@@ -65,10 +66,14 @@ namespace Gaia.Core.Options
         public float ScreeningWeight { get; internal set; }
 
         /// <summary>
-        ///     The rank this option must reach to survive, set by the reasoner from the best rank it found across its valid
-        ///     options.
+        ///     The rank this option must reach to survive, set by <see cref="DualUtilityReasoner" /> from the best rank it
+        ///     found among its valid options.
         /// </summary>
-        public float ScreeningRank { get; internal set; } = float.MinValue;
+        /// <remarks>
+        ///     Holds <see cref="WeightValues.NoRank" />, which every rank meets, until the reasoner sets it, and Calculate
+        ///     puts it back, so an option passes on rank in any cycle where no threshold has been set.
+        /// </remarks>
+        public float ScreeningRank { get; internal set; } = WeightValues.NoRank;
 
         /// <summary>True unless the reasoner's comparison against the other options screened this option out.</summary>
         /// <remarks>
@@ -230,7 +235,7 @@ namespace Gaia.Core.Options
             _considerations.Calculate();
 
             ScreeningWeight = 0f;
-            ScreeningRank = float.MinValue;
+            ScreeningRank = WeightValues.NoRank;
         }
 
         /// <summary>Selects this option, which selects its considerations and actions. Does nothing if IsSelected.</summary>

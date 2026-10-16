@@ -57,10 +57,10 @@ public class DualUtilityReasonerSpec
         _dualUtilityReasoner.AddOption(_firstOption);
         _dualUtilityReasoner.AddOption(_secondOption);
 
-        _vetoedWithALargeAddend = new WeightValues(50f, 0f, float.MinValue);
+        _vetoedWithALargeAddend = new WeightValues(50f, 0f, WeightValues.NoRank);
 
-        _heavyWeight = new WeightValues(3f, 1f, float.MinValue);
-        _lightWeight = new WeightValues(1f, 1f, float.MinValue);
+        _heavyWeight = new WeightValues(3f, 1f, WeightValues.NoRank);
+        _lightWeight = new WeightValues(1f, 1f, WeightValues.NoRank);
 
         _highRankButLight = new WeightValues(1f, 1f, 1f);
         _lowRankButHeavy = new WeightValues(100f, 1f, 0f);

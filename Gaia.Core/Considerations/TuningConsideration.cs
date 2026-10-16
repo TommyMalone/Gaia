@@ -14,7 +14,7 @@ namespace Gaia.Core.Considerations
         ///     The general rule is that an unspecified weight value has no effect, and the exception is this consideration,
         ///     whose addend is 1, so that an element writing only a multiplier scales something rather than scaling nothing.
         /// </remarks>
-        internal static readonly WeightValues Default = new(1f, 1f, float.MinValue);
+        internal static readonly WeightValues Default = new(1f, 1f, WeightValues.NoRank);
 
         internal static readonly ComponentDescription Description = new(ConceptualAbstraction.Considerations,
             "Fixed values that tune the option by hand.", WeightValues.DescribeAttributes(Default),

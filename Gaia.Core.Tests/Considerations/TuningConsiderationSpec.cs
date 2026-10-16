@@ -60,7 +60,7 @@ public class TuningConsiderationSpec
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Init(creationData), Is.True);
-            Assert.That(loaded.Weights, Is.EqualTo(new WeightValues(1f, 0.5f, float.MinValue)));
+            Assert.That(loaded.Weights, Is.EqualTo(new WeightValues(1f, 0.5f, WeightValues.NoRank)));
             Assert.That(_logSink.Entries, Is.Empty);
         });
     }

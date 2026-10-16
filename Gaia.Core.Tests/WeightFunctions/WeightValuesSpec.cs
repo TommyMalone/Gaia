@@ -1,8 +1,12 @@
-﻿using Gaia.Core.WeightFunctions;
+﻿using Gaia.Core.Factories;
+using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Tests.WeightFunctions;
 
-/// <summary>Covers <see cref="WeightValues" /> as a value, its equality, its printing and its two named constants.</summary>
+/// <summary>
+///     Covers <see cref="WeightValues" /> as a value, its equality, its printing, its named values and how it
+///     describes a rank.
+/// </summary>
 /// <remarks>How the three values steer a decision is covered through the consideration and reasoner specs.</remarks>
 [TestFixture]
 public class WeightValuesSpec
@@ -75,6 +79,30 @@ public class WeightValuesSpec
     }
 
     [Test]
+    public void ReportsNoRankAsNeutralAndVetoed()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(WeightValues.NoRank, Is.EqualTo(float.MinValue), "beneath every real rank");
+            Assert.That(WeightValues.Neutral.Rank, Is.EqualTo(WeightValues.NoRank));
+            Assert.That(WeightValues.Vetoed.Rank, Is.EqualTo(WeightValues.NoRank));
+        });
+    }
+
+    [Test]
+    public void DescribesARankOfNoRankAsHavingNoDefault()
+    {
+        AttributeDescription unranked = RankAttributeOver(WeightValues.Neutral);
+        AttributeDescription ranked = RankAttributeOver(new WeightValues(0f, 1f, 2f));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(unranked.DefaultText, Is.Null, "no text a designer would write");
+            Assert.That(ranked.DefaultText, Is.EqualTo("2"));
+        });
+    }
+
+    [Test]
     public void VetoesOnlyThroughItsMultiplierAsVetoed()
     {
         // Everything but the multiplier stays at the identity, so a veto neither raises nor outranks anything.
@@ -84,5 +112,10 @@ public class WeightValuesSpec
             Assert.That(WeightValues.Vetoed.Addend, Is.EqualTo(WeightValues.Neutral.Addend));
             Assert.That(WeightValues.Vetoed.Rank, Is.EqualTo(WeightValues.Neutral.Rank));
         });
+    }
+
+    private static AttributeDescription RankAttributeOver(WeightValues defaults)
+    {
+        return WeightValues.DescribeAttributes(defaults).Single(attribute => attribute.Spelling == "Rank");
     }
 }

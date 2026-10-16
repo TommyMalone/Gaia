@@ -12,7 +12,7 @@ public class StringWeightFunctionSpec
     public void BuildWeightFunction()
     {
         _logSink = new RecordingLogSink();
-        _enemyWeights = new WeightValues(2f, 1f, float.MinValue);
+        _enemyWeights = new WeightValues(2f, 1f, WeightValues.NoRank);
 
         _weightFunction = new StringWeightFunction(WeightValues.Vetoed);
         _weightFunction.AddEntry("Enemy", _enemyWeights);
@@ -45,7 +45,7 @@ public class StringWeightFunctionSpec
     [Test]
     public void ReplacesAnEntryConfiguredTwice()
     {
-        WeightValues replacementWeights = new(9f, 1f, float.MinValue);
+        WeightValues replacementWeights = new(9f, 1f, WeightValues.NoRank);
 
         _weightFunction.AddEntry("Enemy", replacementWeights);
 
@@ -77,7 +77,7 @@ public class StringWeightFunctionSpec
         {
             Assert.That(loaded.Init(creationData), Is.True);
             Assert.That(loaded.CalculateString("Enemy"), Is.EqualTo(WeightValues.Vetoed));
-            Assert.That(loaded.CalculateString("Friend"), Is.EqualTo(new WeightValues(1f, 1f, float.MinValue)));
+            Assert.That(loaded.CalculateString("Friend"), Is.EqualTo(new WeightValues(1f, 1f, WeightValues.NoRank)));
             Assert.That(_logSink.Entries, Is.Empty);
         });
     }

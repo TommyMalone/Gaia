@@ -109,7 +109,7 @@ namespace Gaia.Core.Considerations
 
             float addend = 0f;
             float multiplier = leavesOutVetoes ? 0f : 1f;
-            float rank = float.MinValue;
+            float rank = WeightValues.NoRank;
             bool hasRank = false;
 
             for (int index = 0; index < held.Count; index++)
@@ -126,7 +126,7 @@ namespace Gaia.Core.Considerations
                     ? MathF.Max(multiplier, weights.Multiplier)
                     : multiplier * weights.Multiplier;
 
-                if (weights.Rank != float.MinValue)
+                if (weights.Rank != WeightValues.NoRank)
                 {
                     rank = hasRank ? CombineRanks(rank, weights.Rank) : weights.Rank;
                     hasRank = true;
