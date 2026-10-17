@@ -16,12 +16,6 @@ namespace Gaia.Core.Spatial
         /// </summary>
         private const float GimbalLockThreshold = 0.99999f;
 
-        /// <summary>Converts an angle in radians to the degrees ToEulerAngles reports.</summary>
-        private const float RadiansToDegrees = 180f / MathF.PI;
-
-        /// <summary>Converts an angle in the degrees FromEulerAngles takes to radians.</summary>
-        private const float DegreesToRadians = MathF.PI / 180f;
-
         /// <summary>The X component of the quaternion.</summary>
         public float X { get; }
 
@@ -69,9 +63,9 @@ namespace Gaia.Core.Spatial
         /// <param name="roll">The turn around Z in degrees, positive raising the right side.</param>
         public static Rotation FromEulerAngles(float pitch, float yaw, float roll)
         {
-            float halfPitch = pitch * DegreesToRadians * 0.5f;
-            float halfYaw = yaw * DegreesToRadians * 0.5f;
-            float halfRoll = roll * DegreesToRadians * 0.5f;
+            float halfPitch = pitch * MathHelpers.DegreesToRadians * 0.5f;
+            float halfYaw = yaw * MathHelpers.DegreesToRadians * 0.5f;
+            float halfRoll = roll * MathHelpers.DegreesToRadians * 0.5f;
 
             float sinPitch = MathF.Sin(halfPitch);
             float cosPitch = MathF.Cos(halfPitch);
@@ -126,7 +120,8 @@ namespace Gaia.Core.Spatial
                 roll = MathF.Atan2(2f * (X * Y + W * Z), 1f - 2f * (X * X + Z * Z));
             }
 
-            return new Vector3(pitch * RadiansToDegrees, yaw * RadiansToDegrees, roll * RadiansToDegrees);
+            return new Vector3(pitch * MathHelpers.RadiansToDegrees, yaw * MathHelpers.RadiansToDegrees,
+                roll * MathHelpers.RadiansToDegrees);
         }
 
         /// <summary>

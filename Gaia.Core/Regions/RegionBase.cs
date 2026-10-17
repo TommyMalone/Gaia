@@ -413,13 +413,11 @@ namespace Gaia.Core.Regions
                     return false;
                 }
 
-                world = target.ToWorld(_transform);
-
-                if (AbsoluteRotation || AbsoluteScale)
-                {
-                    world = new Transform(world.Origin, AbsoluteRotation ? _transform.Rotation : world.Rotation,
-                        AbsoluteScale ? _transform.Scale : world.Scale);
-                }
+                // Under either flag the origin still swings and stretches with the target, and only the rotation or
+                // the scale stays the shape's own.
+                world = new Transform(target.ToWorld(_transform.Origin),
+                    AbsoluteRotation ? _transform.Rotation : target.ToWorldRotation(_transform.Rotation),
+                    AbsoluteScale ? _transform.Scale : target.ToWorldScale(_transform.Scale));
             }
 
             if (world.Scale.X == 0f || world.Scale.Y == 0f || world.Scale.Z == 0f)

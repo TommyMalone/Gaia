@@ -1,13 +1,18 @@
 ﻿using System;
 using Gaia.Core.Services.Random;
-using Gaia.Core.Spatial;
 
-namespace Gaia.Core.Regions
+namespace Gaia.Core.Spatial
 {
-    /// <summary>The arithmetic the region shapes share.</summary>
+    /// <summary>The arithmetic the library shares, its angle conversions, the round shapes' reach and the random picks.</summary>
     internal static class MathHelpers
     {
-        /// <summary>How many guesses <see cref="RegionBase.TryRejectionSample" /> makes before giving up.</summary>
+        /// <summary>Multiplies an angle in degrees to give it in radians.</summary>
+        internal const float DegreesToRadians = MathF.PI / 180f;
+
+        /// <summary>Multiplies an angle in radians to give it in degrees.</summary>
+        internal const float RadiansToDegrees = 180f / MathF.PI;
+
+        /// <summary>How many guesses <see cref="Regions.RegionBase.TryRejectionSample" /> makes before giving up.</summary>
         /// <remarks>
         ///     A sphere fills just over half its bounding box, and a polygon or a hull usually fills more of its bounds than
         ///     that, so this many misses in a row is unlikely for any shape worth configuring. A long thin diagonal sliver is the

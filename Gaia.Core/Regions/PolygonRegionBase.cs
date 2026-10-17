@@ -20,8 +20,9 @@ namespace Gaia.Core.Regions
     ///     </para>
     ///     <para>
     ///         A random point is found by guessing inside the footprint's bounds and keeping the first guess inside the
-    ///         footprint. AddCorner keeps the bounds up to date, so reading them walks no corners, and each containment test
-    ///         walks them once. Subclasses raise the point to the height they decide.
+    ///         footprint. AddCorner keeps the bounds up to date, so reading them walks no corners. Each containment test walks
+    ///         the corners once for the crossings, and once more for the edges' tolerance only when the crossings call the
+    ///         point outside. Subclasses raise the point to the height they decide.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
@@ -110,16 +111,15 @@ namespace Gaia.Core.Regions
         /// <summary>Tests whether a point of the plane is inside the footprint.</summary>
         protected bool IsInFootprint(Vector2 point)
         {
-            if (!HasArea)
-            {
-                return false;
-            }
+            // The on-edge walk can only turn an outside into an inside, so it runs only for the points the crossings
+            // call outside. A point they call inside measures no edge's distance.
+            return HasArea && (CrossesAnOddNumberOfEdges(point) || IsOnAnEdge(point));
+        }
 
+        /// <summary>Tests whether the ray cast from a point toward positive X crosses an odd number of edges.</summary>
+        private bool CrossesAnOddNumberOfEdges(Vector2 point)
+        {
             bool isInside = false;
-
-            // Squared once for the walk rather than at every edge.
-            float tolerance = ToleranceInPlane;
-            float squaredTolerance = tolerance * tolerance;
 
             // Each edge runs from the previous corner to the current one. The previous index starts at the last corner
             // so that the first edge tested is the closing edge, from the last corner back around to the first.
@@ -127,15 +127,7 @@ namespace Gaia.Core.Regions
 
             for (int cornerIndex = 0; cornerIndex < _corners.Count; cornerIndex++)
             {
-                Vector2 edgeStart = _corners[previousCornerIndex];
-                Vector2 edgeEnd = _corners[cornerIndex];
-
-                if (IsOnEdge(edgeStart, edgeEnd, point, squaredTolerance))
-                {
-                    return true;
-                }
-
-                if (EdgeCrossesRay(edgeStart, edgeEnd, point))
+                if (EdgeCrossesRay(_corners[previousCornerIndex], _corners[cornerIndex], point))
                 {
                     isInside = !isInside;
                 }
@@ -144,6 +136,28 @@ namespace Gaia.Core.Regions
             }
 
             return isInside;
+        }
+
+        /// <summary>Tests whether a point lies on an edge or a corner of the footprint, or within ToleranceInPlane of one.</summary>
+        private bool IsOnAnEdge(Vector2 point)
+        {
+            // Squared once for the walk rather than at every edge.
+            float tolerance = ToleranceInPlane;
+            float squaredTolerance = tolerance * tolerance;
+
+            int previousCornerIndex = _corners.Count - 1;
+
+            for (int cornerIndex = 0; cornerIndex < _corners.Count; cornerIndex++)
+            {
+                if (IsOnEdge(_corners[previousCornerIndex], _corners[cornerIndex], point, squaredTolerance))
+                {
+                    return true;
+                }
+
+                previousCornerIndex = cornerIndex;
+            }
+
+            return false;
         }
 
         /// <summary>Guesses points inside the bounds until one is inside the footprint, or the attempts run out.</summary>

@@ -106,8 +106,13 @@ namespace Gaia.Core.Spatial
         /// </remarks>
         public Transform ToWorld(Transform local)
         {
-            Vector3 origin = ToWorld(local.Origin);
-            Rotation turn = local.Rotation;
+            return new Transform(ToWorld(local.Origin), ToWorldRotation(local.Rotation), ToWorldScale(local.Scale));
+        }
+
+        /// <summary>The world rotation of a local transform turned by the given rotation, as ToWorld(Transform) composes it.</summary>
+        internal Rotation ToWorldRotation(Rotation local)
+        {
+            Rotation turn = local;
 
             if (Scale.X < 0f || Scale.Y < 0f || Scale.Z < 0f)
             {
@@ -118,10 +123,13 @@ namespace Gaia.Core.Spatial
                 turn = new Rotation(turn.X * signY * signZ, turn.Y * signX * signZ, turn.Z * signX * signY, turn.W);
             }
 
-            Rotation rotation = Rotation * turn;
-            Vector3 scale = new(Scale.X * local.Scale.X, Scale.Y * local.Scale.Y, Scale.Z * local.Scale.Z);
+            return Rotation * turn;
+        }
 
-            return new Transform(origin, rotation, scale);
+        /// <summary>The world scale of a local transform stretched by the given scale, as ToWorld(Transform) composes it.</summary>
+        internal Vector3 ToWorldScale(Vector3 local)
+        {
+            return new Vector3(Scale.X * local.X, Scale.Y * local.Y, Scale.Z * local.Z);
         }
 
         public bool Equals(Transform other)

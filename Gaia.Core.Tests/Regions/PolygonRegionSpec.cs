@@ -66,6 +66,45 @@ public class PolygonRegionSpec
     }
 
     [Test]
+    public void ContainsEveryPointJustInsideItsEdgesAndCorners()
+    {
+        // Each point is inside the L, half a millimeter or two millimeters in from the middle of an edge, square to it,
+        // or from a corner along the diagonal, the inner corner's into the solid part. Two millimeters is past the
+        // tolerance, so no edge holds that point and the crossings alone must count it inside.
+        float diagonal = 1f / MathF.Sqrt(2f);
+        (Vector2 OnTheBoundary, Vector2 Inward)[] boundaryAndInward =
+        {
+            (new Vector2(0f, 0f), new Vector2(diagonal, diagonal)),
+            (new Vector2(10f, 0f), new Vector2(-diagonal, diagonal)),
+            (new Vector2(10f, 5f), new Vector2(-diagonal, -diagonal)),
+            (new Vector2(5f, 5f), new Vector2(-diagonal, -diagonal)),
+            (new Vector2(5f, 10f), new Vector2(-diagonal, -diagonal)),
+            (new Vector2(0f, 10f), new Vector2(diagonal, -diagonal)),
+            (new Vector2(5f, 0f), new Vector2(0f, 1f)),
+            (new Vector2(10f, 2.5f), new Vector2(-1f, 0f)),
+            (new Vector2(7.5f, 5f), new Vector2(0f, -1f)),
+            (new Vector2(5f, 7.5f), new Vector2(-1f, 0f)),
+            (new Vector2(2.5f, 10f), new Vector2(0f, -1f)),
+            (new Vector2(0f, 5f), new Vector2(1f, 0f)),
+        };
+
+        Assert.Multiple(() =>
+        {
+            foreach ((Vector2 onTheBoundary, Vector2 inward) in boundaryAndInward)
+            {
+                foreach (float distanceIn in new[] { 0.0005f, 0.002f })
+                {
+                    Vector2 inside = onTheBoundary + inward * distanceIn;
+                    Vector3 justInside = new(inside.X, 0f, inside.Y);
+
+                    Assert.That(_polygon.IsInRegion(justInside), Is.True,
+                        $"{justInside} is {distanceIn} in from {onTheBoundary}");
+                }
+            }
+        });
+    }
+
+    [Test]
     public void ContainsEveryPointOnASlantedEdge()
     {
         // (6, 6) is inside the bounds of the slanted edge's corners and beside the edge, so the test fails if the

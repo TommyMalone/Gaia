@@ -174,7 +174,7 @@ public class SectorRegionSpec
         {
             foreach (float degreesOffForward in new[] { -25f, 0f, 25f })
             {
-                float radians = degreesOffForward * MathF.PI / 180f;
+                float radians = degreesOffForward * MathHelpers.DegreesToRadians;
 
                 onTheBoundary.Add(new Vector3(20f * MathF.Sin(radians), height, 20f * MathF.Cos(radians)));
             }

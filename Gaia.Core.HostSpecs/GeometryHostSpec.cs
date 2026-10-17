@@ -447,6 +447,124 @@ public class GeometryHostSpec
     }
 
     [Test]
+    public void HoldsAMillimeterPastItsBoundaryInTheWorldUnderAnAbsoluteRotation()
+    {
+        // The actor has turned a quarter right and is scaled by 3. The box keeps its own turn, so its extents of (2, 1,
+        // 0.5) lie along the world's axes, and stretches with the actor to 6 along X and 1.5 along Z. Its tolerance is
+        // 1 millimeter in the world, as a box stretched with its target holds, so half a millimeter past an end or a
+        // side is inside and two millimeters past is outside. Turned with the actor, its length would lie along the
+        // world's Z and hold the last point.
+        Vector3 halfAMillimeterPastItsEnd = new(6.0005f, 0f, 0f);
+        Vector3 twoMillimetersPastItsEnd = new(6.002f, 0f, 0f);
+        Vector3 halfAMillimeterPastItsSide = new(0f, 0f, 1.5005f);
+        Vector3 twoMillimetersPastItsSide = new(0f, 0f, 1.502f);
+        Vector3 whereItWouldLieTurnedWithTheActor = new(0f, 0f, 5.9f);
+
+        Actor actor = new()
+        {
+            Rotation = Rotation.FromEulerAngles(0f, 90f, 0f),
+            Scale = new Vector3(3f, 3f, 3f),
+        };
+        SelfTarget self = new() { Self = actor };
+
+        BoxRegion onTheActor = new()
+        {
+            Extents = new Vector3(2f, 1f, 0.5f),
+            AbsoluteRotation = true,
+            OriginTarget = self,
+        };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(onTheActor.IsInRegion(halfAMillimeterPastItsEnd), Is.True);
+            Assert.That(onTheActor.IsInRegion(twoMillimetersPastItsEnd), Is.False);
+            Assert.That(onTheActor.IsInRegion(halfAMillimeterPastItsSide), Is.True);
+            Assert.That(onTheActor.IsInRegion(twoMillimetersPastItsSide), Is.False);
+            Assert.That(onTheActor.IsInRegion(whereItWouldLieTurnedWithTheActor), Is.False, "keeping its own turn");
+        });
+    }
+
+    [Test]
+    public void HoldsAMillimeterPastItsOwnBoundaryUnderAnAbsoluteScale()
+    {
+        // The actor has turned a quarter right and is scaled by 3. The box is turned a quarter right of its own inside
+        // it, so it lies a half turn round in the world with its length of 2 along the world's X, where the actor's
+        // turn alone would lay it along Z. It keeps its own size and its own tolerance, so half a millimeter past an
+        // end or a side is inside and two millimeters past is outside. Stretched with the actor, it would hold the last
+        // point.
+        Vector3 halfAMillimeterPastItsEnd = new(2.0005f, 0f, 0f);
+        Vector3 twoMillimetersPastItsEnd = new(2.002f, 0f, 0f);
+        Vector3 halfAMillimeterPastItsSide = new(0f, 0f, 0.5005f);
+        Vector3 twoMillimetersPastItsSide = new(0f, 0f, 0.502f);
+        Vector3 whereItWouldReachStretchedWithTheActor = new(5.9f, 0f, 0f);
+
+        Actor actor = new()
+        {
+            Rotation = Rotation.FromEulerAngles(0f, 90f, 0f),
+            Scale = new Vector3(3f, 3f, 3f),
+        };
+        SelfTarget self = new() { Self = actor };
+
+        BoxRegion onTheActor = new()
+        {
+            Rotation = Rotation.FromEulerAngles(0f, 90f, 0f),
+            Extents = new Vector3(2f, 1f, 0.5f),
+            AbsoluteScale = true,
+            OriginTarget = self,
+        };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(onTheActor.IsInRegion(halfAMillimeterPastItsEnd), Is.True);
+            Assert.That(onTheActor.IsInRegion(twoMillimetersPastItsEnd), Is.False);
+            Assert.That(onTheActor.IsInRegion(halfAMillimeterPastItsSide), Is.True);
+            Assert.That(onTheActor.IsInRegion(twoMillimetersPastItsSide), Is.False);
+            Assert.That(onTheActor.IsInRegion(whereItWouldReachStretchedWithTheActor), Is.False,
+                "keeping its own size");
+        });
+    }
+
+    [Test]
+    public void KeepsItsOwnTurnAndSizeUnderBothAbsoluteFlags()
+    {
+        // The actor has turned a quarter right and is scaled by 3, so the box's offset of 3 ahead swings and stretches
+        // to (9, 0, 0). Under both flags the box keeps its own turn and size there, its length of 2 along the world's X
+        // and its depth of 0.5 along Z, and its own tolerance. Turned with the actor its length would lie along Z, and
+        // stretched with it its depth would reach 1.5, either of which holds the last point.
+        Vector3 halfAMillimeterPastItsEnd = new(11.0005f, 0f, 0f);
+        Vector3 twoMillimetersPastItsEnd = new(11.002f, 0f, 0f);
+        Vector3 halfAMillimeterPastItsSide = new(9f, 0f, 0.5005f);
+        Vector3 twoMillimetersPastItsSide = new(9f, 0f, 0.502f);
+        Vector3 whereItWouldReachTurnedOrStretched = new(9f, 0f, 1.4f);
+
+        Actor actor = new()
+        {
+            Rotation = Rotation.FromEulerAngles(0f, 90f, 0f),
+            Scale = new Vector3(3f, 3f, 3f),
+        };
+        SelfTarget self = new() { Self = actor };
+
+        BoxRegion aheadOfTheActor = new()
+        {
+            Origin = new Vector3(0f, 0f, 3f),
+            Extents = new Vector3(2f, 1f, 0.5f),
+            AbsoluteRotation = true,
+            AbsoluteScale = true,
+            OriginTarget = self,
+        };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(aheadOfTheActor.IsInRegion(halfAMillimeterPastItsEnd), Is.True);
+            Assert.That(aheadOfTheActor.IsInRegion(twoMillimetersPastItsEnd), Is.False);
+            Assert.That(aheadOfTheActor.IsInRegion(halfAMillimeterPastItsSide), Is.True);
+            Assert.That(aheadOfTheActor.IsInRegion(twoMillimetersPastItsSide), Is.False);
+            Assert.That(aheadOfTheActor.IsInRegion(whereItWouldReachTurnedOrStretched), Is.False,
+                "keeping its own turn and size");
+        });
+    }
+
+    [Test]
     public void ComposesAnUnevenlyScaledTargetAsUnrealDoes()
     {
         // The actor is stretched to twice its size along the world's X, and the cube of extents 1 inside it is turned
@@ -471,6 +589,32 @@ public class GeometryHostSpec
         {
             Assert.That(turnedInsideTheActor.IsInRegion(insideTheStretchedCube), Is.True);
             Assert.That(turnedInsideTheActor.IsInRegion(insideTheShearedCube), Is.False);
+        });
+    }
+
+    [Test]
+    public void MultipliesItsOwnScaleByTheScaleOfItsTarget()
+    {
+        // The ball's Radius of 1 is doubled by its own Scale and tripled by the actor's, so it reaches 6 from where the
+        // actor stands. A ball that kept only the actor's scale would reach 3, and one that kept only its own would
+        // reach 2, so the point 5.9 ahead lies inside only the composed ball, and the point 6.1 ahead lies outside it.
+        Vector3 insideTheComposedReach = new(0f, 0f, 5.9f);
+        Vector3 pastTheComposedReach = new(0f, 0f, 6.1f);
+
+        Actor actor = new() { Scale = new Vector3(3f, 3f, 3f) };
+        SelfTarget self = new() { Self = actor };
+
+        SphereRegion ballOnTheActor = new()
+        {
+            Radius = 1f,
+            Scale = new Vector3(2f, 2f, 2f),
+            OriginTarget = self,
+        };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ballOnTheActor.IsInRegion(insideTheComposedReach), Is.True);
+            Assert.That(ballOnTheActor.IsInRegion(pastTheComposedReach), Is.False);
         });
     }
 

@@ -34,8 +34,6 @@ namespace Gaia.Core.Regions
     /// </remarks>
     public sealed class SectorRegion : PlanarRegionBase
     {
-        private const float DegreesToRadians = MathF.PI / 180f;
-
         private static readonly DescriptionBuilder Builder =
             DescribeShape("An upright slice of a cylinder around its Origin, opening ahead, such as a field of view.");
 
@@ -76,7 +74,7 @@ namespace Gaia.Core.Regions
 
                 // Halved, converted to radians and its cosine and sine taken once here rather than on every containment
                 // test and pick.
-                _halfAngleInRadians = value * 0.5f * DegreesToRadians;
+                _halfAngleInRadians = value * 0.5f * MathHelpers.DegreesToRadians;
                 _cosineOfHalfAngle = MathF.Cos(_halfAngleInRadians);
                 _sineOfHalfAngle = MathF.Sin(_halfAngleInRadians);
             }
