@@ -289,6 +289,7 @@ public class DescriptionSpec
         ByNameTarget byName = new();
         DistanceConsideration distance = new();
         FloatSequenceWeightFunction floatSequence = new();
+        GroupConsideration group = new();
 
         // Both blackboards are supplied, so the store a component loaded can be matched back to the Store name that
         // picked it.
@@ -362,6 +363,10 @@ public class DescriptionSpec
             AssertAssignsItsDefault(ConceptualAbstraction.Actions, "Subreasoner", "DoneWhen", subreasoner,
                 "<Action Type=\"Subreasoner\" Name=\"Nest\"><Reasoner Type=\"RuleBased\"/></Action>",
                 loaded => loaded.DoneWhen.ToString());
+            AssertAssignsItsDefault(ConceptualAbstraction.Considerations, "Group", "BooleanOperator", group,
+                "<Consideration Type=\"Group\"/>", loaded => loaded.BooleanOperator.ToString());
+            AssertAssignsItsDefault(ConceptualAbstraction.Considerations, "Group", "RankOperator", group,
+                "<Consideration Type=\"Group\"/>", loaded => loaded.RankOperator.ToString());
             AssertAssignsItsDefault(ConceptualAbstraction.Considerations, "Distance", "IgnoreHeight", distance,
                 DistanceSnippet, loaded => loaded.IgnoreHeight);
             AssertAssignsItsDefault(ConceptualAbstraction.WeightFunctions, "Curve", "Linear", curve, CurveSnippet,

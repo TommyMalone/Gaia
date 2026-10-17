@@ -1,5 +1,4 @@
-﻿using System;
-using Gaia.Core.Factories;
+﻿using Gaia.Core.Factories;
 using Gaia.Core.Reasoners;
 using Gaia.Core.Services.Diagnostics;
 using Gaia.Core.Specifications;
@@ -105,11 +104,15 @@ namespace Gaia.Core.Actions
         {
             SpecificationNode node = creationData.Node;
 
-            if (node.TryGetString(DoneWhenAttribute.Name, out string doneWhenText) &&
-                !TryReadDoneWhen(node, doneWhenText))
+            SubreasonerCompletion doneWhen = DoneWhen;
+
+            if (node.HasAttribute(DoneWhenAttribute.Name) &&
+                !node.ReadEnumeration(DoneWhenAttribute.Name, out doneWhen))
             {
                 return false;
             }
+
+            DoneWhen = doneWhen;
 
             if (node.HasAttribute(NothingEligibleCycleLimitAttribute.Name))
             {
@@ -181,32 +184,6 @@ namespace Gaia.Core.Actions
             _consecutiveCyclesNothingHasBeenEligible = Reasoner.SelectedOption == null
                 ? _consecutiveCyclesNothingHasBeenEligible + 1
                 : 0;
-        }
-
-        /// <summary>Reads the DoneWhen attribute's text in any casing, reporting text that names no rule.</summary>
-        private bool TryReadDoneWhen(SpecificationNode node, string text)
-        {
-            if (string.Equals(text, nameof(SubreasonerCompletion.SelectedOptionDone),
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                DoneWhen = SubreasonerCompletion.SelectedOptionDone;
-                return true;
-            }
-
-            if (string.Equals(text, nameof(SubreasonerCompletion.NothingEligible), StringComparison.OrdinalIgnoreCase))
-            {
-                DoneWhen = SubreasonerCompletion.NothingEligible;
-                return true;
-            }
-
-            if (string.Equals(text, nameof(SubreasonerCompletion.ReasonerDone), StringComparison.OrdinalIgnoreCase))
-            {
-                DoneWhen = SubreasonerCompletion.ReasonerDone;
-                return true;
-            }
-
-            node.ReportMalformed(DoneWhenAttribute.Name, text, "SelectedOptionDone, NothingEligible or ReasonerDone");
-            return false;
         }
     }
 }

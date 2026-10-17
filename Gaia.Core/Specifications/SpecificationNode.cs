@@ -513,6 +513,54 @@ namespace Gaia.Core.Specifications
             return TryParseRotation(name, text, out value);
         }
 
+        /// <summary>
+        ///     Reads an optional enumeration attribute, one of the type's member names in any casing. Absence is silent,
+        ///     malformed text is reported.
+        /// </summary>
+        /// <remarks>
+        ///     Text reads as it does through ReadEnumeration. An absent attribute leaves the zero value, which need not be a
+        ///     member, so an attribute whose default is another member is read through HasAttribute and then ReadEnumeration.
+        /// </remarks>
+        /// <typeparam name="TEnum">The enumeration whose member names the attribute holds.</typeparam>
+        /// <exception cref="ArgumentException">
+        ///     The enumeration carries the Flags attribute, has no members, or has two member
+        ///     names that differ only in casing, so a file could not name each member by its name.
+        /// </exception>
+        public bool TryGetEnumeration<TEnum>(AiString name, out TEnum value) where TEnum : struct, Enum
+        {
+            EnumerationTable<TEnum> table = EnumerationTable<TEnum>.Readable();
+            value = default;
+            return _attributes.TryGetValue(name, out string? text) && TryParseEnumeration(table, name, text, out value);
+        }
+
+        /// <summary>
+        ///     Reads a required enumeration attribute, one of the type's member names in any casing. Absence and malformed
+        ///     text are both reported.
+        /// </summary>
+        /// <remarks>
+        ///     Only a whole name reads, so a number, names joined by commas, empty text and a name with spaces around it are
+        ///     malformed, where Enum.TryParse would read all but the empty text. The names are the choices
+        ///     AttributeDescription.Enumeration lists for the same type, in the same order, and a malformed report names them all.
+        /// </remarks>
+        /// <typeparam name="TEnum">The enumeration whose member names the attribute holds.</typeparam>
+        /// <exception cref="ArgumentException">
+        ///     The enumeration carries the Flags attribute, has no members, or has two member
+        ///     names that differ only in casing, so a file could not name each member by its name.
+        /// </exception>
+        public bool ReadEnumeration<TEnum>(AiString name, out TEnum value) where TEnum : struct, Enum
+        {
+            EnumerationTable<TEnum> table = EnumerationTable<TEnum>.Readable();
+            value = default;
+
+            if (!_attributes.TryGetValue(name, out string? text))
+            {
+                ReportMissing(name);
+                return false;
+            }
+
+            return TryParseEnumeration(table, name, text, out value);
+        }
+
         /// <summary>Parses "true" or "false" in any casing, reporting anything else as malformed.</summary>
         private bool TryParseBool(AiString name, string text, out bool value)
         {
@@ -600,6 +648,27 @@ namespace Gaia.Core.Specifications
                 return true;
             }
 
+            value = default;
+            return false;
+        }
+
+        /// <summary>Parses one of the table's names in any casing, reporting anything else with every name listed.</summary>
+        private bool TryParseEnumeration<TEnum>(
+            EnumerationTable<TEnum> table,
+            AiString name,
+            string text,
+            out TEnum value) where TEnum : struct, Enum
+        {
+            for (int index = 0; index < table.Names.Length; index++)
+            {
+                if (string.Equals(text, table.Names[index], StringComparison.OrdinalIgnoreCase))
+                {
+                    value = table.Values[index];
+                    return true;
+                }
+            }
+
+            ReportMalformed(name, text, table.Expected);
             value = default;
             return false;
         }

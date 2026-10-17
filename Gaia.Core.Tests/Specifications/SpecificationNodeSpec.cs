@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Spatial;
+﻿using Gaia.Core.Factories;
+using Gaia.Core.Spatial;
 using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
 using Gaia.Core.Tests.Helpers;
@@ -7,7 +8,8 @@ namespace Gaia.Core.Tests.Specifications;
 
 /// <summary>
 ///     Covers <see cref="SpecificationNode" />, the typed attribute accessors in their silent TryGet tier and their
-///     reporting Read tier, and the members that build and edit a tree with what each refuses.
+///     reporting Read tier, the enumeration's among them, and the members that build and edit a tree with what each
+///     refuses.
 /// </summary>
 /// <remarks>
 ///     The accessor tests read one node parsed through <see cref="XmlSpecificationReader" />, whose element carries
@@ -35,7 +37,7 @@ public class SpecificationNodeSpec
     private const string Snippet = """
                                    <Region Type="Circle" Name="KillZone" Center="(0, 0, 150)" Radius="40" Ratio="1.5" Attempts="10"
                                            IgnoreHeight="true" Speed="fast" Armed="yes" Offset="(1, 2)" Fraction="1,5"
-                                           Corner="(0.5, -2.25)" Facing="(0, 90, 0)"/>
+                                           Corner="(0.5, -2.25)" Facing="(0, 90, 0)" Pace="run" Gait="jog"/>
                                    """;
 
     private RecordingLogSink _logSink;
@@ -63,6 +65,8 @@ public class SpecificationNodeSpec
             Assert.That(corner, Is.EqualTo(new Vector2(0.5f, -2.25f)));
             Assert.That(_node.ReadRotation("Facing", out Rotation facing), Is.True);
             Assert.That(facing.Forward.X, Is.EqualTo(1f).Within(0.001f), "a yaw of 90 faces right");
+            Assert.That(_node.ReadEnumeration("Pace", out Pace pace), Is.True);
+            Assert.That(pace, Is.EqualTo(Pace.Run));
             Assert.That(_logSink.Entries, Is.Empty, "well formed reads report nothing");
         });
     }
@@ -74,6 +78,7 @@ public class SpecificationNodeSpec
         bool wasShelteredRead = _node.ReadBool("Sheltered", out _);
         bool wasLabelRead = _node.ReadString("Label", out _);
         bool wasWaypointRead = _node.ReadVector3("Waypoint", out _);
+        bool wasStrideRead = _node.ReadEnumeration<Pace>("Stride", out _);
 
         Assert.Multiple(() =>
         {
@@ -81,12 +86,14 @@ public class SpecificationNodeSpec
             Assert.That(wasShelteredRead, Is.False);
             Assert.That(wasLabelRead, Is.False);
             Assert.That(wasWaypointRead, Is.False);
+            Assert.That(wasStrideRead, Is.False);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 1, the Region element has no Height attribute",
                 "Error guard.xml Line 1, the Region element has no Sheltered attribute",
                 "Error guard.xml Line 1, the Region element has no Label attribute",
                 "Error guard.xml Line 1, the Region element has no Waypoint attribute",
+                "Error guard.xml Line 1, the Region element has no Stride attribute",
             }));
         });
     }
@@ -126,6 +133,7 @@ public class SpecificationNodeSpec
         bool wasCenterReadFlat = _node.ReadVector2("Center", out _);
         bool hasOffsetAsRotation = _node.TryGetRotation("Offset", out _);
         bool hasFractionCount = _node.TryGetInt("Fraction", out _);
+        bool hasGait = _node.TryGetEnumeration("Gait", out Pace _);
 
         Assert.Multiple(() =>
         {
@@ -135,6 +143,7 @@ public class SpecificationNodeSpec
             Assert.That(wasCenterReadFlat, Is.False, "three components is not a point in a plane");
             Assert.That(hasOffsetAsRotation, Is.False);
             Assert.That(hasFractionCount, Is.False);
+            Assert.That(hasGait, Is.False);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 // @formatter:off
@@ -144,6 +153,7 @@ public class SpecificationNodeSpec
                 "Error guard.xml Line 1, the Region element's Center is not a tuple like (0, 1.5), it reads \"(0, 0, 150)\"",
                 "Error guard.xml Line 1, the Region element's Offset is not pitch, yaw and roll in degrees like (0, 45, 0), it reads \"(1, 2)\"",
                 "Error guard.xml Line 1, the Region element's Fraction is not a whole number, it reads \"1,5\"",
+                "Error guard.xml Line 1, the Region element's Gait is not Walk, Run or Sprint, it reads \"jog\"",
                 // @formatter:on
             }));
         });
@@ -156,6 +166,7 @@ public class SpecificationNodeSpec
         bool hasVisible = _node.TryGetBool("Visible", out _);
         bool hasOrigin = _node.TryGetVector2("Origin", out _);
         bool hasLabel = _node.TryGetString("Label", out _);
+        bool hasStride = _node.TryGetEnumeration<Pace>("Stride", out _);
 
         Assert.Multiple(() =>
         {
@@ -163,6 +174,7 @@ public class SpecificationNodeSpec
             Assert.That(hasVisible, Is.False);
             Assert.That(hasOrigin, Is.False);
             Assert.That(hasLabel, Is.False);
+            Assert.That(hasStride, Is.False);
             Assert.That(_logSink.Entries, Is.Empty);
         });
     }
@@ -213,6 +225,149 @@ public class SpecificationNodeSpec
             Assert.That(root.ReadBool("Guarded", out bool guarded), Is.True);
             Assert.That(guarded, Is.False);
             Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [TestCase("walk", nameof(Pace.Walk))]
+    [TestCase("RUN", nameof(Pace.Run))]
+    [TestCase("sPRINT", nameof(Pace.Sprint))]
+    public void ReadsAnEnumerationNameInAnyCasing(string text, string member)
+    {
+        SpecificationNode probe = ParseProbe($"<Probe Pace=\"{text}\"/>");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(probe.ReadEnumeration("Pace", out Pace pace), Is.True);
+            Assert.That(pace.ToString(), Is.EqualTo(member));
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [TestCase("1")]
+    [TestCase("0")]
+    [TestCase("Walk, Run")]
+    [TestCase("")]
+    [TestCase(" Walk")]
+    [TestCase("Walk ")]
+    [TestCase("Jog")]
+    public void RefusesTextThatIsNotOneWholeName(string text)
+    {
+        // Enum.TryParse, ignoring casing, reads every case but the empty text and Jog. It reads "1" as Run, "0" and
+        // either spaced name as Walk, and "Walk, Run" as Run, the two values combined. A reader that trims reads the
+        // two spaced names.
+        SpecificationNode probe = ParseProbe($"<Probe Pace=\"{text}\"/>");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(probe.ReadEnumeration("Pace", out Pace _), Is.False);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                $"Error guard.xml Line 1, the Probe element's Pace is not Walk, Run or Sprint, it reads \"{text}\"",
+            }));
+        });
+    }
+
+    [Test]
+    public void ReadsAMemberDeclaredOutOfOrderAsItsOwnValue()
+    {
+        // Names taken in declared order beside values taken in value order would read Second as 1.
+        SpecificationNode probe = ParseProbe("<Probe Later=\"Second\" Earlier=\"First\"/>");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(probe.ReadEnumeration("Later", out Order later), Is.True);
+            Assert.That((int)later, Is.EqualTo(2));
+            Assert.That(probe.ReadEnumeration("Earlier", out Order earlier), Is.True);
+            Assert.That((int)earlier, Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void ReadsEachAliasAsTheValueItShares()
+    {
+        SpecificationNode probe = ParseProbe("<Probe Floor=\"Bottom\" Ground=\"low\" Top=\"High\"/>");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(probe.ReadEnumeration("Floor", out Level floor), Is.True);
+            Assert.That((int)floor, Is.EqualTo(0));
+            Assert.That(probe.ReadEnumeration("Ground", out Level ground), Is.True);
+            Assert.That((int)ground, Is.EqualTo(0));
+            Assert.That(probe.ReadEnumeration("Top", out Level top), Is.True);
+            Assert.That((int)top, Is.EqualTo(1));
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [TestCase(TypeArgs = new[] { typeof(Mask) })]
+    [TestCase(TypeArgs = new[] { typeof(Empty) })]
+    [TestCase(TypeArgs = new[] { typeof(Twins) })]
+    public void RefusesAnEnumerationAFileCannotNameMemberByMember<TEnum>() where TEnum : struct, Enum
+    {
+        // The reader that is silent about absence is asked for an attribute the element does not carry, so a check
+        // made only once the text is found lets it pass.
+        SpecificationNode probe = new("Probe");
+        probe.SetAttribute("Choice", "Fast");
+        string typeName = typeof(TEnum).Name;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => probe.ReadEnumeration("Choice", out TEnum _),
+                Throws.ArgumentException.With.Message.Contains(typeName));
+            Assert.That(() => probe.TryGetEnumeration("Absent", out TEnum _),
+                Throws.ArgumentException.With.Message.Contains(typeName));
+            Assert.That(() => AttributeDescription.Enumeration<TEnum>("Choice", "Choice", "Fast", "A choice."),
+                Throws.ArgumentException.With.Message.Contains(typeName));
+        });
+    }
+
+    [Test]
+    public void ReadsEveryChoiceItsDescriptionLists()
+    {
+        AttributeDescription described = AttributeDescription.Enumeration<Pace>("Pace", "Pace", "Walk", "How fast.");
+        SpecificationNode probe = new("Probe");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(described.Choices, Has.Count.EqualTo(3));
+
+            foreach (string choice in described.Choices!)
+            {
+                probe.SetAttribute("Pace", choice);
+
+                Assert.That(probe.ReadEnumeration("Pace", out Pace pace), Is.True, $"the choice {choice} reads");
+                Assert.That(pace.ToString(), Is.EqualTo(choice));
+            }
+        });
+    }
+
+    [Test]
+    public void ReadsAnEnumerationWithoutAllocating()
+    {
+        // The type's table is built the first time the type is read, so one read is made before the reads measured.
+        const int reads = 1000;
+        AiString paceName = "Pace";
+
+        _node.ReadEnumeration(paceName, out Pace _);
+
+        int readsThatSucceeded = 0;
+        long bytesBefore = GC.GetAllocatedBytesForCurrentThread();
+
+        for (int read = 0; read < reads; read++)
+        {
+            if (_node.ReadEnumeration(paceName, out Pace _))
+            {
+                readsThatSucceeded++;
+            }
+        }
+
+        long bytesAllocated = GC.GetAllocatedBytesForCurrentThread() - bytesBefore;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(readsThatSucceeded, Is.EqualTo(reads));
+            Assert.That(bytesAllocated, Is.EqualTo(0L),
+                $"reading {reads} enumeration attributes must not feed the collector");
         });
     }
 
@@ -559,6 +714,15 @@ public class SpecificationNodeSpec
         });
     }
 
+    /// <summary>Parses one element through a reader of its own on the fixture's sink, under the fixture's source name.</summary>
+    private SpecificationNode ParseProbe(string snippet)
+    {
+        XmlSpecificationReader reader = new(_logSink);
+        reader.TryRead(snippet, SourceName, out SpecificationNode? probe);
+
+        return probe!;
+    }
+
     /// <summary>Adds a child through AddChild, or through InsertChild at the front, which refuse the same children.</summary>
     private static void Attach(SpecificationNode parent, SpecificationNode child, bool throughInsert)
     {
@@ -570,5 +734,48 @@ public class SpecificationNodeSpec
         {
             parent.AddChild(child);
         }
+    }
+
+    /// <summary>Three members valued in declared order, as the library's own enumerations are.</summary>
+    private enum Pace
+    {
+        Walk,
+        Run,
+        Sprint,
+    }
+
+    /// <summary>Declared out of order, so a name read by declared position would take the wrong value.</summary>
+    private enum Order
+    {
+        Second = 2,
+        First = 1,
+    }
+
+    /// <summary>Two names for one value, each of which reads as that value.</summary>
+    private enum Level
+    {
+        Low = 0,
+        Bottom = 0,
+        High = 1,
+    }
+
+    /// <summary>Values meant to be combined, which one whole name cannot express.</summary>
+    [Flags]
+    private enum Mask
+    {
+        Near = 1,
+        Far = 2,
+    }
+
+    /// <summary>No members, so there is no name for a file to give.</summary>
+    private enum Empty
+    {
+    }
+
+    /// <summary>Two names that differ only in casing, which a reader taking a name in any casing cannot tell apart.</summary>
+    private enum Twins
+    {
+        Fast,
+        FAST,
     }
 }

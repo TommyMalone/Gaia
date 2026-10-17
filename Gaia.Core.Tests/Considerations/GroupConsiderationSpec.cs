@@ -495,9 +495,11 @@ public class GroupConsiderationSpec
 
     [TestCase("Xor")]
     [TestCase("1")]
+    [TestCase("And, Or")]
     public void RefusesABooleanOperatorThatNamesNoOperator(string text)
     {
-        // Enum.TryParse would read "1" as Or, so the second case holds the reader to the names.
+        // Enum.TryParse would read "1" as Or, and "And, Or" as the two values combined, which is Or, so the last two
+        // cases hold the reader to one whole name.
         string snippet = $"""<Consideration Type="Group" BooleanOperator="{text}"/>""";
         AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
 

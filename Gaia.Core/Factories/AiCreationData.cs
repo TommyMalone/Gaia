@@ -22,19 +22,12 @@ namespace Gaia.Core.Factories
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>
     public sealed class AiCreationData
     {
-        private const string BrainStoreText = "Brain";
-        private const string WorldStoreText = "World";
-
-        private static readonly AiString BrainStoreName = BrainStoreText;
-        private static readonly AiString WorldStoreName = WorldStoreText;
-
         /// <summary>
         ///     Describes the Store attribute that <see cref="TryReadStore" /> reads, and is added to the description of every
         ///     component that reads a store.
         /// </summary>
-        internal static readonly AttributeDescription StoreAttribute = AttributeDescription.Enumeration("Store",
-            "Store", new[] { BrainStoreText, WorldStoreText }, BrainStoreText,
-            "Which blackboard holds the value, Brain or World.");
+        internal static readonly AttributeDescription StoreAttribute = AttributeDescription.Enumeration<StoreKind>(
+            "Store", "Store", nameof(StoreKind.Brain), "Which blackboard holds the value, Brain or World.");
 
         /// <summary>
         ///     Creates the creation data a load starts from, which <see cref="ForChild" /> then copies for every component
@@ -115,35 +108,27 @@ namespace Gaia.Core.Factories
         internal bool TryReadStore(SpecificationNode node, out DataStoreBase? store)
         {
             store = BrainBlackboard;
+            StoreKind kind = StoreKind.Brain;
 
-            if (!node.TryGetString(StoreAttribute.Name, out string text))
+            if (node.HasAttribute(StoreAttribute.Name) && !node.ReadEnumeration(StoreAttribute.Name, out kind))
+            {
+                return false;
+            }
+
+            if (kind == StoreKind.Brain)
             {
                 return true;
             }
 
-            AiString storeName = text;
-
-            if (storeName == BrainStoreName)
+            if (WorldBlackboard == null)
             {
-                return true;
+                ReportError(
+                    $"Line {node.LineNumber}, the {node.NameSpelling} element's Store is World and no world blackboard was supplied");
+                return false;
             }
 
-            if (storeName == WorldStoreName)
-            {
-                if (WorldBlackboard == null)
-                {
-                    ReportError(
-                        $"Line {node.LineNumber}, the {node.NameSpelling} element's Store is World and no world blackboard was supplied");
-                    return false;
-                }
-
-                store = WorldBlackboard;
-                return true;
-            }
-
-            ReportError(
-                $"Line {node.LineNumber}, the {node.NameSpelling} element's Store is not Brain or World, it reads \"{text}\"");
-            return false;
+            store = WorldBlackboard;
+            return true;
         }
 
         /// <summary>Reports a loading error against the node, filed under the node's source document name.</summary>

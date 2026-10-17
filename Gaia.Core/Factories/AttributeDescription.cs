@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Gaia.Core.DataStores;
+using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
 
 namespace Gaia.Core.Factories
@@ -109,14 +110,19 @@ namespace Gaia.Core.Factories
 
         /// <summary>Describes an optional attribute read as one of the enumeration's names, taking the choices from the type.</summary>
         /// <exception cref="ArgumentException">The spelling does not spell the name.</exception>
+        /// <exception cref="ArgumentException">
+        ///     The enumeration carries the Flags attribute, has no members, or has two member
+        ///     names that differ only in casing.
+        /// </exception>
         public static AttributeDescription Enumeration<TEnum>(
             AiString name,
             string spelling,
             string defaultText,
             string summary) where TEnum : struct, Enum
         {
+            EnumerationTable<TEnum> table = EnumerationTable<TEnum>.Readable();
             return new AttributeDescription(name, spelling, AttributeKind.Enumeration, false, defaultText, summary,
-                Enum.GetNames(typeof(TEnum)));
+                table.Names);
         }
 
         /// <summary>Describes an optional attribute read as one of the given names, for choices no enumeration type lists.</summary>

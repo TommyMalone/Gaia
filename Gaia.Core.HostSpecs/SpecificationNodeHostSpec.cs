@@ -1,4 +1,5 @@
-﻿using Gaia.Core.Specifications;
+﻿using Gaia.Core.Factories;
+using Gaia.Core.Specifications;
 
 namespace Gaia.Core.HostSpecs;
 
@@ -178,6 +179,34 @@ public class SpecificationNodeHostSpec
     }
 
     [Test]
+    public void ReadsAGamesOwnEnumerationThroughEitherTier()
+    {
+        AttributeDescription stance = AttributeDescription.Enumeration<Stance>("Stance", "Stance", nameof(Stance.Stand),
+            "How the character holds itself.");
+        ListLogSink logSink = new();
+        XmlSpecificationReader reader = new(logSink);
+        reader.TryRead("""<Consideration Stance="crouch" Cover="Prone"/>""", "stance.xml",
+            out SpecificationNode? consideration);
+
+        bool wasStanceRead = consideration!.ReadEnumeration(stance.Name, out Stance read);
+        bool wasCoverRead = consideration.ReadEnumeration("Cover", out Stance _);
+        bool hasFallback = consideration.TryGetEnumeration("Fallback", out Stance _);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(stance.Choices, Is.EqualTo(new[] { "Crouch", "Stand" }));
+            Assert.That(wasStanceRead, Is.True);
+            Assert.That(read, Is.EqualTo(Stance.Crouch));
+            Assert.That(wasCoverRead, Is.False);
+            Assert.That(hasFallback, Is.False, "the attribute is absent, which the silent tier does not report");
+            Assert.That(logSink.Entries, Is.EqualTo(new[]
+            {
+                "Error stance.xml Line 1, the Consideration element's Cover is not Crouch or Stand, it reads \"Prone\"",
+            }));
+        });
+    }
+
+    [Test]
     public void RefusesFromOutsideWhatItRefusesFromInside()
     {
         Assert.Multiple(() =>
@@ -186,5 +215,12 @@ public class SpecificationNodeHostSpec
             Assert.That(() => _aim.SetAttribute("Type", "Fire"), Throws.ArgumentException);
             Assert.That(() => _actions.AddChild(_aim), Throws.ArgumentException);
         });
+    }
+
+    /// <summary>A game's own enumeration, public in the game's assembly as a host's types are.</summary>
+    public enum Stance
+    {
+        Crouch,
+        Stand,
     }
 }

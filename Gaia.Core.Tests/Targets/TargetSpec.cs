@@ -394,6 +394,27 @@ public class TargetSpec
     }
 
     [Test]
+    public void ReadsTheStoreInAnyCasing()
+    {
+        const string snippet = """
+                               <Target Type="ByName" List="Actors" Entity="Officer" Store="world"/>
+                               """;
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        WorldBlackboard worldBlackboard = new();
+        creationData.WorldBlackboard = worldBlackboard;
+
+        ByNameTarget loaded = new();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Init(creationData), Is.True);
+            Assert.That(loaded.DataStore, Is.SameAs(worldBlackboard));
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
     public void RefusesAByNameLookupMissingItsList()
     {
         const string snippet = """

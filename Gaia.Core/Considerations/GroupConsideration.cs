@@ -70,17 +70,25 @@ namespace Gaia.Core.Considerations
         {
             SpecificationNode node = creationData.Node;
 
-            if (node.TryGetString(BooleanOperatorAttribute.Name, out string booleanOperatorText) &&
-                !TryReadBooleanOperator(node, booleanOperatorText))
+            BooleanOperator booleanOperator = BooleanOperator;
+
+            if (node.HasAttribute(BooleanOperatorAttribute.Name) &&
+                !node.ReadEnumeration(BooleanOperatorAttribute.Name, out booleanOperator))
             {
                 return false;
             }
 
-            if (node.TryGetString(RankOperatorAttribute.Name, out string rankOperatorText) &&
-                !TryReadRankOperator(node, rankOperatorText))
+            BooleanOperator = booleanOperator;
+
+            RankOperator rankOperator = RankOperator;
+
+            if (node.HasAttribute(RankOperatorAttribute.Name) &&
+                !node.ReadEnumeration(RankOperatorAttribute.Name, out rankOperator))
             {
                 return false;
             }
+
+            RankOperator = rankOperator;
 
             if (BooleanOperator == BooleanOperator.Not && Considerations.Count != 1)
             {
@@ -167,59 +175,6 @@ namespace Gaia.Core.Considerations
                 default:
                     return MathF.Max(combined, rank);
             }
-        }
-
-        /// <summary>Reads the BooleanOperator attribute's text in any casing, reporting text that names no operator.</summary>
-        private bool TryReadBooleanOperator(SpecificationNode node, string text)
-        {
-            if (string.Equals(text, nameof(BooleanOperator.And), StringComparison.OrdinalIgnoreCase))
-            {
-                BooleanOperator = BooleanOperator.And;
-                return true;
-            }
-
-            if (string.Equals(text, nameof(BooleanOperator.Or), StringComparison.OrdinalIgnoreCase))
-            {
-                BooleanOperator = BooleanOperator.Or;
-                return true;
-            }
-
-            if (string.Equals(text, nameof(BooleanOperator.Not), StringComparison.OrdinalIgnoreCase))
-            {
-                BooleanOperator = BooleanOperator.Not;
-                return true;
-            }
-
-            node.ReportMalformed(BooleanOperatorAttribute.Name, text, "And, Or or Not");
-            return false;
-        }
-
-        /// <summary>Reads the RankOperator attribute's text in any casing, reporting text that names no operator.</summary>
-        private bool TryReadRankOperator(SpecificationNode node, string text)
-        {
-            // Stryker disable once Linq : the swap of this member for a LINQ call does not compile inside nameof
-            if (string.Equals(text, nameof(RankOperator.Max), StringComparison.OrdinalIgnoreCase))
-            {
-                RankOperator = RankOperator.Max;
-                return true;
-            }
-
-            // Stryker disable once Linq : the swap of this member for a LINQ call does not compile inside nameof
-            if (string.Equals(text, nameof(RankOperator.Min), StringComparison.OrdinalIgnoreCase))
-            {
-                RankOperator = RankOperator.Min;
-                return true;
-            }
-
-            // Stryker disable once Linq : the swap of this member for a LINQ call does not compile inside nameof
-            if (string.Equals(text, nameof(RankOperator.Sum), StringComparison.OrdinalIgnoreCase))
-            {
-                RankOperator = RankOperator.Sum;
-                return true;
-            }
-
-            node.ReportMalformed(RankOperatorAttribute.Name, text, "Max, Min or Sum");
-            return false;
         }
 
         /// <summary>Reports a Not group that holds no consideration or more than one.</summary>

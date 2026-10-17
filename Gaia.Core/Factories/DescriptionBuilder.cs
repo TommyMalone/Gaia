@@ -75,6 +75,10 @@ namespace Gaia.Core.Factories
         /// <param name="summary">One line saying what the attribute does, in a designer's words.</param>
         /// <typeparam name="TEnum">The enumeration whose names are the attribute's choices.</typeparam>
         /// <exception cref="InvalidOperationException">The description has been built.</exception>
+        /// <exception cref="ArgumentException">
+        ///     The enumeration carries the Flags attribute, has no members, or has two member
+        ///     names that differ only in casing.
+        /// </exception>
         public AttributeDescription Enumeration<TEnum>(string spelling, string defaultText, string summary)
             where TEnum : struct, Enum
         {
