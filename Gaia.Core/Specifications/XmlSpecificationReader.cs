@@ -61,8 +61,12 @@ namespace Gaia.Core.Specifications
             }
             catch (XmlException exception)
             {
-                LogSink.LogError(sourceDocumentName,
-                    $"Line {exception.LineNumber}, the document could not be parsed. {exception.Message}");
+                // The parser reports text with no root element at line 0, a line no file has, so a report at line 0
+                // leaves the line out.
+                string report = exception.LineNumber > 0
+                    ? $"Line {exception.LineNumber}, the document could not be parsed. {exception.Message}"
+                    : $"The document could not be parsed. {exception.Message}";
+                LogSink.LogError(sourceDocumentName, report);
                 return false;
             }
 
@@ -76,15 +80,10 @@ namespace Gaia.Core.Specifications
                 return false;
             }
 
-            if (document.Root == null)
-            {
-                LogSink.LogError(sourceDocumentName, "The document has no root element");
-                return false;
-            }
-
             try
             {
-                SpecificationNode? builtRoot = BuildNode(document.Root, sourceDocumentName);
+                // XDocument.Parse throws for text with no root element, so a document that parsed has one.
+                SpecificationNode? builtRoot = BuildNode(document.Root!, sourceDocumentName);
 
                 if (builtRoot == null)
                 {

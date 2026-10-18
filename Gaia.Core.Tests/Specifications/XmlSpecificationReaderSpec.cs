@@ -1,4 +1,6 @@
 ﻿using System.Collections.Concurrent;
+using System.Xml;
+using System.Xml.Linq;
 using Gaia.Core.Specifications;
 using Gaia.Core.Strings;
 using Gaia.Core.Tests.Helpers;
@@ -199,15 +201,19 @@ public class XmlSpecificationReaderSpec
     [Test]
     public void ReportsAMalformedDocumentAndYieldsNoTree()
     {
+        XmlException thrown = Assert.Throws<XmlException>(() => XDocument.Parse("<Option>", LoadOptions.SetLineInfo))!;
+
         bool wasRead = _reader.TryRead("<Option>", SourceName, out SpecificationNode? root);
 
         Assert.Multiple(() =>
         {
+            Assert.That(thrown.LineNumber, Is.EqualTo(1));
             Assert.That(wasRead, Is.False);
             Assert.That(root, Is.Null);
-            Assert.That(_logSink.Entries, Has.Count.EqualTo(1));
-            Assert.That(_logSink.Entries[0],
-                Does.StartWith("Error test.xml Line 1, the document could not be parsed."));
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                $"Error test.xml Line 1, the document could not be parsed. {thrown.Message}",
+            }));
         });
     }
 
@@ -224,6 +230,33 @@ public class XmlSpecificationReaderSpec
             Assert.That(emptyRoot, Is.Null);
             Assert.That(blankRoot, Is.Null);
             Assert.That(_logSink.Entries, Has.Count.EqualTo(2));
+        });
+    }
+
+    // @formatter:off
+    [TestCase("")]
+    [TestCase("<?xml version=\"1.0\"?>")]
+    [TestCase("\n\n<!-- A brain is yet to be written here. -->")]
+    // @formatter:on
+    public void ReportsADocumentWithNoRootElementUsingTheParsersMessageAndNoLine(string document)
+    {
+        // XDocument.Parse refuses text with no root element itself, at line 0 wherever the text ends. No file has a
+        // line 0, so the reader's entry names no line and carries the parser's message after its own. The parser is
+        // asked first, so a runtime that threw at another line fails the assertion on its line rather than reading as
+        // the reader's, and the entry is expected to carry whatever message that runtime gives.
+        XmlException thrown = Assert.Throws<XmlException>(() => XDocument.Parse(document, LoadOptions.SetLineInfo))!;
+
+        bool wasRead = _reader.TryRead(document, SourceName, out SpecificationNode? root);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(thrown.LineNumber, Is.Zero);
+            Assert.That(wasRead, Is.False);
+            Assert.That(root, Is.Null);
+            Assert.That(_logSink.Entries, Is.EqualTo(new[]
+            {
+                $"Error test.xml The document could not be parsed. {thrown.Message}",
+            }));
         });
     }
 

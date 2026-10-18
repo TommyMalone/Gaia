@@ -42,14 +42,9 @@ public class LoadedGuardSpec
 
         GaiaLoader loader = new(factories, _timeSource, new Xoshiro128RandomSource(1), _logSink);
 
-        // The roll is scripted at 0 through the brain's own source to match GuardSpec, where a walk retaining all of
-        // its rank ties a fresh alarm. No test here writes SecondsSinceAlarm, so the Alarm option stays vetoed, no tie
-        // arises and the roll changes no selection.
-        FixedRandomSource tieBreakingRolls = new(0f);
-
         Brain? brain = null;
         _loaded = loader.TryParse(configurationText, "guard.xml", out SpecificationNode? root) &&
-                  loader.TryLoadBrain(root!, out brain, self: _guard, randomSource: tieBreakingRolls);
+                  loader.TryLoadBrain(root!, out brain, self: _guard);
 
         // A failed load yields no brain. An empty stand-in keeps the fixture alive so LoadsTheWholeBrainFromTheFile can
         // report the failure instead of every test failing in SetUp.
