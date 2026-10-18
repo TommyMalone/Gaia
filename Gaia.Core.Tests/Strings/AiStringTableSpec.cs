@@ -39,4 +39,24 @@ public class AiStringTableSpec
             AiStringTable.LogSink = standingSink;
         }
     }
+
+    [Test]
+    public void CountsEachTextOnce()
+    {
+        // The table is never emptied between tests, so the count is read as a difference, across two casings of a text
+        // no other test makes.
+        int countBefore = AiStringTable.Count;
+
+        AiString first = "CountedOnceByTheTable";
+        int countAfterTheFirst = AiStringTable.Count;
+        AiString second = "COUNTEDONCEBYTHETABLE";
+        int countAfterTheSecond = AiStringTable.Count;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(first == second, Is.True, "the two casings are one name");
+            Assert.That(countAfterTheFirst, Is.EqualTo(countBefore + 1), "the first casing adds the text");
+            Assert.That(countAfterTheSecond, Is.EqualTo(countAfterTheFirst), "the second adds nothing");
+        });
+    }
 }

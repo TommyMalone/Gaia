@@ -152,6 +152,68 @@ public class CircleRegionSpec
     }
 
     [Test]
+    public void SpreadsSamplesAllAroundItsOrigin()
+    {
+        // A sampler that turned through a quarter of a circle or less would still land every sample inside, all in one
+        // quarter, so the test asks for a sample in each quarter around Origin. Fifty uniform samples leave some
+        // quarter empty with a chance of about one in four hundred thousand, and the seeded source draws the same
+        // fifty every run.
+        bool sawLowerLeft = false;
+        bool sawLowerRight = false;
+        bool sawUpperLeft = false;
+        bool sawUpperRight = false;
+
+        for (int sampleIndex = 0; sampleIndex < RegionSpecHelpers.SampleCount; sampleIndex++)
+        {
+            _circle.TryGetRandomPosition(out Vector3 position);
+
+            sawLowerLeft |= position.X < InitialOrigin.X && position.Z < InitialOrigin.Z;
+            sawLowerRight |= position.X > InitialOrigin.X && position.Z < InitialOrigin.Z;
+            sawUpperLeft |= position.X < InitialOrigin.X && position.Z > InitialOrigin.Z;
+            sawUpperRight |= position.X > InitialOrigin.X && position.Z > InitialOrigin.Z;
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(sawLowerLeft, Is.True, "a sample in the lower left quarter");
+            Assert.That(sawLowerRight, Is.True, "a sample in the lower right quarter");
+            Assert.That(sawUpperLeft, Is.True, "a sample in the upper left quarter");
+            Assert.That(sawUpperRight, Is.True, "a sample in the upper right quarter");
+        });
+    }
+
+    [Test]
+    public void SpreadsItsSamplesEvenlyOverItsArea()
+    {
+        // A quarter of the disc's area lies within half its Radius of Origin, and half of it past Origin along Z. A
+        // pick without the square root puts half its samples within half the Radius, and a turn through half a circle
+        // puts every sample past Origin along Z. Each window is about five spreads of 2,000 samples either side of the
+        // fraction expected, so a uniform pick falls outside one with a chance under one in a million. The seeded
+        // source draws the same 2,000 every run. The cylinder takes the same pick, MathHelpers.RandomInDisc.
+        const int sampleCount = 2000;
+        int withinHalfTheRadius = 0;
+        int pastOriginAlongZ = 0;
+
+        for (int sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
+        {
+            _circle.TryGetRandomPosition(out Vector3 position);
+
+            float alongX = position.X - InitialOrigin.X;
+            float alongZ = position.Z - InitialOrigin.Z;
+
+            withinHalfTheRadius += alongX * alongX + alongZ * alongZ <= 6.25f ? 1 : 0;
+            pastOriginAlongZ += alongZ > 0f ? 1 : 0;
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(withinHalfTheRadius / (float)sampleCount, Is.InRange(0.2f, 0.3f),
+                "within half the Radius of Origin");
+            Assert.That(pastOriginAlongZ / (float)sampleCount, Is.InRange(0.44f, 0.56f), "past Origin along Z");
+        });
+    }
+
+    [Test]
     public void ReportsASampleAtItsOriginsHeight()
     {
         _circle.Origin = new Vector3(10f, 7f, 10f);

@@ -199,6 +199,48 @@ public class SphereRegionSpec
     }
 
     [Test]
+    public void SpreadsItsSamplesEvenlyThroughItsVolume()
+    {
+        // An eighth of the ball's volume lies within half its Radius of Origin, and 0.488 of it lies more than 4 from
+        // Origin, in the shell the outer fifth of the Radius makes. Guesses from a box half as wide as the one around
+        // the ball land inside every time. They put about half the samples within half the Radius and almost none in
+        // the shell. Each window is about five spreads of 2,000 samples either side of the fraction expected, so a
+        // uniform pick falls outside one with a chance under one in a million. The seeded source draws the same 2,000
+        // every run. The capsule and the convex hull guess through the same TryRejectionSample.
+        const int sampleCount = 2000;
+        Vector3 origin = new(10f, 0f, 10f);
+        int withinHalfTheRadius = 0;
+        int inTheOuterShell = 0;
+
+        for (int sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
+        {
+            _sphere.TryGetRandomPosition(out Vector3 position);
+
+            float squaredDistance = (position - origin).SquaredMagnitude;
+
+            withinHalfTheRadius += squaredDistance <= 6.25f ? 1 : 0;
+            inTheOuterShell += squaredDistance > 16f ? 1 : 0;
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(withinHalfTheRadius / (float)sampleCount, Is.InRange(0.085f, 0.165f),
+                "within half the Radius of Origin");
+            Assert.That(inTheOuterShell / (float)sampleCount, Is.InRange(0.43f, 0.55f), "more than 4 from Origin");
+        });
+    }
+
+    [Test]
+    public void ReportsNoPositionWhenEveryGuessMisses()
+    {
+        // A source that always gives 0 guesses the lowest corner of the ball's box, about 8.7 from Origin and outside
+        // the ball, so every attempt misses and the search has to give up.
+        _sphere.RandomSource = new FixedRandomSource(0f);
+
+        Assert.That(_sphere.TryGetRandomPosition(out _), Is.False);
+    }
+
+    [Test]
     public void ContainsNothingWhenItsOriginTargetHasNoPosition()
     {
         Vector3 initialOrigin = new(10f, 0f, 10f);

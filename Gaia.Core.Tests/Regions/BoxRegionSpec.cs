@@ -155,6 +155,41 @@ public class BoxRegionSpec
     }
 
     [Test]
+    public void SpreadsItsSamplesEvenlyThroughItsVolume()
+    {
+        // A Scale of (2, 1, 0.5) stretches the box to run from -5 to 15 along X, 0 to 3 along Y and 5 to 15 along Z.
+        // Along each axis, a quarter of its volume lies in the quarter of its length nearest its lowest face. A roll
+        // squared puts half the samples in each of those quarters, and a Z drawn between the bounds of Y puts none in
+        // the one along Z. The box is scaled so that a sample placed by Origin and Rotation alone, the Scale left out,
+        // fails too, since it puts none in the one along X. Each window is about five spreads of 2,000 samples either
+        // side of the quarter expected, so a uniform pick falls outside one with a chance under one in a million. The
+        // seeded source draws the same 2,000 every run. The rectangle takes the same pick along each of its axes,
+        // MathHelpers.RandomInRange.
+        const int sampleCount = 2000;
+        int nearestTheLowestX = 0;
+        int nearestTheLowestY = 0;
+        int nearestTheLowestZ = 0;
+
+        _box.Scale = new Vector3(2f, 1f, 0.5f);
+
+        for (int sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
+        {
+            _box.TryGetRandomPosition(out Vector3 position);
+
+            nearestTheLowestX += position.X < 0f ? 1 : 0;
+            nearestTheLowestY += position.Y < 0.75f ? 1 : 0;
+            nearestTheLowestZ += position.Z < 7.5f ? 1 : 0;
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(nearestTheLowestX / (float)sampleCount, Is.InRange(0.2f, 0.3f), "below 0 along X");
+            Assert.That(nearestTheLowestY / (float)sampleCount, Is.InRange(0.2f, 0.3f), "below 0.75 along Y");
+            Assert.That(nearestTheLowestZ / (float)sampleCount, Is.InRange(0.2f, 0.3f), "below 7.5 along Z");
+        });
+    }
+
+    [Test]
     public void ReachesItsExtentsOutFromItsCenter()
     {
         Vector3 center = new(5f, 1f, 10f);

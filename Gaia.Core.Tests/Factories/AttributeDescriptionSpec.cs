@@ -1,4 +1,5 @@
 ﻿using Gaia.Core.Actions;
+using Gaia.Core.DataStores;
 using Gaia.Core.Factories;
 using Gaia.Core.Strings;
 
@@ -53,6 +54,27 @@ public class AttributeDescriptionSpec
             Assert.That(store.DefaultText, Is.EqualTo("Brain"));
             Assert.That(store.IsRequired, Is.False);
             Assert.That(store.VariableKind, Is.Null);
+        });
+    }
+
+    [Test]
+    public void IsRequiredOnlyWhenBuiltByRequiredOrVariableName()
+    {
+        AttributeDescription required = AttributeDescription.Required("Duration", "Duration", AttributeKind.Float,
+            "How long to wait.");
+        AttributeDescription optional = AttributeDescription.Optional("Duration", "Duration", AttributeKind.Float, "2",
+            "How long to wait.");
+        AttributeDescription enumeration = AttributeDescription.Enumeration<SubreasonerCompletion>("DoneWhen",
+            "DoneWhen", nameof(SubreasonerCompletion.SelectedOptionDone), "When the action reports done.");
+        AttributeDescription variableName = AttributeDescription.VariableName("Variable", "Variable",
+            DataStoreValueType.Float, "The stored value to read.");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(required.IsRequired, Is.True, "Required");
+            Assert.That(optional.IsRequired, Is.False, "Optional");
+            Assert.That(enumeration.IsRequired, Is.False, "Enumeration");
+            Assert.That(variableName.IsRequired, Is.True, "VariableName");
         });
     }
 

@@ -130,6 +130,25 @@ public class GaiaLoaderSpec
     }
 
     [Test]
+    public void PrefersTheDiagnosticsOneLoadCarriesOverItsOwn()
+    {
+        // The loader is given settings of its own here, so the brain has the load's and the loader's to choose
+        // between, and takes the ones the load carries.
+        const string snippet = """
+                               <Brain>
+                                   <Reasoner Type="RuleBased"/>
+                               </Brain>
+                               """;
+        MonitorSettings fleetWatch = new(32, 4);
+        MonitorSettings closeWatch = new(1024, 16);
+        _loader.Diagnostics = fleetWatch;
+
+        _loader.TryLoadBrain(snippet, SourceName, out Brain? watchedBrain, diagnostics: closeWatch);
+
+        Assert.That(watchedBrain!.Monitor!.Settings, Is.SameAs(closeWatch));
+    }
+
+    [Test]
     public void StampsItsFaultPolicyOnEveryBrainItLoads()
     {
         const string snippet = """

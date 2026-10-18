@@ -79,6 +79,8 @@ public class SpecificationNodeSpec
         bool wasLabelRead = _node.ReadString("Label", out _);
         bool wasWaypointRead = _node.ReadVector3("Waypoint", out _);
         bool wasStrideRead = _node.ReadEnumeration<Pace>("Stride", out _);
+        bool wasRoundsRead = _node.ReadInt("Rounds", out _);
+        bool wasHeadingRead = _node.ReadRotation("Heading", out _);
 
         Assert.Multiple(() =>
         {
@@ -87,6 +89,8 @@ public class SpecificationNodeSpec
             Assert.That(wasLabelRead, Is.False);
             Assert.That(wasWaypointRead, Is.False);
             Assert.That(wasStrideRead, Is.False);
+            Assert.That(wasRoundsRead, Is.False);
+            Assert.That(wasHeadingRead, Is.False);
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Error guard.xml Line 1, the Region element has no Height attribute",
@@ -94,6 +98,8 @@ public class SpecificationNodeSpec
                 "Error guard.xml Line 1, the Region element has no Label attribute",
                 "Error guard.xml Line 1, the Region element has no Waypoint attribute",
                 "Error guard.xml Line 1, the Region element has no Stride attribute",
+                "Error guard.xml Line 1, the Region element has no Rounds attribute",
+                "Error guard.xml Line 1, the Region element has no Heading attribute",
             }));
         });
     }
@@ -156,6 +162,25 @@ public class SpecificationNodeSpec
                 "Error guard.xml Line 1, the Region element's Gait is not Walk, Run or Sprint, it reads \"jog\"",
                 // @formatter:on
             }));
+        });
+    }
+
+    [Test]
+    public void RefusesATupleMissingEitherParenthesis()
+    {
+        // Each text lacks one parenthesis, and dropping its first and last character leaves "1, 2, 3", which reads as
+        // three numbers. So a check that took either parenthesis as enough would read each as a vector.
+        SpecificationNode region = new("Region");
+        region.SetAttribute("NoOpening", "11, 2, 3)");
+        region.SetAttribute("NoClosing", "(1, 2, 34");
+
+        bool wasNoOpeningRead = region.ReadVector3("NoOpening", out _);
+        bool wasNoClosingRead = region.ReadVector3("NoClosing", out _);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wasNoOpeningRead, Is.False, "no opening parenthesis");
+            Assert.That(wasNoClosingRead, Is.False, "no closing parenthesis");
         });
     }
 
@@ -497,8 +522,10 @@ public class SpecificationNodeSpec
     }
 
     [TestCase("a--b", "two hyphens end a comment")]
+    [TestCase("--a", "two hyphens end a comment at its start as well")]
     [TestCase("a-", "the closing marker would make the last hyphen two")]
     [TestCase("a\\rb", "a parser turns a carriage return into a line feed")]
+    [TestCase("\\ra", "a parser turns a carriage return at the start into a line feed as well")]
     public void RefusesACommentThatWouldNotReadBackAsItself(string escapedComment, string reason)
     {
         string comment = escapedComment.Replace("\\r", "\r");

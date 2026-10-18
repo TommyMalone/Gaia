@@ -36,4 +36,21 @@ public class AiStringSpec
             Assert.That(AiString.Empty.Hash, Is.EqualTo(5381UL));
         });
     }
+
+    [Test]
+    public void EqualsTheSameTextArrivingBoxed()
+    {
+        // A name matches in any casing, so the same text in another casing is the same AiString, boxed or not.
+        AiString name = new("Patrol");
+        object boxedSameName = new AiString("PATROL");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(name.Equals(boxedSameName), Is.True);
+
+            // A value of another type is never equal, even the text the name was made from. It is passed as an object,
+            // so the implicit conversion from text does not make it an AiString first.
+            Assert.That(name.Equals((object)"Patrol"), Is.False);
+        });
+    }
 }

@@ -115,6 +115,23 @@ public class XmlSpecificationReaderSpec
     }
 
     [Test]
+    public void KeepsEveryCommentInARunAboveAnElement()
+    {
+        const string snippet = """
+                               <Option Type="ConsiderationAndAction">
+                                   <!-- Waits out the cooldown. -->
+                                   <!-- Two seconds suits the guard. -->
+                                   <Action Type="Pause" Duration="2"/>
+                               </Option>
+                               """;
+
+        _reader.TryRead(snippet, SourceName, out SpecificationNode? root);
+
+        Assert.That(root!.Children[0].LeadingComments,
+            Is.EqualTo(new[] { " Waits out the cooldown. ", " Two seconds suits the guard. " }));
+    }
+
+    [Test]
     public void AttachesATrailingCommentToItsContainingElement()
     {
         const string snippet = """

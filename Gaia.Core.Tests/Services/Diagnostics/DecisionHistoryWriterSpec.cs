@@ -110,6 +110,26 @@ public class DecisionHistoryWriterSpec
     }
 
     [Test]
+    public void WritesOneReasonersHistoryUnderItsPath()
+    {
+        // The path is the one a brain monitor gives a reasoner nested under the Snipe option, set here by hand.
+        ReasonerMonitor monitor = new(new MonitorSettings(4, 2)) { Path = "Snipe" };
+        StringWriter text = new();
+
+        _writer.Write(monitor, text);
+
+        Assert.That(Lines(text), Is.EqualTo(new[]
+        {
+            "# gaia decision history 1",
+            "# brain\tchannel\tcycles",
+            "# reasoner\tpath\tcycles\tcycleCapacity\toptionCapacity",
+            "# cycle\tindex\troll\tselected\trecords",
+            "# record\toption\trank\tweight\tpassedScreening",
+            "reasoner\tSnipe\t0\t4\t2",
+        }));
+    }
+
+    [Test]
     public void WritesAFloatThatReadsBackAsTheSameFloat()
     {
         const float roll = 1f / 3f;

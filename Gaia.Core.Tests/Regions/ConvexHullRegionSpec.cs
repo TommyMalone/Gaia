@@ -213,6 +213,32 @@ public class ConvexHullRegionSpec
     }
 
     [Test]
+    public void TakesIntoItsBoundsOnlyWhereThreePlanesMeetBehindEveryOtherPlane()
+    {
+        // A box reaching 1 from its middle each way, with a second top plane at 0.5 below the first at 1. The first top
+        // meets the four side walls at four points 0.5 above the second, outside the hull, which the bounds leave out.
+        Plane secondTop = new(TowardPositiveY, 0.5f);
+        Vector3 lowest = new(-1f, -1f, -1f);
+        Vector3 highest = new(1f, 0.5f, 1f);
+
+        ConvexHullRegion cutBox = new() { RandomSource = _randomSource };
+        cutBox.AddPlane(new Plane(TowardNegativeX, 1f));
+        cutBox.AddPlane(new Plane(TowardPositiveX, 1f));
+        cutBox.AddPlane(new Plane(TowardNegativeY, 1f));
+        cutBox.AddPlane(new Plane(TowardPositiveY, 1f));
+        cutBox.AddPlane(new Plane(TowardNegativeZ, 1f));
+        cutBox.AddPlane(new Plane(TowardPositiveZ, 1f));
+        cutBox.AddPlane(secondTop);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(cutBox.TryGetLocalBounds(out Vector3 min, out Vector3 max), Is.True);
+            RegionSpecHelpers.AssertNearly(min, lowest);
+            RegionSpecHelpers.AssertNearly(max, highest);
+        });
+    }
+
+    [Test]
     public void HasNoBoundsWhenItsPlanesDoNotEncloseAnything()
     {
         // A slab between two parallel planes goes on forever, so there is nowhere to sample from, and the region has
@@ -234,20 +260,45 @@ public class ConvexHullRegionSpec
     }
 
     [Test]
-    public void HasNoBoundsWhenItsPlanesLeaveAnOpenEnd()
+    public void HasNoBoundsWithThreePlanesThatMeetAtACorner()
     {
-        // Three planes around the Y axis make a triangular tube with no top or bottom. Three planes are fewer than the
-        // four a closed volume needs, so TryGetLocalBounds reports no bounds before the region looks for corners.
+        // The left wall, the floor and the near wall meet at one corner, the origin, and leave every other way open.
+        // Three planes are fewer than the four a closed volume needs, so TryGetLocalBounds reports no bounds before the
+        // region looks for corners, where it would find the one at the origin and put bounds around it.
         Plane leftWall = new(TowardNegativeX, 0f);
+        Plane floor = new(TowardNegativeY, 0f);
         Plane nearWall = new(TowardNegativeZ, 0f);
-        Plane diagonal = new(DiagonalNormal, 10f);
+
+        ConvexHullRegion corner = new() { RandomSource = _randomSource };
+        corner.AddPlane(leftWall);
+        corner.AddPlane(floor);
+        corner.AddPlane(nearWall);
+
+        Assert.That(corner.TryGetLocalBounds(out _, out _), Is.False);
+    }
+
+    [Test]
+    public void HasNoBoundsWhenFourWallsLeaveAnOpenEndAroundTheOrigin()
+    {
+        // Four walls 1 from the Y axis make a square tube with no top or bottom. Every three of them hold two parallel
+        // walls, so no three meet at a point. The origin is inside the tube, so a meeting point left at the origin when
+        // three planes do not meet would pass as a corner and give the tube bounds.
+        Plane leftWall = new(TowardNegativeX, 1f);
+        Plane rightWall = new(TowardPositiveX, 1f);
+        Plane nearWall = new(TowardNegativeZ, 1f);
+        Plane farWall = new(TowardPositiveZ, 1f);
 
         ConvexHullRegion tube = new() { RandomSource = _randomSource };
         tube.AddPlane(leftWall);
+        tube.AddPlane(rightWall);
         tube.AddPlane(nearWall);
-        tube.AddPlane(diagonal);
+        tube.AddPlane(farWall);
 
-        Assert.That(tube.TryGetLocalBounds(out _, out _), Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(tube.TryGetLocalBounds(out _, out _), Is.False);
+            Assert.That(tube.TryGetRandomPosition(out _), Is.False);
+        });
     }
 
     [Test]
@@ -273,6 +324,43 @@ public class ConvexHullRegionSpec
             Assert.That(loaded.LocalPlanes, Has.Count.EqualTo(6));
             Assert.That(loaded.IsInRegion(Vector3.Zero), Is.True);
             Assert.That(loaded.IsInRegion(new Vector3(2f, 0f, 0f)), Is.False);
+            Assert.That(_logSink.Entries, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void LoadsAndSamplesAHullOfExactlyFourPlanes()
+    {
+        // Four planes, the fewest that close a volume. Three pass through the origin, each facing away from the first
+        // eighth of space, and a slanted one closes it. The slanted plane stands 3 out along its unit normal, so the
+        // tetrahedron reaches 3 times the square root of 3, about 5.2, along each axis. It fills a sixth of its box, so
+        // one sample is asked for, which every guess misses with a chance of about one in 350.
+        const string snippet = """
+                               <Region Type="ConvexHull">
+                                   <Plane Normal="(-1, 0, 0)" Distance="0"/>
+                                   <Plane Normal="(0, -1, 0)" Distance="0"/>
+                                   <Plane Normal="(0, 0, -1)" Distance="0"/>
+                                   <Plane Normal="(1, 1, 1)" Distance="3"/>
+                               </Region>
+                               """;
+        float reach = 3f * MathF.Sqrt(3f);
+        Vector3 origin = new(0f, 0f, 0f);
+        Vector3 farCorner = new(reach, reach, reach);
+        AiCreationData creationData = LoadingSpecHelpers.ParseForLoad(snippet, _logSink);
+
+        ConvexHullRegion loaded = new();
+        bool wasLoaded = loaded.Init(creationData);
+        loaded.RandomSource = _randomSource;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wasLoaded, Is.True);
+            Assert.That(loaded.LocalPlanes, Has.Count.EqualTo(4));
+            Assert.That(loaded.TryGetLocalBounds(out Vector3 min, out Vector3 max), Is.True);
+            RegionSpecHelpers.AssertNearly(min, origin);
+            RegionSpecHelpers.AssertNearly(max, farCorner);
+            Assert.That(loaded.TryGetRandomPosition(out Vector3 sample), Is.True);
+            Assert.That(loaded.IsInRegion(sample), Is.True, $"the sample at {sample} landed outside");
             Assert.That(_logSink.Entries, Is.Empty);
         });
     }

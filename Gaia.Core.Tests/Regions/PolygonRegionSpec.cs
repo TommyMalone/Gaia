@@ -142,6 +142,38 @@ public class PolygonRegionSpec
     }
 
     [Test]
+    public void ContainsWhatIsInsideASlantedEdge()
+    {
+        // The slanted edge runs from (0, 10) down to (10, 0), so where it crosses a point's ray is worked out over the
+        // difference of its ends' Y, 10 and 0, which their sum would get wrong. Every point is a meter or more from
+        // every edge, so no edge holds it and the crossings alone decide. The ray from each point inside crosses the
+        // slanted edge alone.
+        Vector2 rightAngleCorner = new(0f, 0f);
+        Vector2 cornerAlongZ = new(0f, 10f);
+        Vector2 cornerAlongX = new(10f, 0f);
+        Vector3[] insideTheSlantedEdge = { new(1f, 0f, 1f), new(2f, 0f, 6f), new(6f, 0f, 2f) };
+        Vector3[] outsideTheSlantedEdge = { new(4f, 0f, 8f), new(8f, 0f, 4f), new(7f, 0f, 7f) };
+
+        PolygonRegion triangle = new();
+        triangle.AddCorner(rightAngleCorner);
+        triangle.AddCorner(cornerAlongZ);
+        triangle.AddCorner(cornerAlongX);
+
+        Assert.Multiple(() =>
+        {
+            foreach (Vector3 inside in insideTheSlantedEdge)
+            {
+                Assert.That(triangle.IsInRegion(inside), Is.True, $"{inside} is inside the slanted edge");
+            }
+
+            foreach (Vector3 outside in outsideTheSlantedEdge)
+            {
+                Assert.That(triangle.IsInRegion(outside), Is.False, $"{outside} is outside the slanted edge");
+            }
+        });
+    }
+
+    [Test]
     public void ContainsNothingPastItsEdges()
     {
         // The L is moved to (100, 0, 100). Each position is 2 millimeters, twice the tolerance, outside the middle of
@@ -289,6 +321,99 @@ public class PolygonRegionSpec
         _polygon.Rotation = Rotation.FromEulerAngles(0f, 90f, 0f);
 
         RegionSpecHelpers.AssertEverySampleLandsInside(_polygon);
+    }
+
+    [Test]
+    public void SpreadsSamplesAcrossAFootprintAwayFromTheOrigin()
+    {
+        // A 2 by 2 square 100 along each axis from the origin. Bounds that took in the origin as well would hold it in
+        // fewer than one guess in two thousand, so a sample would seldom be found. Bounds that kept only its lowest or
+        // only its highest Y would put every guess on its bottom or top edge, in two of its four quarters. Fifty
+        // uniform samples leave some quarter empty with a chance of about one in four hundred thousand, and the
+        // seeded source draws the same fifty every run.
+        const float middle = 101f;
+        bool sawLowerLeft = false;
+        bool sawLowerRight = false;
+        bool sawUpperLeft = false;
+        bool sawUpperRight = false;
+
+        PolygonRegion square = new() { RandomSource = _randomSource };
+        square.AddCorner(new Vector2(100f, 100f));
+        square.AddCorner(new Vector2(102f, 100f));
+        square.AddCorner(new Vector2(102f, 102f));
+        square.AddCorner(new Vector2(100f, 102f));
+
+        Assert.Multiple(() =>
+        {
+            for (int sampleIndex = 0; sampleIndex < RegionSpecHelpers.SampleCount; sampleIndex++)
+            {
+                Assert.That(square.TryGetRandomPosition(out Vector3 position), Is.True,
+                    $"sample {sampleIndex} was not found");
+                Assert.That(square.IsInRegion(position), Is.True, $"sample {sampleIndex} at {position} landed outside");
+
+                sawLowerLeft |= position.X < middle && position.Z < middle;
+                sawLowerRight |= position.X > middle && position.Z < middle;
+                sawUpperLeft |= position.X < middle && position.Z > middle;
+                sawUpperRight |= position.X > middle && position.Z > middle;
+            }
+
+            Assert.That(sawLowerLeft, Is.True, "a sample in the lower left quarter");
+            Assert.That(sawLowerRight, Is.True, "a sample in the lower right quarter");
+            Assert.That(sawUpperLeft, Is.True, "a sample in the upper left quarter");
+            Assert.That(sawUpperRight, Is.True, "a sample in the upper right quarter");
+        });
+    }
+
+    [Test]
+    public void SpreadsItsSamplesEvenlyOverItsFootprint()
+    {
+        // The footprint is a 10 by 10 square with a 5 by 10 column standing on its left half. The square's left half,
+        // its right half and the column each hold a third of the area, and the bounds are twice as tall as they are
+        // wide. Guesses whose footprint Y, the world's Z here, is drawn between the bounds of X land inside every time,
+        // in the square, and put none in the column. Each window is about five spreads of 2,000 samples either side of
+        // the third expected, so a uniform pick falls outside one with a chance under one in a million. The seeded
+        // source draws the same 2,000 every run. The extruded polygon guesses its footprint through the same
+        // TryGetRandomFootprintPoint.
+        const int sampleCount = 2000;
+        int inTheLeftOfTheSquare = 0;
+        int inTheRightOfTheSquare = 0;
+        int inTheColumn = 0;
+
+        PolygonRegion squareAndColumn = new() { RandomSource = _randomSource };
+        squareAndColumn.AddCorner(new Vector2(0f, 0f));
+        squareAndColumn.AddCorner(new Vector2(10f, 0f));
+        squareAndColumn.AddCorner(new Vector2(10f, 10f));
+        squareAndColumn.AddCorner(new Vector2(5f, 10f));
+        squareAndColumn.AddCorner(new Vector2(5f, 20f));
+        squareAndColumn.AddCorner(new Vector2(0f, 20f));
+
+        for (int sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
+        {
+            squareAndColumn.TryGetRandomPosition(out Vector3 position);
+
+            inTheColumn += position.Z >= 10f ? 1 : 0;
+            inTheLeftOfTheSquare += position.Z < 10f && position.X < 5f ? 1 : 0;
+            inTheRightOfTheSquare += position.Z < 10f && position.X >= 5f ? 1 : 0;
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(inTheLeftOfTheSquare / (float)sampleCount, Is.InRange(0.28f, 0.39f),
+                "in the square's left half");
+            Assert.That(inTheRightOfTheSquare / (float)sampleCount, Is.InRange(0.28f, 0.39f),
+                "in the square's right half");
+            Assert.That(inTheColumn / (float)sampleCount, Is.InRange(0.28f, 0.39f), "in the column");
+        });
+    }
+
+    [Test]
+    public void ReportsNoPositionWhenEveryGuessMisses()
+    {
+        // A source that always gives 0.9 guesses (9, 9) in the bounds from (0, 0) to (10, 10), the missing quarter, so
+        // every attempt misses and the search has to give up.
+        _polygon.RandomSource = new FixedRandomSource(0.9f);
+
+        Assert.That(_polygon.TryGetRandomPosition(out _), Is.False);
     }
 
     [Test]

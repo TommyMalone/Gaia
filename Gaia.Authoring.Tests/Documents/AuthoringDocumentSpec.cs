@@ -301,6 +301,27 @@ public class AuthoringDocumentSpec
     }
 
     [Test]
+    public void IsNotDirtyInsideATransactionThatHasChangedNothing()
+    {
+        // Opening a transaction changes nothing in the tree, so the document is as it was saved until a command runs.
+        bool isDirtyBeforeTheCommand;
+        bool isDirtyAfterTheCommand;
+
+        using (_document.Transaction("Rename"))
+        {
+            isDirtyBeforeTheCommand = _document.IsDirty;
+            _document.SetAttribute(_fight, "Name", "Guard");
+            isDirtyAfterTheCommand = _document.IsDirty;
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(isDirtyBeforeTheCommand, Is.False);
+            Assert.That(isDirtyAfterTheCommand, Is.True);
+        });
+    }
+
+    [Test]
     public void AnnouncesTheUndoOfAnAddedAttributeAsARemoval()
     {
         _document.SetAttribute(_fight, "Rank", "1");

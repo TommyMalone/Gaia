@@ -64,6 +64,19 @@ public class SecondsSpec
     }
 
     [Test]
+    public void OrdersEqualDurationsNeitherBeforeNorAfter()
+    {
+        Seconds time = new(2f);
+        Seconds sameTime = new(2f);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(time < sameTime, Is.False);
+            Assert.That(time > sameTime, Is.False);
+        });
+    }
+
+    [Test]
     public void EqualsAnotherTimeOfTheSameLength()
     {
         Seconds time = new(2f);

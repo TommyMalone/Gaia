@@ -8,7 +8,7 @@ namespace Gaia.Core.Tests.Spatial;
 /// </summary>
 /// <remarks>
 ///     The equality asserts are exact because every value here is chosen to add, scale and divide without rounding,
-///     and the one length measured is a 3-4-5, whose root is exact as well. The reading of a Vector2 attribute is covered
+///     and each length measured is a 3-4-5, whose root is exact as well. The reading of a Vector2 attribute is covered
 ///     where the other kinds are, in SpecificationNodeSpec.
 /// </remarks>
 [TestFixture]
@@ -40,6 +40,22 @@ public class Vector2Spec
             Assert.That(threeFourFive.SquaredMagnitude, Is.EqualTo(25f));
             Assert.That(Vector2.Distance(Vector2.Zero, threeFourFive), Is.EqualTo(5f));
             Assert.That(Vector2.SquaredDistance(Vector2.Zero, threeFourFive), Is.EqualTo(25f));
+        });
+    }
+
+    [Test]
+    public void MeasuresTheDistanceBetweenTwoPositionsAwayFromTheOrigin()
+    {
+        // From the origin, the distance is the other position's length whether the two are subtracted or added, so
+        // both positions stand away from it. From (1, 2) to (4, 6) is 3 along X and 4 along Y, where adding them
+        // would give (5, 8).
+        Vector2 from = new(1f, 2f);
+        Vector2 to = new(4f, 6f);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Vector2.Distance(from, to), Is.EqualTo(5f));
+            Assert.That(Vector2.SquaredDistance(from, to), Is.EqualTo(25f));
         });
     }
 

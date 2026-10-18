@@ -115,6 +115,20 @@ public class PauseActionSpec
     }
 
     [Test]
+    public void IsDoneOnceDeselectedPartWayThroughItsWait()
+    {
+        // A deselected pause is not running, and an action that is not running has nothing left to finish, however
+        // much of its wait was left.
+        _pauseAction.Select();
+
+        _timeSource.Advance(PartOfTheDuration);
+
+        _pauseAction.Deselect();
+
+        Assert.That(_pauseAction.IsDone, Is.True);
+    }
+
+    [Test]
     public void IsDoneImmediatelyWithNoDuration()
     {
         PauseAction pauseAction = new(Seconds.Zero) { TimeSource = _timeSource };

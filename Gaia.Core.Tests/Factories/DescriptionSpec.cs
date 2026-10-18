@@ -238,6 +238,28 @@ public class DescriptionSpec
     }
 
     [Test]
+    public void DescribesTheStoreEveryVariableConsiderationReads()
+    {
+        // Every variable consideration reads Store through its shared base, which also describes it, so a designer is
+        // told of the attribute whichever of the five they write.
+        string[] variableConsiderations =
+            { "BooleanVariable", "EntityExists", "FloatVariable", "IntVariable", "StringVariable" };
+
+        Assert.Multiple(() =>
+        {
+            foreach (string typeName in variableConsiderations)
+            {
+                AttributeDescription? store =
+                    AttributeOf(DescriptionOf(ConceptualAbstraction.Considerations, typeName)!, "Store");
+
+                Assert.That(store, Is.Not.Null, typeName);
+                Assert.That(store?.Kind, Is.EqualTo(AttributeKind.Enumeration), typeName);
+                Assert.That(store?.DefaultText, Is.EqualTo("Brain"), typeName);
+            }
+        });
+    }
+
+    [Test]
     public void GivesEveryDefaultAsTextTheReaderAccepts()
     {
         List<AttributeDescription> attributes = new();

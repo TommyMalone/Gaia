@@ -19,6 +19,19 @@ public class MonitorSettingsSpec
     }
 
     [Test]
+    public void AcceptsCapacitiesOfOne()
+    {
+        // One cycle of one option is the smallest history there is, and the least a capacity may be.
+        MonitorSettings settings = new(1, 1);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(settings.CycleCapacity, Is.EqualTo(1));
+            Assert.That(settings.OptionCapacity, Is.EqualTo(1));
+        });
+    }
+
+    [Test]
     public void WarnsAboutADoneOptionAndAnEmptySelectionAfterSixtyCyclesByDefault()
     {
         MonitorSettings settings = new();

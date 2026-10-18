@@ -412,8 +412,17 @@ public class CommandSpec
     [Test]
     public void ClearsTheNotesForEmptyText()
     {
-        AssertUndoGivesTheTextBack(() => _document.SetNotes(_fight, string.Empty),
-            Does.Not.Contain("Fights while a threat is known"));
+        // The node's comments are counted between the command and its undo, since the text written back lacks the
+        // old note whether the notes were cleared or an empty comment was left in their place.
+        int commentsAfterTheCommand = -1;
+
+        AssertUndoGivesTheTextBack(() =>
+        {
+            _document.SetNotes(_fight, string.Empty);
+            commentsAfterTheCommand = _fight.LeadingComments.Count;
+        }, Does.Not.Contain("Fights while a threat is known"));
+
+        Assert.That(commentsAfterTheCommand, Is.Zero, "the node carries no comments");
     }
 
     [Test]

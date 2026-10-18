@@ -42,6 +42,28 @@ public class WeightValuesSpec
     }
 
     [Test]
+    public void EqualsOnlyValuesWithTheSameAddendMultiplierAndRank()
+    {
+        // Each differs from the report in one of the three values alone, so each value has to match for two reports
+        // to be equal.
+        WeightValues[] differingInOneValue =
+        {
+            new(4f, _report.Multiplier, _report.Rank),
+            new(_report.Addend, 4f, _report.Rank),
+            new(_report.Addend, _report.Multiplier, 4f),
+        };
+
+        Assert.Multiple(() =>
+        {
+            foreach (WeightValues other in differingInOneValue)
+            {
+                Assert.That(_report.Equals(other), Is.False, other.ToString());
+                Assert.That(_report == other, Is.False, other.ToString());
+            }
+        });
+    }
+
+    [Test]
     public void EqualsTheSameReportArrivingBoxed()
     {
         object boxedSameReport = new WeightValues(3f, 2f, 1f);

@@ -240,6 +240,29 @@ public class CurveSpec
     }
 
     [Test]
+    public void SetsLinearTangentsToTheSlopeOfALineAwayFromTheOrigin()
+    {
+        // For a line from the origin the slope is its far end's value over its input whether the ends are subtracted
+        // or added, so this line starts away from it. From (2, 3) to (6, 11) the slope is 8 over 4, which a sum in
+        // place of either difference makes 14 over 4 or 8 over 8. Every loaded Linear curve takes its tangents this
+        // way.
+        CurveKeyframe start = new(2f, 3f);
+        CurveKeyframe end = new(6f, 11f);
+        const float slope = 2f;
+
+        _curve.AddKeyframe(start);
+        _curve.AddKeyframe(end);
+
+        _curve.SetLinearTangents();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_curve.Keyframes[0].OutTangent, Is.EqualTo(slope).Within(Tolerance));
+            Assert.That(_curve.Keyframes[1].InTangent, Is.EqualTo(slope).Within(Tolerance));
+        });
+    }
+
+    [Test]
     public void SetsLinearTangentsOnACurveWithTooFewKeyframesToHaveASlope()
     {
         Curve emptyCurve = new();
