@@ -4,9 +4,8 @@
     /// <remarks>
     ///     <para>The tangents are the slopes of the Hermite formulation cited on Curve, in units of value per input.</para>
     ///     <para>
-    ///         A segment is a straight line when both of its tangents equal the slope between the two keyframes. Tangents of
-    ///         0 make the curve flatten out as it reaches the keyframe, which is what gives a two-keyframe curve an ease-in
-    ///         and ease-out shape.
+    ///         A two-keyframe curve whose tangents are all 0 is not a straight line. It is flat at both keyframes and
+    ///         steepest midway between them.
     ///     </para>
     /// </remarks>
     public readonly struct CurveKeyframe

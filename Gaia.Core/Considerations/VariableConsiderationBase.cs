@@ -9,14 +9,8 @@ namespace Gaia.Core.Considerations
 {
     /// <summary>A consideration that reads a named value out of a data store and hands it to a weight function.</summary>
     /// <remarks>
-    ///     <para>
-    ///         The store, the name and the weight function are all configured, so the game writes what it knows onto a
-    ///         blackboard or an entity and the AI reads it back without either side knowing about the other.
-    ///     </para>
-    ///     <para>
-    ///         DataStore is a fixed reference, the brain's or the world's blackboard, since a loaded Store attribute names
-    ///         one of the two. The chapter also allows it to come from a target.
-    ///     </para>
+    ///     The store, the name and the weight function are all configured, so the game writes what it knows onto a
+    ///     blackboard and the AI reads it back without either side knowing about the other.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.6.2.3, Listing 8.9</seealso>
     public abstract class VariableConsiderationBase : WeightedConsiderationBase
@@ -36,7 +30,10 @@ namespace Gaia.Core.Considerations
 
         private bool _missingVariableReported;
 
-        /// <summary>The store to read from.</summary>
+        /// <summary>
+        ///     The store to read from. The brain's or the world's blackboard, which the loaded Store attribute names. The
+        ///     chapter's Listing 8.9 also reads a target's store, which Gaia does not.
+        /// </summary>
         /// <remarks>
         ///     Settable by a derived type as well as by loading, like <see cref="VariableName" />,
         ///     <see cref="MissingVariableWeights" />, <see cref="LogSink" /> and <see cref="LogChannel" />, so a game's own
@@ -124,15 +121,12 @@ namespace Gaia.Core.Considerations
         /// <remarks>
         ///     <para>
         ///         A typo in a variable name is unreachable by the loader, since names are runtime data, and without this
-        ///         warning it reads as a tuning problem. The warning fires once per consideration, and not at all when the
-        ///         configuration authored an explicit Missing element, since serving those values is then the designed expectation
-        ///         rather than a surprise.
+        ///         warning it reads as a tuning problem. An authored Missing element suppresses the warning, since serving its
+        ///         values is then the designed expectation rather than a surprise.
         ///     </para>
         ///     <para>
-        ///         The wording names the kind the read asked for, which is the consideration's own query phrase unless the read
-        ///         differs, as it does where an entity list answers a bool. A name written as another kind also reads as unwritten
-        ///         through the typed accessor, and this warning stands beside the store's own mismatch report, so the read is
-        ///         named from both sides.
+        ///         A name written as another kind also reads as unwritten through the typed accessor. The store reports the
+        ///         mismatch, and this warning follows it with what the consideration served instead.
         ///     </para>
         /// </remarks>
         /// <param name="readKind">
@@ -159,8 +153,9 @@ namespace Gaia.Core.Considerations
         protected abstract WeightValues CalculateWeights(WeightFunctionBase weightFunction, DataStoreBase dataStore);
 
         /// <summary>
-        ///     Describes a variable consideration whose variable is read as the given kind, which is the Variable and Store
-        ///     attributes and the Missing and WeightFunction children every one shares.
+        ///     Builds the description of a variable consideration that reads its variable as the given kind. Every variable
+        ///     consideration's description holds the Variable attribute naming the variable, the Store attribute, and the Missing
+        ///     and WeightFunction children.
         /// </summary>
         internal static ComponentDescription Describe(string summary, DataStoreValueType variableKind)
         {

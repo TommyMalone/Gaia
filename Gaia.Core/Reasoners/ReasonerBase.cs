@@ -18,11 +18,7 @@ namespace Gaia.Core.Reasoners
     /// <seealso>"Modular AI", Section 8.5.3, Listing 8.3</seealso>
     public abstract class ReasonerBase : IAiComponent
     {
-        /// <summary>Describes the Option children Init reads by on every reasoner, for a derived reasoner's description to add.</summary>
-        /// <remarks>
-        ///     Public so that a reasoner a game writes adds the piece its base reads rather than restating the element name
-        ///     in a description of its own.
-        /// </remarks>
+        /// <summary>Describes the Option children every reasoner's Init reads by, for a derived reasoner's description to add.</summary>
         public static readonly SlotDescription OptionSlot = new("Option", "Option", ConceptualAbstraction.Options, 0,
             SlotDescription.Unbounded);
 
@@ -36,11 +32,11 @@ namespace Gaia.Core.Reasoners
 
         /// <summary>The same options as their concrete list, for the loops that run every cycle.</summary>
         /// <remarks>
-        ///     Iterating a List through IReadOnlyList boxes its enumerator, one small heap allocation per loop, which a
-        ///     decision cycle runs several of. Iterating the concrete list keeps the enumerator on the stack, so per-cycle code
-        ///     loops over this and everything else reads Options. It is protected so a game's own reasoner can loop the concrete
-        ///     list too, and internal as well so the monitors, which record inside the cycle, loop it rather than Options. It is
-        ///     the list AddOption adds to, and a game's own reasoner may change it the same way.
+        ///     Iterating a List through IReadOnlyList boxes its enumerator, one small heap allocation per loop, and a
+        ///     decision cycle runs several loops. Iterating the concrete list keeps the enumerator on the stack, so the library
+        ///     loops over this and Options is the view a reader outside it gets. It is protected so a game's own reasoner can loop
+        ///     the concrete list too, and internal as well so the monitors, which record inside the cycle, loop it rather than
+        ///     Options. AddOption adds to this list, and a game's own reasoner may add to it directly.
         /// </remarks>
         protected internal List<OptionBase> MutableOptions { get; } = new();
 
@@ -79,14 +75,16 @@ namespace Gaia.Core.Reasoners
 
         /// <summary>True once this reasoner has run out of work. The base reports false, since a scoring reasoner never finishes.</summary>
         /// <remarks>
-        ///     Done means ran out of work, never nothing was eligible this cycle. A scoring reasoner chooses by the weights
-        ///     its options report, which a <see cref="RuleBasedReasoner" /> and a <see cref="DualUtilityReasoner" /> do, and a
-        ///     <see cref="SequenceReasoner" /> chooses by position. Selecting nothing is a circumstance, such as every option
-        ///     vetoed for a cycle while the host rewrites a list, and treating it as completion would let one such cycle advance a
-        ///     parent SequenceReasoner past unfinished work. A reasoner with an end overrides this, a sequence once it is past its
-        ///     last step. <see cref="SubreasonerAction" /> applies the completion rule its step was configured with, by default
-        ///     done when the option this reasoner selected has finished, which IsSelectionDone reports. A scoring reasoner's own
-        ///     option ends the way every option ends, through its considerations.
+        ///     Done means the reasoner ran out of work, not that nothing was eligible this cycle. A scoring reasoner chooses
+        ///     by the weights its options report, which a <see cref="RuleBasedReasoner" /> and a
+        ///     <see cref="DualUtilityReasoner" /> do, and a <see cref="SequenceReasoner" /> chooses by position. Selecting nothing
+        ///     is a circumstance, such as every option vetoed for a cycle while the host rewrites a list, and treating it as
+        ///     completion would let one such cycle advance a parent SequenceReasoner past unfinished work. A reasoner with an end
+        ///     overrides this, a sequence once it is past its last step. A scoring reasoner never reads an option's IsDone in its
+        ///     decision, and only a SequenceReasoner advances on it. An option a scoring reasoner selected ends when its
+        ///     considerations veto it or score another option above it, and a finished option ends through the finished veto, an
+        ///     <see cref="Considerations.ExecutionHistoryConsideration" /> whose Finished weight function reports Vetoed once the
+        ///     option's IsDone is true.
         /// </remarks>
         public virtual bool IsDone => false;
 
@@ -171,7 +169,6 @@ namespace Gaia.Core.Reasoners
         }
 
         /// <summary>Adds an option to the current set of options.</summary>
-        /// <param name="option">The option to add.</param>
         public void AddOption(OptionBase option)
         {
             MutableOptions.Add(option);
@@ -188,9 +185,8 @@ namespace Gaia.Core.Reasoners
         {
             IsEnabled = true;
 
-            // Loading supplies each option's default tuning consideration from Init. An option assembled in code never
-            // runs Init, and by the time its reasoner is enabled the assembler has added the considerations it means
-            // to, so the default is supplied here instead. An option that already has one is left alone.
+            // An option assembled in code never runs Init, which is where a loaded option gets its default tuning
+            // consideration, so it is supplied here instead.
             foreach (OptionBase option in MutableOptions)
             {
                 option.EnsureTuningConsideration();
@@ -221,7 +217,6 @@ namespace Gaia.Core.Reasoners
         }
 
         /// <summary>Sets SelectedOption. If null no option is selected.</summary>
-        /// <param name="option">The option to select or null.</param>
         protected void SelectOption(OptionBase? option)
         {
             if (ReferenceEquals(option, SelectedOption))
@@ -248,10 +243,7 @@ namespace Gaia.Core.Reasoners
             SelectedOption?.Select();
         }
 
-        /// <summary>
-        ///     Runs one decision cycle. Sense is the perception phase and is empty, EvaluateOptions rescores every option,
-        ///     Think chooses which to run, and Act updates whatever is selected.
-        /// </summary>
+        /// <summary>Runs one decision cycle while the reasoner is enabled.</summary>
         public void Update()
         {
             if (IsEnabled)
@@ -266,7 +258,7 @@ namespace Gaia.Core.Reasoners
             }
         }
 
-        /// <summary>The perception phase of the cycle. Nothing is sensed yet, so the method is empty.</summary>
+        /// <summary>The perception phase of the cycle, which presently senses nothing.</summary>
         protected void Sense()
         {
         }

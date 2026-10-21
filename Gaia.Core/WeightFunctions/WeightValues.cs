@@ -33,8 +33,7 @@ namespace Gaia.Core.WeightFunctions
         ///     <see cref="Reasoners.DualUtilityReasoner" /> then keeps only the options sharing the highest rank it found among
         ///     those whose weight is above 0 and decides between those on weight alone, so rank settles which options are eligible
         ///     rather than scoring them. A <see cref="Reasoners.RuleBasedReasoner" /> or <see cref="Reasoners.SequenceReasoner" />
-        ///     never reads rank. An option of higher rank beats every option beneath it however little it weighs. The identity is
-        ///     <see cref="NoRank" />.
+        ///     never reads rank. The identity is <see cref="NoRank" />.
         /// </remarks>
         public float Rank { get; }
 
@@ -77,14 +76,14 @@ namespace Gaia.Core.WeightFunctions
         ///     Describes the four attributes TryRead reads over <see cref="Neutral" />, for a description whose element reads
         ///     them.
         /// </summary>
-        /// <remarks>These are the attributes TryRead reads by, so an element reads exactly what this list names.</remarks>
+        /// <remarks>
+        ///     The factory refuses any attribute an element's description does not name, so an attribute TryRead reads is
+        ///     listed here and in DescribeAttributes, or every element that carries it is refused before TryRead runs.
+        /// </remarks>
         internal static readonly IReadOnlyList<AttributeDescription> Attributes = new[]
             { AddendAttribute, MultiplierAttribute, RankAttribute, VetoAttribute };
 
-        /// <summary>
-        ///     Describes an element that is one set of weight values and nothing else, such as True, False, Missing or
-        ///     Default.
-        /// </summary>
+        /// <summary>Describes an element that is one set of weight values and nothing else.</summary>
         internal static readonly ComponentDescription Description = new("One set of weight values.", Attributes,
             Array.Empty<SlotDescription>());
 
@@ -124,10 +123,6 @@ namespace Gaia.Core.WeightFunctions
         }
 
         /// <summary>Reads the same attributes over the given defaults, for an element whose identity is not Neutral.</summary>
-        /// <remarks>
-        ///     <see cref="Considerations.TuningConsideration" /> is the one element that has a unique default value, an
-        ///     addend of 1. Everything else reads over Neutral.
-        /// </remarks>
         internal static bool TryRead(SpecificationNode node, WeightValues defaults, out WeightValues values)
         {
             values = defaults;

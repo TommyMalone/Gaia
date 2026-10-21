@@ -10,8 +10,8 @@ namespace Gaia.Core.WeightFunctions
     /// <remarks>
     ///     <para>
     ///         The first entry whose Threshold the input falls at or below is the one that answers, and an input above every
-    ///         threshold gets DefaultWeights. Entries are expected in ascending order of Threshold, since that is the order
-    ///         they are tested in, and AddEntry rejects one that is out of order.
+    ///         threshold gets DefaultWeights. Entries are tested in the order they were added, which AddEntry keeps ascending
+    ///         by Threshold.
     ///     </para>
     ///     <para>
     ///         Configuring a vetoing entry at 50, an allowing entry at 300 and a vetoing default, for example, expresses
@@ -114,9 +114,8 @@ namespace Gaia.Core.WeightFunctions
         ///         others, and a configuration that does that is never what was meant.
         ///     </para>
         ///     <para>
-        ///         A randomized entry takes its first roll here, after the order check, so an entry the check refuses draws
-        ///         nothing from <see cref="RandomSource" />. Every entry reaches a function through this method, loaded or built
-        ///         in code, so the roll happens once wherever the entry came from.
+        ///         A randomized entry takes its first roll here. Every entry reaches a function through this method, loaded or
+        ///         built in code, so the roll happens once wherever the entry came from.
         ///     </para>
         /// </remarks>
         /// <exception cref="ArgumentException">
@@ -172,9 +171,8 @@ namespace Gaia.Core.WeightFunctions
 
         /// <summary>Loads one entry from an Entry element, in either its fixed or its rolled threshold form.</summary>
         /// <remarks>
-        ///     The checks <see cref="AddEntry" /> and the entry's constructor enforce with exceptions are made here first and
-        ///     reported through the creation data's <see cref="Services.Log.ILogSink" /> instead, so a configuration mistake reads
-        ///     as an error naming the source document and line rather than a thrown exception.
+        ///     The order check in <see cref="AddEntry" /> and the entry constructor's check that ThresholdMax is not below
+        ///     ThresholdMin are made here first, so a configuration mistake is reported as a loading error rather than thrown.
         /// </remarks>
         private bool TryLoadEntry(SpecificationNode entryNode, AiCreationData creationData)
         {

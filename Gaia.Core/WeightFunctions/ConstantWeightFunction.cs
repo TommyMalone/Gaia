@@ -20,9 +20,8 @@ namespace Gaia.Core.WeightFunctions
 
         /// <summary>The weight values to report for every input.</summary>
         /// <remarks>
-        ///     Neutral until something sets it, so a function built in code and left alone contributes nothing, the way an
-        ///     element saying nothing does. The default of the struct would be a multiplier of 0 and a rank of 0, which is a veto
-        ///     that also claims a rank above the identity.
+        ///     Neutral until OnInit reads the element. An element saying nothing also reads as Neutral, so the default
+        ///     contributes nothing to the option's weight, as such an element does.
         /// </remarks>
         public WeightValues Weights { get; internal set; } = WeightValues.Neutral;
 

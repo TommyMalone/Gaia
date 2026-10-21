@@ -14,16 +14,8 @@ namespace Gaia.Core.Curves
     ///         at both ends.
     ///     </para>
     ///     <para>
-    ///         Inputs below the first keyframe report the first keyframe's value, and inputs above the last report the last,
-    ///         so a curve never extrapolates past what it was given.
-    ///     </para>
-    ///     <para>
     ///         A curve holds one keyframe per input. Two values at one input have no interpolation between them, so a second
     ///         keyframe at an input another already holds is refused rather than resolved.
-    ///     </para>
-    ///     <para>
-    ///         Curves are built in code as well as loaded, so a host or a tool builds one through AddKeyframe, SetKeyframe,
-    ///         RemoveKeyframe and SetLinearTangents without a configuration.
     ///     </para>
     /// </remarks>
     /// <seealso>Cubic Hermite splines, described at https://en.wikibooks.org/wiki/Cg_Programming/Unity/Hermite_Curves</seealso>
@@ -40,7 +32,8 @@ namespace Gaia.Core.Curves
         {
             int index = IndexAtOrAfter(keyframe.Input);
 
-            // The walk stops where a keyframe of this input would sit, so the one place a twin can be is here.
+            // IndexAtOrAfter stops at the keyframe holding this input when there is one, so this index is the only
+            // place a keyframe at the same input can be.
             if (index < _keyframes.Count && _keyframes[index].Input == keyframe.Input)
             {
                 throw new ArgumentException(
@@ -54,7 +47,7 @@ namespace Gaia.Core.Curves
         /// <summary>Replaces the keyframe at the given keyframe's input, if the curve holds one.</summary>
         /// <remarks>
         ///     The only way to change a curve's one remaining keyframe, since that one cannot be removed and added back. A
-        ///     new value changes the neighbors' slopes as a removal does, so a host that wants straight lines runs
+        ///     new value changes the slope of the straight line to each neighbor, so a host that wants straight lines runs
         ///     SetLinearTangents again.
         /// </remarks>
         /// <returns>True if a keyframe was replaced. False when no keyframe holds the input.</returns>
@@ -119,6 +112,10 @@ namespace Gaia.Core.Curves
         }
 
         /// <summary>Reports the value of the curve at the given input.</summary>
+        /// <remarks>
+        ///     Inputs below the first keyframe report the first keyframe's value, and inputs above the last report the last,
+        ///     so a curve never extrapolates past what it was given.
+        /// </remarks>
         /// <returns>The interpolated value, or 0 if the curve has no keyframes.</returns>
         public float Evaluate(float input)
         {
@@ -185,7 +182,7 @@ namespace Gaia.Core.Curves
 
             // The four cubic Hermite basis functions, weighting the values and tangents at each end of the segment. See
             // the reference on Curve. The tangents are multiplied by inputSpan below because they are slopes per unit
-            // of input, and position runs from 0 to 1 across the segment however wide the segment really is.
+            // of input, and position runs from 0 to 1 across the segment however wide the segment is.
             float startValueWeight = 2f * positionCubed - 3f * positionSquared + 1f;
             float startTangentWeight = positionCubed - 2f * positionSquared + position;
             float endValueWeight = -2f * positionCubed + 3f * positionSquared;

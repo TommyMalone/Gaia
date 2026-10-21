@@ -6,21 +6,13 @@ namespace Gaia.Core.Considerations
 {
     /// <summary>
     ///     One thing an option takes into account. Each cycle a consideration looks at the situation and reports an
-    ///     addend, a multiplier and a rank, and the option's <see cref="ConsiderationSet" /> combines those together with what
-    ///     every other consideration on the option said.
+    ///     addend, a multiplier and a rank as its <see cref="WeightValues" />, and what holds it, the option's
+    ///     <see cref="ConsiderationSet" /> or a consideration holding considerations of its own, combines those into what the
+    ///     option weighs.
     /// </summary>
     /// <remarks>
-    ///     <para>
-    ///         The addend raises or lowers the option's weight, the multiplier scales it, and a multiplier of 0 is a veto
-    ///         that removes the option from selection under any reasoner that selects by weight. The rank is a priority class
-    ///         that a reasoner may settle before comparing weights at all. Considerations are meant to be small and reusable.
-    ///     </para>
-    ///     <para>
-    ///         A shipped consideration is made by loading rather than by construction from game code, since its values load
-    ///         through Init and its setters are internal. Loading through <see cref="Factories.GaiaLoader" /> is the public
-    ///         way to make one. A game's own derived considerations belong to the game and expose whatever constructors it
-    ///         wants.
-    ///     </para>
+    ///     The considerations this library ships have internal constructors, so game code makes one by loading it through
+    ///     <see cref="Factories.GaiaLoader" />.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.1, Listing 8.1</seealso>
     public abstract class ConsiderationBase : IAiComponent

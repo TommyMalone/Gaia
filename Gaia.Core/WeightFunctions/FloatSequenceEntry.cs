@@ -8,16 +8,8 @@ namespace Gaia.Core.WeightFunctions
     ///     inputs at or below it.
     /// </summary>
     /// <remarks>
-    ///     <para>
-    ///         The threshold is a single value rather than a band. An entry covers everything from the previous entry's
-    ///         threshold up to its own.
-    ///     </para>
-    ///     <para>
-    ///         Most entries hold a fixed threshold. An entry given a ThresholdMin below its ThresholdMax rolls Threshold
-    ///         from between them as it is added to a function, and again each time the <see cref="Options.OptionBase" />
-    ///         holding the function is selected while RerollOnSelect holds. Threshold is ThresholdMin until the entry is
-    ///         added.
-    ///     </para>
+    ///     A randomized entry takes its first roll when it is added to a function, and Threshold is ThresholdMin until
+    ///     then.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.2</seealso>
     public sealed class FloatSequenceEntry
@@ -64,10 +56,10 @@ namespace Gaia.Core.WeightFunctions
 
         /// <summary>Whether a randomized entry rolls again each time its option is selected, rather than once.</summary>
         /// <remarks>
-        ///     True unless a configuration turns it off, so an entry that rolls keeps the chapter's behavior of a fresh value
-        ///     per selection. An entry that holds its first roll is one whose value is meant to vary between characters rather
-        ///     than between runs of the same character. A fixed entry has nothing to reroll, so the flag has no effect on one and
-        ///     a configuration that sets it there is refused.
+        ///     True by default, so a randomized entry rolls a fresh threshold each time its option is selected. An entry that
+        ///     holds its first roll is one whose threshold is meant to differ between characters, not between one character's
+        ///     selections. A fixed entry has nothing to reroll, so the flag has no effect on one and a configuration that sets it
+        ///     there is refused.
         /// </remarks>
         public bool RerollOnSelect { get; internal set; } = true;
 

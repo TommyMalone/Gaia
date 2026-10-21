@@ -10,19 +10,13 @@ namespace Gaia.Core.Actions
     ///     through IsDone when there is nothing left to do.
     /// </summary>
     /// <remarks>
-    ///     A shipped action is made by loading rather than by construction from game code, since the actions this library
-    ///     ships declare their constructors internal and their configuration loads through Init. Loading through
-    ///     <see cref="Factories.GaiaLoader" /> is the public way to make one. A game's own derived actions belong to the game
-    ///     and expose whatever constructors it wants.
+    ///     The actions this library ships have internal constructors, so game code makes one by loading it through
+    ///     <see cref="Factories.GaiaLoader" />.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.4, Listing 8.4</seealso>
     public abstract class ActionBase : IAiComponent
     {
         /// <summary>Describes the Name attribute Init reads by on every action, for a derived action's description to add.</summary>
-        /// <remarks>
-        ///     Public so that an action a game writes adds the piece its base reads rather than restating the spelling in a
-        ///     description of its own.
-        /// </remarks>
         public static readonly AttributeDescription NameAttribute = AttributeDescription.Required("Name", "Name",
             AttributeKind.String, "What the action is called in the log.");
 
@@ -37,15 +31,13 @@ namespace Gaia.Core.Actions
 
         /// <summary>
         ///     True once this action has finished executing. Some actions (such as a looping animation) are never done, but
-        ///     others (such as moving to a position) can be completed. Every action answers for itself, so none is done at once
-        ///     without its author having said so.
+        ///     others (such as moving to a position) can be completed.
         /// </summary>
         /// <remarks>
         ///     An action may be deselected without ever having been updated, since a
         ///     <see cref="Reasoners.SequenceReasoner" /> passes a step that is done at selection, and any such steps after it, in
-        ///     a single cycle, giving each one Select and Deselect with no Update between. Whatever must happen therefore happens
-        ///     in OnSelect, and an action that answers true from the moment it is selected has no work left for a cycle to
-        ///     advance.
+        ///     a single cycle, giving each one Select and Deselect with no Update between. An action that is done from the moment
+        ///     it is selected therefore does all of its work in OnSelect.
         /// </remarks>
         public abstract bool IsDone { get; }
 

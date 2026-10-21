@@ -5,13 +5,13 @@ using Gaia.Core.Strings;
 namespace Gaia.Core.WeightFunctions
 {
     /// <summary>
-    ///     A conversion from the value a <see cref="Considerations.WeightedConsiderationBase" /> measured to the weight
-    ///     values it reports, each derived function giving the measurement a different shape.
+    ///     A conversion from a value a consideration measured to the weight values it reports, which a
+    ///     <see cref="Considerations.WeightedConsiderationBase" /> does with what it reads and an
+    ///     <see cref="Considerations.ExecutionHistoryConsideration" /> does with elapsed time.
     /// </summary>
     /// <remarks>
-    ///     A shipped function is made by loading rather than by construction from game code, since its values load
-    ///     through Init and its setters are internal. Loading through <see cref="Factories.GaiaLoader" /> is the public way to
-    ///     make one. A game's own derived functions belong to the game and expose whatever constructors it wants.
+    ///     The weight functions this library ships have internal constructors, so game code makes one by loading it
+    ///     through <see cref="Factories.GaiaLoader" />.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.2, Listing 8.2</seealso>
     public abstract class WeightFunctionBase : IAiComponent
@@ -79,7 +79,7 @@ namespace Gaia.Core.WeightFunctions
         }
 
         /// <summary>
-        ///     Called when the <see cref="Options.OptionBase" /> holding the consideration this function scores is selected.
+        ///     Called by the consideration holding this function when the option that consideration scores is selected.
         ///     OnSelect runs.
         /// </summary>
         public void Select()

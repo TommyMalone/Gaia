@@ -9,9 +9,9 @@ namespace Gaia.Core.Reasoners
     ///     option is executed when its turn comes, so the weights the considerations report play no part in which option runs.
     /// </summary>
     /// <remarks>
-    ///     Each option of a sequence is one step, and an instantaneous step is one done the moment it is selected. A run
-    ///     of instantaneous steps is passed in a single cycle rather than costing a cycle apiece. The rule that makes that
-    ///     safe lives on <see cref="Actions.ActionBase.IsDone" />. An instantaneous action completes its work in OnSelect.
+    ///     Each option of a sequence is one step. A step that is done the moment it is selected is instantaneous. A run
+    ///     of instantaneous steps is passed in a single cycle rather than costing a cycle apiece, and
+    ///     <see cref="Actions.ActionBase.IsDone" /> states what that requires of an action.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.3</seealso>
     public class SequenceReasoner : ReasonerBase
@@ -25,8 +25,10 @@ namespace Gaia.Core.Reasoners
 
         /// <summary>True once the sequence has run off its last step. An empty sequence is done from the start.</summary>
         /// <remarks>
-        ///     Done is the position, not the selection, so a step held by a cycle with nothing eligible leaves the sequence
-        ///     not done and a parent cannot mistake that for completion.
+        ///     Done is read from the position in the sequence rather than from SelectedOption, since a sequence has nothing
+        ///     selected both before its first cycle and after its last step. A parent SequenceReasoner checks the step holding
+        ///     this sequence as soon as it selects that step, before this sequence has run a cycle, so reading done from nothing
+        ///     being selected would skip the whole sequence.
         /// </remarks>
         public override bool IsDone => _currentIndex >= MutableOptions.Count;
 

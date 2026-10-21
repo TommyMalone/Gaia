@@ -8,10 +8,9 @@ namespace Gaia.Core.WeightFunctions
     /// <summary>Runs the input through the Curve configured for the addend and the one configured for the multiplier.</summary>
     /// <remarks>
     ///     <para>
-    ///         AddendCurve and MultiplierCurve each map the input on their own, so one configuration can raise the addend of
-    ///         an <see cref="Options.OptionBase" /> as a value climbs while another vetoes it outside a band. An addend or
-    ///         multiplier with no curve reports its identity, which is 0 for the addend and 1 for the multiplier, and so has
-    ///         no effect on the option's weight.
+    ///         The addend and the multiplier each have a curve of their own, so the addend curve can raise the addend of an
+    ///         <see cref="Options.OptionBase" /> as the input climbs while the multiplier curve vetoes that option outside a
+    ///         band.
     ///     </para>
     ///     <para>
     ///         Rank is reported as configured rather than curved, because it names a tier rather than a quantity and a value
@@ -19,12 +18,8 @@ namespace Gaia.Core.WeightFunctions
     ///     </para>
     ///     <para>
     ///         A multiplier below 0 has no meaning, as <see cref="WeightValues.Multiplier" /> says, so the multiplier
-    ///         curve's output is clamped at 0. A keyframe authored below 0 draws a loading warning, and a segment that
-    ///         overshoots below 0 between keyframes clamps the same way at evaluation.
-    ///     </para>
-    ///     <para>
-    ///         AddendCurve and MultiplierCurve take the same inline description, so the two elements hold the same
-    ///         attributes and the same Keyframe children and one reader loads either.
+    ///         curve's output is clamped at 0. A multiplier curve with any keyframe authored below 0 is reported in one
+    ///         loading warning, and a segment that overshoots below 0 between keyframes clamps the same way at evaluation.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.2</seealso>
@@ -162,7 +157,7 @@ namespace Gaia.Core.WeightFunctions
             }
         }
 
-        /// <summary>Loads one curve from a curve element's Keyframe children, which AddendCurve and MultiplierCurve share.</summary>
+        /// <summary>Loads one curve from an AddendCurve or MultiplierCurve element's Keyframe children.</summary>
         /// <remarks>
         ///     A keyframe's tangents default to 0, which flattens the curve at the keyframe. A curve element carrying
         ///     Linear="true" replaces every tangent with the slope of its neighboring segment once its keyframes are loaded, so

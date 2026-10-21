@@ -7,12 +7,9 @@ namespace Gaia.Core.Actions
 {
     /// <summary>An action that holds a reasoner of its own. This allows a flat decision to become a hierarchy.</summary>
     /// <remarks>
-    ///     The contained reasoner runs only while the option holding this action is selected. The rule
-    ///     <see cref="DoneWhen" /> names says when the action reports done, which is what lets its option finish and a parent
-    ///     <see cref="Reasoners.SequenceReasoner" /> move past that step. Selecting the action enables it, deselecting it
-    ///     disables it, and disabling a reasoner deselects whatever it was running. A veto near the root therefore reaches
-    ///     every level beneath it, since deselecting an option deselects its actions and considerations, and each subreasoner
-    ///     action among them disables the reasoner it holds.
+    ///     A veto near the root, under a reasoner that selects by weight, reaches every level beneath it. Deselecting an
+    ///     option deselects its actions and considerations, each subreasoner action among them disables the reasoner it holds,
+    ///     and that reasoner deselects the option it was running.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.4</seealso>
     public sealed class SubreasonerAction : ActionBase
@@ -54,8 +51,7 @@ namespace Gaia.Core.Actions
         /// <remarks>
         ///     The rule is on the action rather than on the reasoner, because the same subtree can be wanted two ways. One
         ///     sequence wants its step to end as soon as the option the reasoner chose has finished, and another wants it to run
-        ///     until nothing is eligible. Whatever the rule, a reasoner that ran out of work ends the step, which a sequence does
-        ///     off its last step and a scoring reasoner never does.
+        ///     until nothing is eligible.
         /// </remarks>
         public SubreasonerCompletion DoneWhen { get; internal set; } = SubreasonerCompletion.SelectedOptionDone;
 
@@ -64,11 +60,12 @@ namespace Gaia.Core.Actions
         ///     NothingEligibleCycleLimit attribute. Defaults to 1 and must be at least 1.
         /// </summary>
         /// <remarks>
-        ///     The attribute is refused under any other rule, since no other rule reads it. A list rewritten in place vetoes
-        ///     everything for the cycle the rewrite spans, and a limit above 1 keeps such a cycle from ending the step. The count
-        ///     restarts whenever the reasoner selects something. A limit at or past the monitor's
-        ///     <see cref="MonitorSettings.NothingEligibleForSelectionWarningWindow" /> draws that warning before the step ends,
-        ///     since the monitor reads a scoring reasoner with nothing selected as one with work left.
+        ///     The attribute is refused under any other rule, since no other rule reads it. A cycle can have nothing eligible
+        ///     while work remains, as when every option is vetoed by a consideration reading an entity list the host is partway
+        ///     through rewriting. A limit above 1 keeps one such cycle from ending the step. The count restarts whenever the
+        ///     reasoner selects something. A limit at or past the monitor's
+        ///     <see cref="MonitorSettings.NothingEligibleForSelectionWarningWindow" /> makes the monitor log that warning before
+        ///     the step ends, since the monitor reads a scoring reasoner with nothing selected as one with work left.
         /// </remarks>
         public int NothingEligibleCycleLimit { get; internal set; } = 1;
 

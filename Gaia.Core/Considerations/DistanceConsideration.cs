@@ -8,9 +8,10 @@ namespace Gaia.Core.Considerations
 {
     /// <summary>Measures the distance between two targets and hands it to a weight function.</summary>
     /// <remarks>
-    ///     The two ends are targets rather than positions, which is what makes one consideration serve a sniper judging a
-    ///     contact and a guard judging its post. Each target's <see cref="TargetBase.TryGetPosition" /> is called every cycle,
-    ///     since a target that tracks an entity can answer differently each time.
+    ///     The two ends are targets rather than positions, so either end is whichever target the configuration names, one
+    ///     of the three the library ships, the character the AI controls, an entity looked up by name or a fixed point, or one
+    ///     the game registered itself. Each target's <see cref="TargetBase.TryGetPosition" /> is called every cycle rather
+    ///     than once at load, since a target that tracks an entity reports where the entity is at the time.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.3.2</seealso>
     public sealed class DistanceConsideration : WeightedConsiderationBase

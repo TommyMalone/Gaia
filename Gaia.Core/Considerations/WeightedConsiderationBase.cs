@@ -41,8 +41,9 @@ namespace Gaia.Core.Considerations
 
         /// <summary>The kind of value this consideration hands its weight function, such as "a float".</summary>
         /// <remarks>
-        ///     A noun phrase carrying its own article, allowing a variable nothing has written to be reported as "never been
-        ///     written as a float".
+        ///     A noun phrase carrying its own article, since two messages splice it in whole. The load error in
+        ///     TryLoadWeightFunction says the function "does not convert a float", and the warning a variable consideration logs
+        ///     when its variable is missing says it "has never been written as a float".
         /// </remarks>
         protected abstract string QueryPhrase { get; }
 
@@ -85,7 +86,7 @@ namespace Gaia.Core.Considerations
         ///     <see cref="WeightFunctionBase.CalculateFloat" /> or <see cref="WeightFunctionBase.CalculateString" /> matches the
         ///     type of the query.
         /// </summary>
-        /// <param name="weightFunction">The configured weight function. Can never be null.</param>
+        /// <param name="weightFunction">The configured weight function, never null.</param>
         /// <returns>The weight values this consideration reports this cycle.</returns>
         protected abstract WeightValues CalculateWeights(WeightFunctionBase weightFunction);
 

@@ -19,8 +19,8 @@ namespace Gaia.Core.Options
     {
         /// <summary>Describes the Name attribute Init reads by on every option, for a derived option's description to add.</summary>
         /// <remarks>
-        ///     Public so that an option a game writes adds the piece its base reads rather than restating the spelling in a
-        ///     description of its own.
+        ///     Public so that a game's own option adds this to its description rather than describing the Name attribute
+        ///     again.
         /// </remarks>
         public static readonly AttributeDescription NameAttribute = AttributeDescription.Required("Name", "Name",
             AttributeKind.String, "What the option is called in decisions and the log.");
@@ -75,11 +75,15 @@ namespace Gaia.Core.Options
         /// </remarks>
         public float ScreeningRank { get; internal set; } = WeightValues.NoRank;
 
-        /// <summary>True unless the reasoner's comparison against the other options screened this option out.</summary>
+        /// <summary>
+        ///     True when the considerations' rank meets ScreeningRank and their weight meets ScreeningWeight, so under a
+        ///     reasoner that sets neither threshold it is false only for a weight below 0.
+        /// </summary>
         /// <remarks>
         ///     An option below either ScreeningRank or ScreeningWeight reports a Weight of 0 rather than being taken out of a
         ///     list, which is how a reasoner narrows its options without building a subset. <see cref="DualUtilityReasoner" /> is
-        ///     the only reasoner that sets these thresholds. For the other reasoner types PassesScreening is always true.
+        ///     the only reasoner that sets these thresholds. Under any other reasoner they stay where Calculate puts them, no rank
+        ///     and a weight of 0, so an option there fails screening only when its weight before screening is below 0.
         /// </remarks>
         internal bool PassesScreening =>
             _considerations.Rank >= ScreeningRank && _considerations.Weight >= ScreeningWeight;
@@ -194,10 +198,10 @@ namespace Gaia.Core.Options
 
         /// <summary>Warns when every consideration is a fixed tuning whose combined weight can never select the option.</summary>
         /// <remarks>
-        ///     Only fixed values can be judged at load, since one dynamic consideration is enough to make the answer depend
+        ///     Only fixed values can be judged at load, since one dynamic consideration is enough to make the weight depend
         ///     on the world. A fixed weight of 0 or less fails <see cref="IsValid" /> every cycle, so under a reasoner that
-        ///     selects by weight the option is configuration that can never run, which is sometimes a deliberate off switch and
-        ///     accepts the one warning.
+        ///     selects by weight the option can never run. A designer can set such a weight on purpose as an off switch, and the
+        ///     option still loads, with this one warning.
         /// </remarks>
         private void WarnWhenFixedValuesCannotSelect(AiCreationData creationData)
         {

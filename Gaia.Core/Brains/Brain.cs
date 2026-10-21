@@ -10,13 +10,6 @@ using Gaia.Core.Strings;
 namespace Gaia.Core.Brains
 {
     /// <summary>The decision-making logic of one character, holding its top-level reasoner and a blackboard of its own.</summary>
-    /// <remarks>
-    ///     The chapter describes the brain only in passing, as the thing an actor contains and the thing its reasoner
-    ///     reports to, so what it holds has been derived from what the rest of the architecture needs from it. A
-    ///     <see cref="BrainBlackboard" /> is where contacts and threats live and where components of one character share
-    ///     values, so the brain owns it. RootReasoner is what makes the character act at all, so the brain enables and updates
-    ///     it.
-    /// </remarks>
     /// <seealso>"Modular AI", Section 8.3.1</seealso>
     public class Brain
     {
@@ -66,15 +59,14 @@ namespace Gaia.Core.Brains
 
         /// <summary>What this brain does with an exception a component throws during a cycle. Rethrow by default.</summary>
         /// <remarks>
-        ///     Public set because a host assembles brains in code as often as it loads them, and
-        ///     <see cref="Factories.GaiaLoader" /> stamps its own policy on every brain it loads. Which way a fault surfaces is a
-        ///     stance a whole process takes, development or shipped, rather than a property of one character.
+        ///     A host that assembles a brain in code sets this on it, and <see cref="Factories.GaiaLoader" /> sets its own on
+        ///     every brain it loads.
         /// </remarks>
         public FaultPolicy FaultPolicy { get; set; } = FaultPolicy.Rethrow;
 
         /// <summary>
-        ///     The exception that stopped this brain under <see cref="Brains.FaultPolicy.Contain" />, or null while it is
-        ///     deciding.
+        ///     The exception that stopped this brain under <see cref="Brains.FaultPolicy.Contain" />, or null while no fault
+        ///     has stopped it.
         /// </summary>
         /// <remarks>
         ///     Set once and never cleared, so a host that keeps running can count its faulted brains and read why each one
@@ -109,7 +101,8 @@ namespace Gaia.Core.Brains
         ///     <para>
         ///         No factory builds a brain, so Init holds the Brain element to its description itself, before the children
         ///         load and again after. A Brain element with no Reasoner child loads, matching the runtime rule that a brain may
-        ///         decide nothing, and Enable warns about it.
+        ///         decide nothing, and Enable warns about it. A Reasoner child replaces whatever RootReasoner held, so a brain
+        ///         built over a reasoner and then loaded keeps the loaded one.
         ///     </para>
         /// </remarks>
         /// <returns>True when the configuration loaded. False after reporting what went wrong.</returns>

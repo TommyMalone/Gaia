@@ -32,12 +32,9 @@ namespace Gaia.Core.Reasoners
         ///     options whose weight falls below the result are screened out before the random pick.
         /// </summary>
         /// <remarks>
-        ///     Loading refuses anything outside 0 to 1. Screening keeps an option whose weight is at or above the threshold,
-        ///     so a factor above 1 puts the threshold above the best weight in the winning rank and screens out every option
-        ///     including the best, leaving the reasoner selecting nothing for as long as the configuration ships. A negative
-        ///     factor puts the threshold below zero, where an option with a negative weight can sit above it, since an addend is
-        ///     read with no sign constraint. Such an option passes screening and then subtracts from the total the weighted pick
-        ///     runs over.
+        ///     Loading refuses a factor outside 0 to 1. Above 1 the threshold sits above the best weight, so every option is
+        ///     screened out. Below 0 an option with a negative weight can pass screening and lower the total the roll is scaled
+        ///     by, which favors the options listed first.
         /// </remarks>
         public float WeightScreeningFactor { get; internal set; }
 
@@ -111,7 +108,7 @@ namespace Gaia.Core.Reasoners
             SelectOption(GetWeightedRandomOption(totalWeightPostScreening));
         }
 
-        /// <summary>Choose an option at random, in proportion to weight.</summary>
+        /// <summary>Chooses an option at random, in proportion to weight.</summary>
         /// <param name="totalWeightPostScreening">The sum of the options' weights, after screening.</param>
         /// <returns>The selected option, or null if no option has any weight.</returns>
         private OptionBase? GetWeightedRandomOption(float totalWeightPostScreening)

@@ -20,10 +20,6 @@ namespace Gaia.Core.Considerations
     ///         an option with none keeps running. Once vetoed the option is deselected and the cooldown, if any, starts.
     ///     </para>
     ///     <para>
-    ///         Commitment is a consideration keeping an option selected between cycles, which this consideration does by
-    ///         retaining rank, and is what loading looks for through CarriesCommitment.
-    ///     </para>
-    ///     <para>
     ///         The elapsed time functions gate eligibility rather than schedule runs. A cooldown that has passed makes the
     ///         option selectable again and nothing more, so no runs are owed however much time goes by before the reasoner
     ///         next evaluates the option.
@@ -64,27 +60,27 @@ namespace Gaia.Core.Considerations
         public ITimeSource TimeSource { get; internal set; } = new SystemTimeSource();
 
         /// <summary>The rank the option had when it was most recently selected.</summary>
-        /// <remarks>Retention needs the rank the option won with, so Select reads Option.Rank and keeps it here.</remarks>
+        /// <remarks>Retention needs this rank, so OnSelect reads Option.Rank and keeps it here.</remarks>
         public float RankWhenLastSelected { get; private set; } = WeightValues.NoRank;
 
         /// <summary>How much of RankWhenLastSelected is kept while Option's actions run, from 0 for none to 1 for all of it.</summary>
         /// <remarks>
         ///     <para>
-        ///         None by default. All of it is the Commit pattern, which keeps the option's rank from falling below the one it
-        ///         was selected with while its actions run, so under a <see cref="Reasoners.DualUtilityReasoner" /> only an option
-        ///         of higher rank, an option of the same rank that the random pick lands on, or a veto of this option is left that
-        ///         can interrupt it. A portion is Inertia, enough to hold off near equals but not something far more important.
+        ///         None by default. All of it is the Commit pattern. Commit keeps the option's rank from falling below the one
+        ///         it was selected with while its actions run, so under a <see cref="Reasoners.DualUtilityReasoner" /> no option
+        ///         of a lower rank can take its place while this one stays eligible, however much that option weighs. A portion is
+        ///         Inertia, enough to hold off near equals but not something far more important.
         ///     </para>
         ///     <para>
-        ///         Retention only applies while the option runs and its <see cref="OptionBase.IsDone" /> is false. Once it is
-        ///         true and a FinishedWeightFunction is configured, that function alone decides, since the point of retention is
-        ///         to see the actions through.
+        ///         Retention applies while the option runs, until its <see cref="OptionBase.IsDone" /> is true and a
+        ///         FinishedWeightFunction is configured. From then that function alone decides, since the point of retention is to
+        ///         see the actions through.
         ///     </para>
         ///     <para>Only a positive rank is retained, since a portion of a negative rank would be higher than the rank itself.</para>
         ///     <para>
         ///         Loading refuses anything outside 0 to 1. A factor above 1 retains a rank the option never held, which holds
-        ///         it against rivals up to that rank rather than against near equals, and a negative factor retains nothing while
-        ///         saying something else.
+        ///         it against rivals up to that rank rather than against near equals, and a negative factor could only mean what 0
+        ///         already means.
         ///     </para>
         /// </remarks>
         public float RankRetentionFactor { get; internal set; }
@@ -94,7 +90,8 @@ namespace Gaia.Core.Considerations
 
         /// <summary>
         ///     Converts the time since the option was selected, once its <see cref="OptionBase.IsDone" /> is true. Falls back
-        ///     to WhileRunningWeightFunction if this is null, so an option that says nothing keeps running after it finishes.
+        ///     to WhileRunningWeightFunction if this is null, so without a Finished element the option is weighed after it
+        ///     finishes exactly as it was while running.
         /// </summary>
         public WeightFunctionBase? FinishedWeightFunction { get; internal set; }
 

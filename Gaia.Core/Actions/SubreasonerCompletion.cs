@@ -1,13 +1,7 @@
 ﻿namespace Gaia.Core.Actions
 {
     /// <summary>The rule for when a <see cref="SubreasonerAction" /> reports done, read from the action's DoneWhen attribute.</summary>
-    /// <remarks>
-    ///     The action's done state counts toward the <see cref="Options.OptionBase.IsDone" /> of its option. A parent
-    ///     <see cref="Reasoners.SequenceReasoner" /> moves past a done option, and under any reasoner an
-    ///     <see cref="Considerations.ExecutionHistoryConsideration" /> weighs its option through its FinishedWeightFunction
-    ///     once the option is done. Under every rule the action is done once its reasoner's
-    ///     <see cref="Reasoners.ReasonerBase.IsDone" /> is true.
-    /// </remarks>
+    /// <remarks>Under every rule the action is done once its reasoner's <see cref="Reasoners.ReasonerBase.IsDone" /> is true.</remarks>
     public enum SubreasonerCompletion
     {
         /// <summary>
@@ -17,9 +11,8 @@
         SelectedOptionDone,
 
         /// <summary>
-        ///     Done once nothing has been eligible for <see cref="SubreasonerAction.NothingEligibleCycleLimit" /> consecutive
-        ///     cycles, which is what every option vetoed or scoring nothing leaves the reasoner with. That limit is 1 or more, and
-        ///     1 by default.
+        ///     Done once the reasoner has selected nothing for <see cref="SubreasonerAction.NothingEligibleCycleLimit" />
+        ///     consecutive cycles, as it does while every option is vetoed or scores nothing.
         /// </summary>
         NothingEligible,
 

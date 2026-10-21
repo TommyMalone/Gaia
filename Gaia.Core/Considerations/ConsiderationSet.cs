@@ -13,7 +13,7 @@ namespace Gaia.Core.Considerations
     {
         private readonly List<ConsiderationBase> _considerations = new();
 
-        /// <summary>The option the set belongs to, once AttachTo has said which that is.</summary>
+        /// <summary>The option the set belongs to, or null until AttachTo has been called.</summary>
         private OptionBase? _option;
 
         /// <summary>Creates an empty set for its option and loading to fill.</summary>
@@ -116,8 +116,7 @@ namespace Gaia.Core.Considerations
 
             if (consideration is TuningConsideration or GroupConsiderationBase { HasTuning: true })
             {
-                // If considerations are ever allowed to be removed, a more robust method will be needed to tell
-                // whether a TuningConsideration exists.
+                // Set once and never cleared, since nothing removes a consideration from the set.
                 HasTuning = true;
             }
         }
