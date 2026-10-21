@@ -4,10 +4,8 @@ namespace Gaia.Authoring.Documents
 {
     /// <summary>One change an <see cref="AuthoringDocument" /> made to its tree, as its Changed event announces it.</summary>
     /// <remarks>
-    ///     A view that keeps a row per node finds the row through <see cref="Node" />, and for a child change finds the
-    ///     row it now sits under through <see cref="Parent" /> and its place through <see cref="Index" />. An undo announces
-    ///     the inverse of the change it takes back, so a removal undone is announced as an addition at the index the node
-    ///     stood at.
+    ///     An undo announces the inverse of the change it takes back, so a removal undone is announced as an addition at
+    ///     the index the node stood at.
     /// </remarks>
     public readonly struct DocumentChange
     {

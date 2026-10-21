@@ -8,10 +8,8 @@ namespace Gaia.Core.Factories
 {
     /// <summary>One attribute a component reads from its element, described for a tool that lists what the element may hold.</summary>
     /// <remarks>
-    ///     The name is the same <see cref="AiString" /> the component's Init reads by, and the spelling is the text a
-    ///     tool writes the attribute under, since an AiString keeps no spelling of its own. A required attribute carries no
-    ///     default. An optional attribute's default is the text the reader takes an absent attribute as, or null where absence
-    ///     means no value at all.
+    ///     The spelling is kept beside the name because an <see cref="AiString" /> holds only a hash, and its Text is
+    ///     whichever casing <see cref="AiStringTable" /> met first, which need not be the casing a document writes.
     /// </remarks>
     public sealed class AttributeDescription
     {
@@ -75,7 +73,10 @@ namespace Gaia.Core.Factories
         /// <summary>The kind of stored value a VariableName attribute is read as, or null for every other kind.</summary>
         public DataStoreValueType? VariableKind { get; }
 
-        /// <summary>The same attribute described with another default, for an element that reads it over other identity values.</summary>
+        /// <summary>
+        ///     The same attribute described with another default, for an element that reads an absent attribute as a default
+        ///     of its own.
+        /// </summary>
         /// <remarks>Public so that a game's component can describe a shared attribute under a default of its own.</remarks>
         public AttributeDescription WithDefault(string? defaultText)
         {

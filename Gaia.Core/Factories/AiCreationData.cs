@@ -13,12 +13,6 @@ namespace Gaia.Core.Factories
     ///     Everything a component needs to construct itself, the specification node it loads from, the factories it
     ///     builds children through, and the services a factory-built component uses.
     /// </summary>
-    /// <remarks>
-    ///     A composite descends by calling <see cref="ForChild" /> with one of its node's children, which copies every
-    ///     field and swaps the node. <see cref="Brains.Brain.Init" /> fills in the two a loader cannot supply, the blackboard
-    ///     the brain owns and the log channel taken from its actor, on the data it hands its root reasoner. WorldBlackboard
-    ///     and Self are what the host passed to TryLoadBrain on <see cref="GaiaLoader" />, or null.
-    /// </remarks>
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>
     public sealed class AiCreationData
     {
@@ -47,11 +41,7 @@ namespace Gaia.Core.Factories
         /// <summary>The factories a composite builds its children through.</summary>
         public FactorySet Factories { get; }
 
-        /// <summary>
-        ///     Where a component built from this data reports, pulled by its Init. An Init that returns false has already
-        ///     reported what went wrong here, through <see cref="ReportError" /> or the node's typed accessors, filed under the
-        ///     node's source document name.
-        /// </summary>
+        /// <summary>Where a component built from this data reports, pulled by its Init.</summary>
         public ILogSink LogSink { get; internal set; } = new TraceLogSink();
 
         /// <summary>
@@ -67,9 +57,9 @@ namespace Gaia.Core.Factories
         public IRandomSource RandomSource { get; internal set; } = new Xoshiro128RandomSource();
 
         /// <summary>
-        ///     The blackboard of the <see cref="Brains.Brain" /> being built. A brain's own creation data never carries one,
-        ///     since the loader has nothing to give before the brain exists. Brain.Init sets it on the data it hands its root
-        ///     reasoner, so everything beneath a brain has one.
+        ///     The blackboard of the <see cref="Brains.Brain" /> being built. The data a brain itself loads from carries
+        ///     none, since the brain holds its blackboard as its own <see cref="Brains.Brain.Blackboard" />. Brain.Init sets that
+        ///     on the data it hands its root reasoner, so everything beneath a brain has one.
         /// </summary>
         public BrainBlackboard? BrainBlackboard { get; internal set; }
 
@@ -80,9 +70,9 @@ namespace Gaia.Core.Factories
         public Actor? Self { get; internal set; }
 
         /// <summary>
-        ///     The creation data for one of this node's children, the same everything with the child's node. A composite is a
-        ///     component that builds children of its own from its node's child elements, and it calls this with each child element
-        ///     it builds from.
+        ///     The creation data for one of this node's children, every field copied and the node replaced by the child's. A
+        ///     composite is a component that builds children of its own from its node's child elements, and it calls this with
+        ///     each child element it builds from.
         /// </summary>
         public AiCreationData ForChild(SpecificationNode childNode)
         {
@@ -100,10 +90,10 @@ namespace Gaia.Core.Factories
 
         /// <summary>Reads the node's optional Store attribute, which picks between the blackboards.</summary>
         /// <remarks>
-        ///     The brain blackboard is the default, matching where a character's own knowledge lives. A store the data does
-        ///     not know is a reported error, and so is a Store naming a blackboard that was not supplied. An element with no Store
-        ///     at all takes whatever the brain blackboard holds, null included, since configuring no store is the unwritten-value
-        ///     case rather than a mistake.
+        ///     The brain blackboard is the default, matching where a character's own knowledge lives. A Store that is not
+        ///     Brain or World is a reported error, and so is World when no world blackboard was supplied. Brain, or no Store at
+        ///     all, takes the brain blackboard as it stands, null included, since a null store reads as one with nothing written
+        ///     in it rather than as a mistake.
         /// </remarks>
         internal bool TryReadStore(SpecificationNode node, out DataStoreBase? store)
         {

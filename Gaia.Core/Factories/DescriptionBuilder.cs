@@ -8,20 +8,14 @@ namespace Gaia.Core.Factories
     /// <summary>Collects the attributes and slots a component declares as fields and seals them into its description.</summary>
     /// <remarks>
     ///     <para>
-    ///         A component declares one builder, then one <see cref="AttributeDescription" /> or
-    ///         <see cref="SlotDescription" /> field for each name it loads by, made through the builder, and its description
-    ///         last, as the builder's <see cref="Build" />. C# runs a class's static field initializers in the order they are
-    ///         written, so every field above Build is in the description. Init then reads by RadiusAttribute.Name, which makes
-    ///         the description the one place a name is written.
+    ///         A component declares its builder first, then one <see cref="AttributeDescription" /> or
+    ///         <see cref="SlotDescription" /> field for each name of its own it loads by, each made through the builder. Its
+    ///         description is the last field, set from <see cref="Build" />. C# runs a class's static field initializers in
+    ///         the order they are written, so every field made through or added to the builder above the description is in it.
+    ///         The component's Init reads each name through its field, such as CircleRegion's RadiusAttribute.Name, so the
+    ///         description is the one place a name is written.
     ///     </para>
-    ///     <para>
-    ///         The spelling is the one argument, and the builder makes the <see cref="AiString" /> from it at static
-    ///         initialization, which keeps the string table's lock off the cycle path.
-    ///     </para>
-    ///     <para>
-    ///         <see cref="Add(AttributeDescription)" /> takes a piece another type owns, such as the Store attribute
-    ///         <see cref="AiCreationData" /> reads, and records it in the same order.
-    ///     </para>
+    ///     <para>Each describing method takes the spelling alone and makes the <see cref="AiString" /> from it.</para>
     /// </remarks>
     public sealed class DescriptionBuilder
     {

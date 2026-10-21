@@ -6,20 +6,21 @@ namespace Gaia.Core.Specifications
     /// <summary>Writes a specification node tree back out as XML text in a canonical format.</summary>
     /// <remarks>
     ///     <para>
-    ///         One canonical form is what keeps hand-authored and tool-authored files converging to the same bytes, so diffs
-    ///         stay reviewable. Elements indent by four spaces per level, Type is always the first attribute and is always
-    ///         written as Type, the remaining attributes keep the order they were set in, an element without children closes
-    ///         itself, and every line ends with a line feed alone, so a version control system that normalizes line endings
-    ///         converts them for each platform.
+    ///         Every tree is written in one fixed layout, whether its file was first written by hand or by a tool, so a diff
+    ///         between two written versions of a file shows only the lines whose content changed. Elements indent by four
+    ///         spaces per level, Type is always the first attribute and is always written as Type, the remaining attributes
+    ///         keep the order they were set in, an element without children or trailing comments closes itself, and every line
+    ///         ends with a line feed alone, so a version control system that normalizes line endings converts them for each
+    ///         platform.
     ///     </para>
     ///     <para>
-    ///         Every name and the Type's value are written in the spelling the node keeps, so the text is a function of the
-    ///         tree, and two documents that spell one name differently each write their own spelling in one process.
+    ///         The element's name, the attributes' names and the Type's value are written in the spelling the node keeps, so
+    ///         the text is a function of the tree, and two documents that spell one name differently each write their own
+    ///         spelling in one process.
     ///     </para>
     ///     <para>
-    ///         Comments write back where they stood, each above the element that carries it and trailing comments before
-    ///         their element's closing tag, so a hand-commented file already in the canonical form survives a round trip
-    ///         through the reader and this writer byte for byte.
+    ///         A hand-commented file already in the canonical form survives a round trip through
+    ///         <see cref="XmlSpecificationReader" /> and this writer byte for byte, its comments included.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.6.3</seealso>
@@ -57,7 +58,7 @@ namespace Gaia.Core.Specifications
         /// <param name="node">The node to write.</param>
         /// <param name="depth">How many levels the node is indented by.</param>
         /// <param name="lineByNode">Where each node's line is recorded, or null when the caller did not ask for the lines.</param>
-        /// <param name="lineCount">How many line feeds the builder holds, which every append of one keeps in step.</param>
+        /// <param name="lineCount">How many line feeds the builder holds, incremented with each one appended.</param>
         private static void WriteNode(
             StringBuilder builder,
             SpecificationNode node,

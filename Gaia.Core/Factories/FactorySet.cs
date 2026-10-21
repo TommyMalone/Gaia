@@ -14,18 +14,14 @@ namespace Gaia.Core.Factories
     ///     One factory per kind of component, the single thing creation data carries so any component can build children
     ///     of any kind.
     /// </summary>
-    /// <remarks>
-    ///     The constructor registers every built-in component with its description, so a registered name always means a
-    ///     loadable component that a tool can describe, and a game registers its own components on the same set before loading
-    ///     begins.
-    /// </remarks>
+    /// <remarks>A game registers its own components on the factory of their kind before loading begins.</remarks>
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>
     public sealed class FactorySet
     {
         /// <summary>The name of a document's root element, which <see cref="GaiaLoader" /> holds every root to.</summary>
         public const string RootName = "Brain";
 
-        /// <summary>Creates a set holding every built-in component that can load itself.</summary>
+        /// <summary>Creates a set with every built-in component registered.</summary>
         public FactorySet()
         {
             Actions.Register("Pause", () => new PauseAction(), PauseAction.Description);

@@ -14,18 +14,20 @@ namespace Gaia.Authoring.Documents
     ///         A host's views edit the tree through the commands here and through nothing else, so two views over one
     ///         document agree and an undo step is what the user did. Each command applies its change at once, records the
     ///         calls that take it back, and announces it through <see cref="Changed" />. A command that would leave the tree
-    ///         as it is does nothing, so it records no undo step and leaves <see cref="IsDirty" /> as it was. A command's node
-    ///         has to be in this document's tree, and an index has to be in range, which the document checks with
-    ///         <see cref="ArgumentException" />. Everything else a command could be given wrong is what the node itself
-    ///         refuses, a name XML cannot carry, the Type as an attribute, a child another node holds, and the node's
-    ///         exception comes through with nothing recorded.
+    ///         as it is does nothing, so it records no undo step and leaves <see cref="IsDirty" /> as it was. Every node a
+    ///         command is given, other than the child AddChild adds, has to be in this document's tree, which the document
+    ///         checks with <see cref="ArgumentException" /> before the command runs. RemoveChild and Move also refuse the
+    ///         root, and Move refuses a new parent that is the moved node or beneath it, and an index out of range. Everything
+    ///         else a command could be given wrong is refused by <see cref="SpecificationNode" />, and the document does not
+    ///         check for it first. A name or a value XML cannot carry, the Type as an attribute, a child another node holds
+    ///         and an AddChild index out of range are refused that way. Whichever refuses, the exception comes through with
+    ///         nothing recorded.
     ///     </para>
     ///     <para>
-    ///         The inverse of every command is exact. Undoing a set restores the previous value, or removes an added
-    ///         attribute. Undoing an unset puts the attribute back at the index it had, under the spelling it had. Undoing a
-    ///         removal puts the same node object back at the index it stood at, so a map keyed by node stays right across an
-    ///         undo. The proof is the text <see cref="XmlSpecificationWriter" /> writes, the same after a command is undone as
-    ///         before it ran, and the same after a redo as after the command.
+    ///         The inverse of every command is exact. The node an add, a removal or a move concerns is the same object
+    ///         through every undo and redo of it, so a map keyed by node stays right across both. The text
+    ///         <see cref="XmlSpecificationWriter" /> writes is the same after a command is undone as before it ran, and the
+    ///         same after a redo as after the command.
     ///     </para>
     ///     <para>
     ///         The document reads and writes text. Files, paths and encodings belong to the host. What a node may hold and
@@ -45,10 +47,7 @@ namespace Gaia.Authoring.Documents
         private int _savedDepth;
         private int _transactionDepth;
 
-        /// <summary>
-        ///     Creates a document over a tree built in code or handed over by another document, with nothing to undo and
-        ///     nothing unsaved.
-        /// </summary>
+        /// <summary>Creates a document over a tree, with nothing to undo and nothing unsaved.</summary>
         public AuthoringDocument(SpecificationNode root)
         {
             Root = root;
@@ -87,9 +86,10 @@ namespace Gaia.Authoring.Documents
 
         /// <summary>Raised when each undo step ends.</summary>
         /// <remarks>
-        ///     An undo step is a command issued outside any transaction, a transaction, an undo or a redo, and the event
-        ///     follows the last <see cref="Changed" /> of the step. A command that changes nothing, and a transaction in which no
-        ///     command changed anything, record no step and raise nothing.
+        ///     The event is raised after a command issued outside any transaction, after a transaction's outermost scope is
+        ///     disposed, after an undo and after a redo, each time following the last <see cref="Changed" /> of the step. A
+        ///     command that changes nothing, and a transaction in which no command changed anything, record no step and raise
+        ///     nothing.
         /// </remarks>
         public event Action? StepEnded;
 
@@ -140,13 +140,13 @@ namespace Gaia.Authoring.Documents
         }
 
         /// <summary>
-        ///     Opens a transaction, in which every command until the returned scope is disposed is one step of the undo
-        ///     stack.
+        ///     Opens a transaction, so that the commands issued until the returned scope is disposed form one step of the
+        ///     undo stack.
         /// </summary>
         /// <remarks>
-        ///     A scope opened inside another folds into it, and the outermost scope's label is the step's. A scope disposed
-        ///     with no command issued inside it records nothing. Disposing the scope is what ends the transaction, so a using
-        ///     statement ends it on any path out of the block.
+        ///     A scope opened inside another adds its commands to the outer scope's step, and the outermost scope's label is
+        ///     the step's. A scope disposed with no command issued inside it records nothing. Disposing the scope is what ends the
+        ///     transaction, so a using statement ends it on any path out of the block.
         /// </remarks>
         /// <param name="label">What a menu shows for the step, after "Undo" or "Redo".</param>
         public IDisposable Transaction(string label)
@@ -393,9 +393,9 @@ namespace Gaia.Authoring.Documents
         /// <summary>Replaces the comments above a node with one holding the text, or with none for empty text.</summary>
         /// <remarks>
         ///     The comments above an element are the designer's notes on it, and the text is kept as given, spaces at either
-        ///     end included. The inverse puts back every comment that stood there. A text the node refuses, one holding two
-        ///     hyphens in a row, ending in a hyphen or holding a carriage return, leaves the comments as they were. When the
-        ///     comments above the node are already the ones the text would leave there, nothing is recorded.
+        ///     end included. The inverse puts back every comment that stood there. A text the node refuses as a comment leaves the
+        ///     comments as they were. When the comments above the node are already the ones the text would leave there, nothing is
+        ///     recorded.
         /// </remarks>
         /// <exception cref="ArgumentException">The node is not in this document, or the text is one the node refuses as a comment.</exception>
         public void SetNotes(SpecificationNode node, string text)

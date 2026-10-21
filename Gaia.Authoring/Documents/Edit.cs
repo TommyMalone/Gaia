@@ -4,8 +4,8 @@ namespace Gaia.Authoring.Documents
 {
     /// <summary>One recorded change to the tree, with the call that applies it and the call that takes it back.</summary>
     /// <remarks>
-    ///     Each call returns the change to announce. <see cref="Apply" /> is what ran when the command was issued and
-    ///     runs again on redo, so a redo reaches the same tree through the same code, and <see cref="Revert" /> runs on undo.
+    ///     A redo runs <see cref="Apply" /> again rather than a separate call, so it reaches the same tree through the
+    ///     same code that ran when the command was issued.
     /// </remarks>
     internal sealed class Edit
     {

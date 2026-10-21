@@ -22,17 +22,18 @@ namespace Gaia.Core.Factories
     ///     </para>
     ///     <para>
     ///         Randomness is per brain. The loader's own source is a master stream, and a brain whose load is handed no
-    ///         source of its own gets a <see cref="Xoshiro128RandomSource" /> seeded from the master, so one character's draws
-    ///         never shift another's and brains can tick on parallel threads. When the master is a Xoshiro128RandomSource, a
-    ///         brain loaded for a named actor derives its seed from the master seed and the name, which keeps its stream when
-    ///         a content edit shifts the load order. Two actors with the same name therefore get identical streams. Any other
-    ///         brain given no source takes the master's next value, so the master seed reproduces its stream only when the
-    ///         loads before it happen in the same order. A loader given no random source rolls a master seed and reports it
-    ///         through the sink. A fleet is every brain one loader built, and a fleet whose master is a
+    ///         source of its own gets a <see cref="Xoshiro128RandomSource" /> seeded from the master, so one brain's rolls
+    ///         never shift another's, whether the brains tick in turn or on parallel threads. When the master is a
+    ///         Xoshiro128RandomSource, a brain loaded for a named actor derives its seed from the master seed and the name,
+    ///         which keeps its stream when a content edit shifts the load order. Two actors with the same name therefore get
+    ///         identical streams. Any other brain given no source takes the master's next value, so its stream depends on how
+    ///         many loads before it took the master's next value. A loader given no random source rolls a master seed and
+    ///         reports it through the sink. A fleet is every brain one loader built, and a fleet whose master is a
     ///         <see cref="Xoshiro128RandomSource" /> can be reproduced by constructing one with that source's seed and
     ///         repeating the same loads, in the same order for the brains that take the master's next value. A loader given a
-    ///         source of any other kind has no seed to report and none to derive from, so reproducing its fleet is whatever
-    ///         reproducing that source is.
+    ///         source of any other kind has no master seed to derive from, so every brain given no source takes the master's
+    ///         next value, and the fleet is reproduced by reproducing that source's values and repeating every load in the
+    ///         same order.
     ///     </para>
     /// </remarks>
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>
@@ -72,10 +73,10 @@ namespace Gaia.Core.Factories
             _timeSource = timeSource;
             _logSink = logSink ?? new TraceLogSink();
 
-            // The string table is the one process-wide service, and a hash collision in it is unrecoverable corruption,
-            // so the loader points the table at the host's sink rather than leaving it on Trace, which an engine's
-            // console does not show. With several loaders the most recent one's sink carries the reports, and a host
-            // that wants finer control sets AiStringTable.LogSink itself, after constructing its loaders.
+            // The string table reports a hash collision through AiStringTable.LogSink, which the whole process shares.
+            // The loader points it at the host's sink, which shows its messages in every build, rather than leaving it
+            // on TraceLogSink, whose Trace output Unity's Console never shows and Godot's Output panel shows only in
+            // the editor and in a debug export.
             AiStringTable.LogSink = _logSink;
             _reader = new XmlSpecificationReader(_logSink);
 
@@ -99,8 +100,8 @@ namespace Gaia.Core.Factories
 
         /// <summary>
         ///     The monitor settings every brain this loader loads is watched under, or null, the default, to attach no
-        ///     monitor. A single load may carry its own through TryLoadBrain, which is how one brain under investigation is kept
-        ///     apart from a fleet's noise.
+        ///     monitor. A single load may carry its own through TryLoadBrain, so one brain can be watched on settings of its own
+        ///     while the rest of the fleet keeps these.
         /// </summary>
         public MonitorSettings? Diagnostics { get; set; }
 
@@ -153,8 +154,10 @@ namespace Gaia.Core.Factories
 
         /// <summary>Loads one brain from a parsed tree.</summary>
         /// <param name="root">
-        ///     The Brain element to load, from the tree <see cref="TryParse" /> builds. A root with any name but
-        ///     Brain is refused. The name is matched in any casing.
+        ///     The Brain element to load, from the tree <see cref="TryParse" /> builds or one built in code. A root
+        ///     with any name but Brain is refused, and the name is matched in any casing. A node built in code reports a missing
+        ///     or malformed attribute through its own <see cref="TraceLogSink" /> rather than this loader's sink, so a host that
+        ///     wants those reports in its sink writes the tree and loads the text.
         /// </param>
         /// <param name="brain">The loaded brain, or null when loading failed.</param>
         /// <param name="worldBlackboard">The blackboard every character shares, or null when the game keeps none.</param>

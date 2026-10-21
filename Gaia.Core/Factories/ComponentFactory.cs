@@ -11,15 +11,13 @@ namespace Gaia.Core.Factories
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         Registering a type that is already registered replaces it. A game adds its own components by registering new
-    ///         names, and replaces a built-in by registering that name again, so the last registration is the one kept. Every
-    ///         registration carries a <see cref="ComponentDescription" />, which is what a tool reads to learn what the
-    ///         component's element may hold, and <see cref="Types" /> lists the registered names for it.
+    ///         A game adds its own components by registering new names, and replaces a built-in by registering that name
+    ///         again.
     ///     </para>
     ///     <para>
     ///         The factory constructs and initializes, it does not inject. A component's Init pulls whatever services and
     ///         references it wants from the creation data, so the factory never needs to know one component's needs from
-    ///         another's. Failures are reported through the creation data's sink, filed under the node's source name.
+    ///         another's.
     ///     </para>
     /// </remarks>
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>

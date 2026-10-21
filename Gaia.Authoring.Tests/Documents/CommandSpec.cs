@@ -9,10 +9,10 @@ namespace Gaia.Authoring.Tests.Documents;
 ///     <see cref="XmlSpecificationWriter" /> writes before and after each.
 /// </summary>
 /// <remarks>
-///     The fixture is a hand-built brain of two options with a comment above one and inside the other, and three
-///     attributes on one consideration, so that a place lost through an inverse, an attribute's, a child's or a comment's,
-///     shows in the text. WrittenBefore is that text, and each undo test asserts that the command changed it and that the
-///     undo gave it back.
+///     The fixture is a hand-built brain of two options, with a comment above one and inside the other, and three
+///     attributes on one consideration. An undo that put an attribute or a child back at the wrong index, or put a comment
+///     back inside a node when it stood above it or the reverse, would change the written text. Before is the text the
+///     fixture writes before any command.
 /// </remarks>
 [TestFixture]
 public class CommandSpec
@@ -556,7 +556,7 @@ public class CommandSpec
         Assert.Multiple(() =>
         {
             Assert.That(writtenAfter, Is.Not.EqualTo(Before), "the command changes the text");
-            Assert.That(writtenUndone, Is.EqualTo(Before), "the undo the redo replays");
+            Assert.That(writtenUndone, Is.EqualTo(Before), "the undo gives the text back");
             Assert.That(_document.Write(), Is.EqualTo(writtenAfter));
         });
     }

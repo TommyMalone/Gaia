@@ -12,13 +12,12 @@ namespace Gaia.Core.Specifications
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         Each element becomes a node carrying the element's name, its Type attribute as the discriminator, the
-    ///         remaining attributes as raw text, and its child elements in order. Type is taken in any casing, as every other
-    ///         name is matched. Comments are kept, each one as a leading comment of the element below it, or as a trailing
-    ///         comment of its containing element when no element follows it, so a tree written back out gives back what its
-    ///         author documented. A comment after the root's closing tag has no element to attach to and is reported as a
-    ///         warning. Non whitespace text inside an element is reported as a warning naming the element, since a
-    ///         configuration is attribute shaped and stray text usually indicates a mistake, but it does not fail the read.
+    ///         The Type attribute is taken in any casing, as every other name is matched. Comments become the
+    ///         <see cref="SpecificationNode.LeadingComments" /> of the element each stands above, or the
+    ///         <see cref="SpecificationNode.TrailingComments" /> of the element it stands inside when no element follows it,
+    ///         except a comment after the root's closing tag, which has no element to attach to and is reported as a warning.
+    ///         Non whitespace text inside an element is reported as a warning naming the element, since a configuration is
+    ///         attribute shaped and stray text usually indicates a mistake, but it does not fail the read.
     ///     </para>
     ///     <para>
     ///         The reader takes text rather than a file, so whatever owns files does its own reading and passes the name it
@@ -28,11 +27,13 @@ namespace Gaia.Core.Specifications
     ///         writes.
     ///     </para>
     ///     <para>
-    ///         A well formed document can still describe a tree a node refuses to hold, and each such place is reported as
-    ///         an error. An element that carries Type or any other name in two casings is refused, since a node matches names
-    ///         in any casing. A namespace declaration, an element in a namespace other than the default one, and an attribute
-    ///         in a namespace are refused, because Gaia reads no XML namespace and dropping the prefix would take one name for
-    ///         another.
+    ///         A well formed document can still describe a tree a node refuses to hold, and the reader reports each refusal
+    ///         it meets as an error and reads on, the children of a refused element included. An element that carries Type or
+    ///         any other name in two casings is refused, since a node matches names in any casing, and an element refused for
+    ///         a namespace, for its name or for a second Type has its other attributes left unread, so a name among them
+    ///         carried twice is reported by the read after that refusal is fixed. A namespace declaration, an element in a
+    ///         namespace other than the default one, and an attribute in a namespace are refused, because Gaia reads no XML
+    ///         namespace and dropping the prefix would take one name for another.
     ///     </para>
     /// </remarks>
     /// <seealso>Kevin Dill, "Six Factory System Tricks for Extensibility and Library Reuse", Game AI Pro 3, CRC Press, 2017</seealso>

@@ -11,8 +11,9 @@ namespace Gaia.Authoring.Tests.Documents;
 /// </summary>
 /// <remarks>
 ///     The commands and their inverses are covered in CommandSpec and the undo stack in UndoStackSpec. The fixture is
-///     a hand-built brain of two options with one action each, wrapped in a document that records every change it
-///     announces, and every comparison of text is of what <see cref="XmlSpecificationWriter" /> writes.
+///     a hand-built brain of two options with one action each, wrapped in a document. The setup adds every change the
+///     document announces to a list and counts every step it ends, and every comparison of written text is of what
+///     <see cref="XmlSpecificationWriter" /> writes.
 /// </remarks>
 [TestFixture]
 public class AuthoringDocumentSpec
@@ -58,7 +59,7 @@ public class AuthoringDocumentSpec
 
     [TestCase("guard.xml")]
     [TestCase("sniper.xml")]
-    public void OpensATextAndWritesTheSameBytes(string fileName)
+    public void WritesTheTreeItOpenedAsTheWriterWritesIt(string fileName)
     {
         string text = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, fileName));
         XmlSpecificationReader reader = new(_logSink);

@@ -17,21 +17,13 @@ namespace Gaia.Core.Specifications
     ///     <para>
     ///         A node is parsed from a document by <see cref="XmlSpecificationReader" /> or built in code through the
     ///         constructor, and either kind is edited through the same members. Each member that changes the node throws
-    ///         rather than hold what <see cref="XmlSpecificationWriter" /> could not write and the reader give back, which is
-    ///         a name XML cannot carry, a character XML cannot carry, a name the element already carries, or a child that
-    ///         another node holds. The XML parser refuses most of that before the reader meets it, and the reader reports the
-    ///         rest, where a member would throw.
+    ///         rather than hold what <see cref="XmlSpecificationWriter" /> could not write and the reader give back, and its
+    ///         exception tag says what it refuses.
     ///     </para>
     ///     <para>
     ///         A name matches in any casing, since its identity is an <see cref="AiString" />, and the node keeps the
     ///         spelling it was given beside that identity. The writer writes the kept spelling, so what a tree writes depends
     ///         on the tree alone and not on which spelling <see cref="AiStringTable" /> registered first.
-    ///     </para>
-    ///     <para>
-    ///         The typed accessors come in two tiers. A required attribute is read through ReadFloat and its siblings, which
-    ///         report exactly what is missing or malformed and where. An optional attribute is read through TryGetFloat and
-    ///         its siblings, which stay silent about an absent attribute so the caller can supply its own default. Malformed
-    ///         text is an error through either tier, optional never means malformed text passes silently.
     ///     </para>
     ///     <para>
     ///         Every report carries the node's source name and line, and is filed under the source name as the channel of
@@ -144,7 +136,10 @@ namespace Gaia.Core.Specifications
         /// </remarks>
         public IReadOnlyList<string> LeadingComments => _leadingComments;
 
-        /// <summary>The comments that stood inside this element after its last child.</summary>
+        /// <summary>
+        ///     The comments that stood inside this element after its last child element, or anywhere inside it when it has no
+        ///     child elements, in order, without their markers.
+        /// </summary>
         public IReadOnlyList<string> TrailingComments => _trailingComments;
 
         /// <summary>Adds a child node after the children the element already has.</summary>
@@ -297,7 +292,10 @@ namespace Gaia.Core.Specifications
             _leadingComments.Add(text);
         }
 
-        /// <summary>Adds a comment below the ones that already stand inside this element after its last child.</summary>
+        /// <summary>
+        ///     Adds a comment below the ones that already stand inside this element, after its last child element or, when it
+        ///     has no child elements, anywhere inside it.
+        /// </summary>
         /// <exception cref="ArgumentException">
         ///     The text holds two hyphens in a row, ends with a hyphen, or holds a carriage return
         ///     or another character an XML comment cannot carry.
@@ -347,9 +345,11 @@ namespace Gaia.Core.Specifications
 
         /// <summary>Reports whether the element carries the named attribute.</summary>
         /// <remarks>
-        ///     What a component's Init checks before reading an optional attribute whose default is not the zero value
-        ///     TryGetFloat and its siblings leave in their out parameter, so that absence keeps the default while malformed text
-        ///     still fails the read.
+        ///     What a component's Init calls before reading an optional attribute. TryGetFloat and its siblings return false
+        ///     for an absent attribute and for malformed text alike, so their result cannot tell the Init whether to keep the
+        ///     attribute's default or to fail the load. The Init checks HasAttribute first, keeps the default when the attribute
+        ///     is absent, and otherwise reads the attribute with ReadFloat or its siblings, which report malformed text and return
+        ///     false.
         /// </remarks>
         public bool HasAttribute(AiString name)
         {
@@ -564,8 +564,8 @@ namespace Gaia.Core.Specifications
         /// <summary>Parses "true" or "false" in any casing, reporting anything else as malformed.</summary>
         private bool TryParseBool(AiString name, string text, out bool value)
         {
-            // Names match case-insensitively everywhere, so a value parsed more strictly than its own attribute name is
-            // matched would turn the chapter's Veto="True" into a malformed-value error.
+            // Names match in any casing, so a value is taken in any casing as well, and the chapter's Veto="True" reads
+            // as true.
             if (string.Equals(text, "true", StringComparison.OrdinalIgnoreCase))
             {
                 value = true;
@@ -714,7 +714,7 @@ namespace Gaia.Core.Specifications
                 $"Line {LineNumber}, the {NameSpelling} element has no {name.Text} attribute");
         }
 
-        /// <summary>Reports two attributes on one element that say the same thing differently.</summary>
+        /// <summary>Reports two attributes on one element that both decide one value.</summary>
         /// <remarks>
         ///     Public so that a game's component can refuse a combination it cannot resolve, such as a veto and a multiplier.
         ///     It reports in the form every load error against an element takes, opening with the element's line and its name as

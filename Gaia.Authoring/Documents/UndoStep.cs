@@ -3,10 +3,6 @@
 namespace Gaia.Authoring.Documents
 {
     /// <summary>One entry of the undo stack, the edits one Undo takes back together and the label a menu shows for it.</summary>
-    /// <remarks>
-    ///     A command issued outside a transaction is an undo step of one edit. A transaction is an undo step of every
-    ///     edit issued inside it.
-    /// </remarks>
     internal sealed class UndoStep
     {
         private readonly List<Edit> _edits = new();
