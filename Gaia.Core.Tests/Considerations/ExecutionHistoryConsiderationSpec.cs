@@ -17,7 +17,9 @@ namespace Gaia.Core.Tests.Considerations;
 ///     </para>
 ///     <para>
 ///         The cited paper names the configurations these functions build, Is Done, Commit, Inertia, Cooldown and Do
-///         Once. The tests demonstrating them double as the manual, one pattern per test.
+///         Once. Each is named in a comment on a test that shows it, Cooldown and Do Once on
+///         HandsTheTimeSinceDeselectionToTheSinceLastRunFunction, the first of the three tests that assert the time since
+///         deselection the SinceLastRunWeightFunction received.
 ///     </para>
 /// </remarks>
 /// <seealso>
@@ -91,8 +93,8 @@ public class ExecutionHistoryConsiderationSpec
     [Test]
     public void ReportsTheFinishedValuesOnceItsOptionsActionsAreDone()
     {
-        // The Is Done pattern. A FinishedWeightFunction that vetoes is how an option ends itself, since the reasoner
-        // takes no notice of IsDone.
+        // The Is Done pattern. A FinishedWeightFunction that vetoes is how an option ends itself under a
+        // RuleBasedReasoner or a DualUtilityReasoner, since neither reads an option's IsDone.
         SelectTheOption();
         _action.SetDone(true);
 
@@ -175,9 +177,10 @@ public class ExecutionHistoryConsiderationSpec
     }
 
     [Test]
-    public void KeepsTheWholeSelectedRankToCommit()
+    public void KeepsTheWholeSelectedRankWhileRunning()
     {
-        // The Commit pattern. Nothing of the same rank or lower can interrupt the option while it runs.
+        // The Commit pattern. The option keeps the whole rank it was selected at while it runs, so under a
+        // DualUtilityReasoner no option of a lower rank can take its place while it stays eligible.
         _consideration.RankRetentionFactor = 1f;
 
         SelectTheOption();
@@ -234,8 +237,8 @@ public class ExecutionHistoryConsiderationSpec
     [Test]
     public void StopsRetainingRankOnceTheActionsAreFinished()
     {
-        // Retention applies only while the option's IsDone is false. Once IsDone is true, FinishedWeightFunction alone
-        // decides.
+        // With a FinishedWeightFunction configured, retention applies only while the option's IsDone is false. Once
+        // IsDone is true, that function alone decides.
         _consideration.RankRetentionFactor = 1f;
 
         SelectTheOption();
@@ -443,8 +446,8 @@ public class ExecutionHistoryConsiderationSpec
     [Test]
     public void RefusesARetentionFactorOutsideZeroToOne()
     {
-        // Above 1 the option keeps a rank it never held, which holds it against rivals up to that rank instead of
-        // against near equals, and a negative factor is refused the way a negative multiplier already is.
+        // A factor above 1 would keep a rank the option never held, and a negative one could only mean what 0 already
+        // means, so the attribute is held to 0 to 1.
         const string snippet = """
                                <Consideration Type="ExecutionHistory" RankRetentionFactor="-0.5"/>
                                """;

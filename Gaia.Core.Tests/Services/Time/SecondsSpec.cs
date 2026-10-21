@@ -139,8 +139,7 @@ public class SecondsSpec
 
         Assert.Multiple(() =>
         {
-            Assert.That(floatAdvanced, Is.EqualTo(floatSession),
-                "a float clock has stopped here, which is the horizon this moves");
+            Assert.That(floatAdvanced, Is.EqualTo(floatSession), "a float clock stands still here");
             Assert.That(advanced.Value, Is.GreaterThan(longSession.Value));
         });
     }

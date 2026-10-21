@@ -5,10 +5,8 @@ namespace Gaia.Core.Tests.Helpers;
 
 /// <summary>Builds the creation data a loading test hands to an Init.</summary>
 /// <remarks>
-///     The snippet is parsed through <see cref="XmlSpecificationReader" /> under the source name guard.xml, and the
-///     creation data reports to the given sink, so a spec asserts loading errors the same way it asserts reader errors.
-///     The source name is fixed so that every loading spec asserts errors under one prefix, whatever its snippet
-///     configures.
+///     The source name is fixed at guard.xml, so every loading spec asserts its errors under one prefix whatever its
+///     snippet configures.
 /// </remarks>
 internal static class LoadingSpecHelpers
 {

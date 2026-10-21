@@ -18,14 +18,13 @@ namespace Gaia.Core.HostSpecs;
 /// <remarks>
 ///     A region is queried by the host, not by the library. The library fills no <see cref="Contact" /> list, so a
 ///     host tests each contact against a region itself and writes the ones inside to the blackboard entity list that a
-///     configuration's <see cref="EntityExistsConsideration" /> reads, which is the work this fixture does through the
-///     public surface alone.
+///     configuration's <see cref="EntityExistsConsideration" /> reads.
 /// </remarks>
 [TestFixture]
 public class GeometryHostSpec
 {
     [Test]
-    public void BuildsARegionAndSortsPositionsWithIt()
+    public void BuildsARegionAndTellsAPositionInsideItFromOneOutside()
     {
         CircleRegion killZone = new()
         {
@@ -244,7 +243,7 @@ public class GeometryHostSpec
     }
 
     [Test]
-    public void KeepsItsOffsetWhileItsParentMoves()
+    public void KeepsItsOffsetFromATargetThatMovesAndTurns()
     {
         // The ball sits 10 ahead of the actor along the actor's forward. The actor then moves to (50, 0, 0) and turns a
         // quarter right, so its forward is the world's X and the ball's middle is at (60, 0, 0). Setting the ball's own
@@ -755,7 +754,7 @@ public class GeometryHostSpec
     }
 
     [Test]
-    public void PointsATargetAndReadsItBack()
+    public void ReadsBackThePositionAPositionTargetWasGiven()
     {
         Vector3 vantagePosition = new(3f, 10f, 4f);
 

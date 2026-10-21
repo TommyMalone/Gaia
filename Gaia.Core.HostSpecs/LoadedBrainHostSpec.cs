@@ -16,9 +16,10 @@ namespace Gaia.Core.HostSpecs;
 /// </summary>
 /// <remarks>
 ///     The behavioral assertions live in LoadedSniperSpec, in Gaia.Core.Tests. What is asserted here is the host's
-///     contract, which is four things. The configuration loads through <see cref="GaiaLoader" />, a game-registered action
-///     type is built by name from the file, the loaded brain runs, and the description the game registered its action with
-///     is read back through the set. Cycle counts are generous rather than exact, so this spec does not restate how many
+///     side of loading, all of it through the public surface. An action type a game registers with its own description is
+///     built by name from the file through <see cref="GaiaLoader" /> and runs. A file that gives it a child, an attribute
+///     or a value it does not take is refused with the line, and the description and the spelling the game registered are
+///     read back through the set. Cycle counts are generous rather than exact, so this spec does not restate how many
 ///     cycles each step of a <see cref="SequenceReasoner" /> takes.
 /// </remarks>
 [TestFixture]
@@ -145,7 +146,7 @@ public class LoadedBrainHostSpec
     }
 
     [Test]
-    public void RefusesANegativeValueInTheLoadersGrammar()
+    public void ReportsAGameActionsRefusalInTheLoadersGrammar()
     {
         // A negative speed parses as a number, so the typed read accepts it. The action then refuses it through the
         // node's public reporter, so the sentence is the loader's own rather than one the action composed.
@@ -192,8 +193,7 @@ public class LoadedBrainHostSpec
         List<EntityBase> retreatRouteContacts = new();
 
         // An absent variable reads as neutral rather than false, so without an empty KillZoneContacts the Snipe option
-        // would not be vetoed. Writing the two lists empty is the host saying there is nothing there, which is not the
-        // same as saying nothing.
+        // would not be vetoed.
         _brain.Blackboard.SetBool("IsUnderFire", false);
         _brain.Blackboard.SetEntityList("KillZoneContacts", killZoneContacts);
         _brain.Blackboard.SetEntityList("RetreatRouteContacts", retreatRouteContacts);

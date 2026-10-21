@@ -9,7 +9,7 @@ namespace Gaia.Core.HostSpecs;
 /// <remarks>
 ///     This project has no InternalsVisibleTo grant, so the ActionBase hooks, the creation data, the node accessors,
 ///     the <see cref="DescriptionBuilder" /> and <see cref="ActionBase.NameAttribute" /> this type reaches are the surface
-///     a host gets. The description adds the base's Name attribute rather than restating its spelling.
+///     a host gets.
 /// </remarks>
 internal sealed class HostRecordAction : ActionBase
 {

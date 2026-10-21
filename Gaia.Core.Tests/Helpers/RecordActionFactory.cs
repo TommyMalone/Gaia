@@ -4,8 +4,8 @@ using Gaia.Core.Strings;
 namespace Gaia.Core.Tests.Helpers;
 
 /// <summary>
-///     Builds <see cref="RecordAction" /> instances that share one executed list, one sink, and one channel, so a
-///     spec that builds many actions for the same character wires the fixture's plumbing once instead of at every action.
+///     Builds <see cref="RecordAction" /> instances that share one log, one sink and one channel, so a spec that
+///     builds many actions for one character passes the three once rather than on every action.
 /// </summary>
 internal sealed class RecordActionFactory
 {

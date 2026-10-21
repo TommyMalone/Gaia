@@ -26,7 +26,8 @@ public class AttributeDescriptionSpec
     [Test]
     public void TakesASpellingInAnotherCasingOfTheName()
     {
-        // A name matches in any casing, so a spelling differs from a field only in its letters and never in identity.
+        // An AiString lower cases its text before hashing, so a spelling that differs from the name only in casing
+        // passes the constructor's check and is kept as written.
         AiString name = "duration";
 
         AttributeDescription described = AttributeDescription.Required(name, "Duration", AttributeKind.Float,

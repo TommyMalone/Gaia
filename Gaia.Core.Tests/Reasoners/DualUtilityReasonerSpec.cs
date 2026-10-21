@@ -18,10 +18,9 @@ namespace Gaia.Core.Tests.Reasoners;
 /// </summary>
 /// <remarks>
 ///     Each option's numbers come from a <see cref="StubConsideration" /> set by hand, and the random source is
-///     fixed, so each test pins down one step. The exception is SelectsInProportionToWeightOverManyCycles, which samples
-///     the weighted pick over many cycles from a seeded source. ReportsTheOptionsItChoosesAmongInTheOrderTheyWereAdded
-///     covers the read-only list every reasoner reports its options through, which the fixture's two added options are
-///     enough to pin.
+///     fixed, so each test whose comment opens with a step number pins down that one step.
+///     SelectsInProportionToWeightOverManyCycles instead draws its rolls from a seeded source and checks the share of many
+///     cycles in which the heavier option is selected.
 /// </remarks>
 [TestFixture]
 public class DualUtilityReasonerSpec
@@ -41,8 +40,8 @@ public class DualUtilityReasonerSpec
 
         // A neutral TuningConsideration contributes nothing, but its presence stops EnsureTuningConsideration from
         // adding the default one with an addend of 1. That keeps each option's weight exactly what its
-        // StubConsideration reports. TuningConsideration holds no per-option state, so one instance can sit in every
-        // option.
+        // StubConsideration reports. TuningConsideration reads neither the option it belongs to nor whether it is
+        // selected, so one instance can sit in every option.
         TuningConsideration neutralTuning = new(WeightValues.Neutral);
 
         _firstConsideration = new StubConsideration(WeightValues.Neutral);
@@ -218,7 +217,7 @@ public class DualUtilityReasonerSpec
     {
         // Step 4 again. The same two options, so First owns the roll range [0, 3) and Second owns [3, 4). A roll of
         // 0.9 lands at 3.6, inside Second's share. A roll landing on either side of the boundary at 3 is what shows
-        // selection actually walks the accumulated weights instead of always taking the first candidate.
+        // selection walks the accumulated weights rather than taking the first candidate every time.
         _firstConsideration.Set(_heavyWeight);
         _secondConsideration.Set(_lightWeight);
 
@@ -422,8 +421,6 @@ public class DualUtilityReasonerSpec
     [Test]
     public void RefusesAScreeningFactorOutsideZeroToOne()
     {
-        // Above 1 the threshold rises above the best weight in the winning rank, so every option is screened out and
-        // the reasoner selects nothing for as long as the configuration ships, with nothing to say why.
         const string snippet = """
                                <Reasoner Type="DualUtility" WeightScreeningFactor="1.5"/>
                                """;

@@ -8,9 +8,10 @@ namespace Gaia.Core.Tests.Specifications;
 
 /// <summary>Covers <see cref="XmlSpecificationWriter" />, the canonical form it emits and the round trip it keeps.</summary>
 /// <remarks>
-///     The writer's contract is being the inverse of <see cref="XmlSpecificationReader" />, in both directions. A
-///     parsed snippet has to write back as the text it came from, and a tree built by hand has to read back as an equal
-///     tree, where equal is what Describe spells out.
+///     A snippet already in the canonical form has to write back as the text it came from, and a snippet in any other
+///     form writes back in the canonical form, which a second write leaves unchanged. A tree, whether built by hand or
+///     read from a document, has to write and read back through <see cref="XmlSpecificationReader" /> as an equal tree.
+///     Equal means Describe gives the same text for both trees.
 /// </remarks>
 [TestFixture]
 public class XmlSpecificationWriterSpec
@@ -111,9 +112,6 @@ public class XmlSpecificationWriterSpec
     [Test]
     public void RoundTripsTheSniperConfigurationCommentsAndAll()
     {
-        // The shipped sniper.xml survives a read and a write back untouched, comments included. The comparison
-        // normalizes endings the same way Canonical does, since the copied file carries whatever endings the checkout
-        // gave it.
         string configurationPath = Path.Combine(AppContext.BaseDirectory, "Integration", "sniper.xml");
         string configurationText = File.ReadAllText(configurationPath);
 
@@ -125,8 +123,8 @@ public class XmlSpecificationWriterSpec
     [Test]
     public void ReachesItsFixedPointInOneWrite()
     {
-        // A document in any formatting canonicalizes on the first write, and a second trip changes nothing more,
-        // which is what makes the canonical form one form rather than a drift.
+        // A document however it is formatted reaches the canonical form on the first write, and reading that text back
+        // and writing it again returns the same text.
         const string messySnippet = """
                                     <Option
                                         Name="Snipe"   Type="ConsiderationAndAction"><Consideration Type="Tuning"/></Option>
@@ -284,9 +282,9 @@ public class XmlSpecificationWriterSpec
     [Category(XmlSpecificationReaderSpec.SweepCategory)]
     public void ReadsEveryDocumentTheReaderAcceptsBackAsAnEqualTree()
     {
-        // The documents XmlSpecificationReaderSpec sweeps, keeping the ones the reader accepts. Each tree is written
-        // and the text is read, and the tree read from the text has to equal the tree it was written from and write
-        // the same text again.
+        // Reads every document XmlSpecificationReaderSpec sweeps and keeps the ones the reader accepts. Each accepted
+        // tree is written, the text is read back, and the tree read back has to equal the tree it was written from and
+        // write the same text again.
         ConcurrentQueue<string> failures = new();
         int acceptedCount = 0;
 
@@ -345,9 +343,10 @@ public class XmlSpecificationWriterSpec
     [Category(XmlSpecificationReaderSpec.SweepCategory)]
     public void ReadsEveryTreeTheMembersAcceptBackAsAnEqualTree()
     {
-        // The sweep from the other side. Every character a char can hold is offered to each member that takes text, in
-        // each place the text can differ, and whatever the members accept is written and read. A member that accepted
-        // text the writer cannot write or the reader cannot give back would fail here.
+        // Every character a char can hold is offered to each member that takes text, alone and after a letter in an
+        // element or attribute name, as a Type, as an attribute value, as the name of a second attribute, and in a
+        // comment above and inside an element. Whatever the members accept is written and read back. A member that
+        // accepted text the writer cannot write or the reader cannot give back would fail here.
         ConcurrentQueue<string> failures = new();
         int acceptedCount = 0;
 
@@ -446,8 +445,8 @@ public class XmlSpecificationWriterSpec
     }
 
     /// <summary>
-    ///     Spells out everything a tree holds, one line per fact, in a form that owes nothing to the writer, so two trees
-    ///     are equal when their descriptions are.
+    ///     Spells out everything a tree holds, one line per fact, without going through the writer, so two trees are
+    ///     equal when their descriptions are.
     /// </summary>
     /// <remarks>
     ///     Each fact ends with the character numbered 0, which no text in a tree can hold, so a value holding a line feed

@@ -14,8 +14,9 @@ using Gaia.Core.WeightFunctions;
 namespace Gaia.Core.Tests.Integration;
 
 /// <summary>
-///     Covers the sniper from the chapter's running example, a whole brain of reasoners, considerations, weight
-///     functions, regions and targets working together, with nothing but actions stubbed.
+///     Covers the sniper from the chapter's running example, the library's reasoners, considerations, weight
+///     functions, regions and targets working together as a whole brain, with test helpers for the options, the contacts
+///     and the game's own actions.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -245,7 +246,7 @@ public class SniperSpec
     }
 
     [Test]
-    public void WillNotSnipeFromTooFarAway()
+    public void HidesWhenTheKillZoneIsOutOfRange()
     {
         // The sniper has relocated well outside the range band its Snipe option allows.
         Vector3 farBehindTheKillZone = new(0f, 10f, -300f);

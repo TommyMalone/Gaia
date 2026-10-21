@@ -263,8 +263,10 @@ public class SequenceReasonerSpec
     [Test]
     public void HoldsItsStepThroughATransientVeto()
     {
-        // One cycle in which a nested scoring reasoner has nothing eligible, such as a contact list mid-rewrite, must
-        // hold the sequence at its step rather than read as that step completing. Done means ran out of work.
+        // One cycle in which the nested RuleBasedReasoner has nothing eligible must hold the sequence at the fight step
+        // rather than read as that step completing. With nothing selected, the nested reasoner has no selected option
+        // to be done, so under its default rule the SubreasonerAction holding it is not done and the sequence stays
+        // on that step.
         RuleBasedReasoner nested = new();
         StubConsideration nestedGate = new(WeightValues.Neutral);
         RecordAction nestedAction = new("Nested.Work", _executed, false);

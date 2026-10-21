@@ -16,16 +16,23 @@ using Gaia.Core.WeightFunctions;
 namespace Gaia.Core.Tests.Factories;
 
 /// <summary>
-///     Covers the component descriptions, that the shipped configurations carry nothing a description does not name,
-///     and that the descriptions have the shape the authoring tool reads.
+///     Covers the component descriptions. Every registered type has one, the shipped configurations carry nothing a
+///     description does not name, a sample of the names a base reads on a component's behalf is described, and the tests
+///     besides these assert what a description says about a name, its kind, its choices, its default, the count a slot
+///     takes and what fills it.
 /// </summary>
 /// <remarks>
 ///     A name a component reads for itself is an <see cref="AttributeDescription" /> or
 ///     <see cref="SlotDescription" /> field made through the component's own <see cref="DescriptionBuilder" />, which
-///     records it as it hands it back, so a component's own field is in its description. A piece a base reads on the
-///     component's behalf comes from the builder the base hands out, or from an Add the component writes. What is left to
-///     assert is what the description says about a name rather than whether it carries one, which is the kind, the
-///     choices, the default, the count a slot takes and the abstraction that fills it.
+///     records each field as it hands it back, or one of the fields WeightValues makes and lists, which
+///     TuningConsideration and ConstantWeightFunction read through WeightValues.TryRead, so that name is in the
+///     description without a test asserting it. A name a base reads on the component's behalf is in the description
+///     because the component started from the builder the base hands out or wrote an Add, so a test asserts it for a
+///     sample of them, every action's Name, every reasoner's Option, every variable consideration's Store, and the region
+///     base's attributes and target slot and the footprint base's Corner slot on the polygon. Every other test, apart from
+///     the two walks over the registered types and the shipped configurations, asserts what a description says about a
+///     name, the order of the attributes, the kind an attribute is read as, its choices and its default, and the count a
+///     slot takes and what fills it.
 /// </remarks>
 [TestFixture]
 public class DescriptionSpec
@@ -545,7 +552,7 @@ public class DescriptionSpec
         return BareRegions.Single(region => region.type == type).snippet;
     }
 
-    /// <summary>Every attribute in the description and in the inline descriptions beneath it.</summary>
+    /// <summary>Appends every attribute in the description and in the inline descriptions beneath it to the list.</summary>
     private static void CollectAttributes(ComponentDescription description, List<AttributeDescription> attributes)
     {
         attributes.AddRange(description.Attributes);

@@ -4,10 +4,7 @@ using Gaia.Core.WeightFunctions;
 
 namespace Gaia.Core.Tests.Helpers;
 
-/// <summary>
-///     A consideration whose result is set by hand rather than queried from a world. A multiplier of 0 vetoes the
-///     option regardless of what the other considerations contribute.
-/// </summary>
+/// <summary>A consideration whose result is set by hand rather than queried from a world.</summary>
 internal sealed class StubConsideration : ConsiderationBase
 {
     /// <summary>Creates a consideration that reports the given weights until Set changes them.</summary>

@@ -14,12 +14,10 @@ namespace Gaia.Core.Tests.Integration;
 ///     can ship as a configuration file.
 /// </summary>
 /// <remarks>
-///     GuardSpec covers the Commit and Inertia patterns of <see cref="ExecutionHistoryConsideration" />, with the
-///     retention factor varied per test, and the FinishedWeightFunction veto that ends the Investigate option's walk to
-///     the noise once its action reports done. What is asserted here is that the file expresses the same brain at its
-///     authored factor. The loaded guard investigates a noise, keeps walking on retained rank after the noise fades, and
-///     always drops the walk for a threat. As a game's sensors would, the spec writes SecondsSinceNoise before each cycle
-///     once a noise has been heard, and adds threats to the list it set on the blackboard at setup.
+///     GuardSpec varies the <see cref="ExecutionHistoryConsideration.RankRetentionFactor" /> per test. What is
+///     asserted here is that the file expresses the same brain at its authored factor. As a game's sensors would, the spec
+///     writes SecondsSinceNoise before each cycle once a noise has been heard, and adds threats to the list it set on the
+///     blackboard at setup.
 /// </remarks>
 [TestFixture]
 public class LoadedGuardSpec
@@ -135,7 +133,7 @@ public class LoadedGuardSpec
     }
 
     [Test]
-    public void AlwaysDropsTheWalkForAThreat()
+    public void DropsTheWalkForAThreatOnItsAuthoredRetention()
     {
         // Rank 10 sits above anything retention can keep.
         HearNoise();

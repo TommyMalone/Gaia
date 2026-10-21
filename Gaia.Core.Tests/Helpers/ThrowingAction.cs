@@ -38,7 +38,7 @@ internal sealed class ThrowingAction : ActionBase
         throw new InvalidOperationException("the action failed");
     }
 
-    /// <summary>Throws when the action was built to, which is on the way down after a failed Update.</summary>
+    /// <summary>Throws when the action was built to, which is when the brain stops after a failed Update and deselects it.</summary>
     protected override void OnDeselect()
     {
         if (_throwsOnDeselect)

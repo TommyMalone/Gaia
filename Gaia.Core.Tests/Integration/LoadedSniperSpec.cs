@@ -15,16 +15,10 @@ namespace Gaia.Core.Tests.Integration;
 ///     behavior the hand-built <see cref="SniperSpec" /> asserts.
 /// </summary>
 /// <remarks>
-///     <para>
-///         The spec plays the host, through the same <see cref="GaiaLoader" /> surface a game uses. Its services, actor
-///         and sensor work are the ones <see cref="SniperSpec" /> uses. It registers the Record action the file's Action
-///         elements name, and writes the variables the loaded considerations read onto the brain's own blackboard.
-///         Everything the sniper decides with comes from the file.
-///     </para>
-///     <para>
-///         Registering Record on the factory set is the game-facing extension point in use. A component the library does
-///         not ship is built by name from the configuration.
-///     </para>
+///     The spec plays the host, through the same <see cref="GaiaLoader" /> surface a game uses. Its services, actor
+///     and sensor work are the ones <see cref="SniperSpec" /> uses. It registers the Record action the file's Action
+///     elements name, and writes the variables the loaded considerations read onto the brain's own blackboard. Everything
+///     the sniper decides with comes from the file.
 /// </remarks>
 /// <seealso>"Modular AI", Section 8.3.3</seealso>
 [TestFixture]
@@ -210,7 +204,7 @@ public class LoadedSniperSpec
     }
 
     [Test]
-    public void WillNotSnipeFromTooFarAway()
+    public void HidesWhenTheKillZoneIsOutOfRange()
     {
         // The sniper has relocated well outside the range band the file's Snipe option allows.
         Vector3 farBehindTheKillZone = new(0f, 10f, -300f);

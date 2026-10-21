@@ -28,9 +28,9 @@ namespace Gaia.Core.Tests.Integration;
 ///         options scored by stub considerations with fixed weights, so the measured window covers the brain's cycle,
 ///         evaluation, screening, the roll and the monitor's recording. The steady-state case's selected option also
 ///         carries an execution history consideration whose while-running weight function is constant, so that
-///         consideration's clock read and function call are inside the window. Actions are left out of the steady-state
-///         case because the suite's <see cref="RecordAction" /> builds a string for every lifecycle call it records, and
-///         the transition case carries a shipped PauseAction so that an action's Select and Deselect are inside its
+///         consideration's clock read and function call are inside the window. The steady-state case holds no actions,
+///         since the suite's <see cref="RecordAction" /> builds a string for every lifecycle call it records. The
+///         transition case carries a shipped PauseAction, so an action's Select, Update and Deselect are inside its
 ///         window.
 ///     </para>
 ///     <para>
@@ -42,9 +42,9 @@ namespace Gaia.Core.Tests.Integration;
 ///     <para>
 ///         The transition case exists because a DualUtilityReasoner rolls every cycle, so a change of selection is
 ///         routine across the brains a host runs rather than an exception. The transition path builds its selection and
-///         action lines only for a sink enabled at Message severity, so the case pins allocation-free transitions only
-///         under a sink that filters, since the shipped <see cref="TraceLogSink" /> enables every severity and builds the
-///         strings.
+///         action log lines only when the sink is enabled at Message severity. The case therefore runs under a sink that
+///         filters Message out, and asserts nothing about the shipped <see cref="TraceLogSink" />, which is enabled at
+///         every severity and builds those lines on every transition.
 ///     </para>
 ///     <para>
 ///         The store case walks a store holding four entries of four kinds. A walk of a data store is not part of a
@@ -63,8 +63,8 @@ namespace Gaia.Core.Tests.Integration;
 ///     <para>
 ///         The group case calculates a group whose rule reads what it holds by index, a thousand times after the same
 ///         warm-up, and counts what the rule read, so a rule that read nothing cannot pass as one that allocates nothing.
-///         The case of groups under every operator runs the steady-state brain over two shipped groups, one under Or with
-///         Sum and one under Not with Min. It reads what each reported, so the walk of what a group holds is inside the
+///         The case of groups under Or and Not runs the steady-state brain over two shipped groups, one under Or with Sum
+///         and one under Not with Min. It reads what each reported, so the walk of what a group holds is inside the
 ///         window.
 ///     </para>
 /// </remarks>
@@ -95,7 +95,7 @@ public class AllocationSpec
 
     /// <summary>Runs the warm-up, then measures the thread-local bytes a thousand further walks of a store allocate.</summary>
     /// <param name="store">The store to walk.</param>
-    /// <param name="entriesRead">How many entries the measured walks read, which the failure message reports.</param>
+    /// <param name="entriesRead">How many entries the measured walks read.</param>
     private static long MeasureEntryWalks(DataStoreBase store, out int entriesRead)
     {
         entriesRead = 0;
@@ -129,10 +129,7 @@ public class AllocationSpec
     /// </summary>
     /// <param name="region">The region to ask.</param>
     /// <param name="position">The position every pass asks about.</param>
-    /// <param name="answersInside">
-    ///     How many measured answers held the position or found a sample, which the failure message
-    ///     reports.
-    /// </param>
+    /// <param name="answersInside">How many measured answers held the position or found a sample.</param>
     private static long MeasureRegionQueries(RegionBase region, Vector3 position, out int answersInside)
     {
         for (int pass = 0; pass < WarmUpCycles; pass++)
@@ -163,10 +160,7 @@ public class AllocationSpec
 
     /// <summary>Runs the warm-up, then measures the thread-local bytes a thousand further calculations of a group allocate.</summary>
     /// <param name="group">The group to calculate.</param>
-    /// <param name="addendsRead">
-    ///     The sum of the addends its rule read in the measured calculations, which the failure message
-    ///     reports.
-    /// </param>
+    /// <param name="addendsRead">The sum of the addends its rule read in the measured calculations.</param>
     private static long MeasureGroupCalculations(RecordingGroupConsideration group, out float addendsRead)
     {
         for (int pass = 0; pass < WarmUpCycles; pass++)
@@ -394,7 +388,7 @@ public class AllocationSpec
     }
 
     [Test]
-    public void RunsACycleOfGroupsUnderEveryOperatorWithoutAllocating()
+    public void RunsACycleOfGroupsUnderOrAndNotWithoutAllocating()
     {
         StubConsideration enemyVisible = new(new WeightValues(3f, 1f, 1f));
         StubConsideration heardShot = new(new WeightValues(2f, 1f, 2f));
@@ -426,7 +420,7 @@ public class AllocationSpec
                 "the Or group combined the two threats that allow, its ranks summed");
             Assert.That(calm.Weights.Multiplier, Is.EqualTo(1f), "the Not group turned its vetoing consideration");
             Assert.That(allocatedBytes, Is.EqualTo(0),
-                "a warm cycle of groups under every operator must not feed the collector");
+                "a warm cycle of groups under Or with Sum and Not with Min must not feed the collector");
         });
     }
 }

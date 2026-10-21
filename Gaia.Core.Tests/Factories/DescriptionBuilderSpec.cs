@@ -6,9 +6,10 @@ namespace Gaia.Core.Tests.Factories;
 
 /// <summary>Covers <see cref="DescriptionBuilder" />, the tie between a component's name fields and its description.</summary>
 /// <remarks>
-///     A component declares its attribute and slot fields through a builder and its description as the builder's
-///     Build, so what is asserted here is that the description holds what was made through it, in that order, and that a
-///     builder which has handed its description out takes nothing more.
+///     A component declares its attribute and slot fields through a builder, and its description is what the
+///     builder's Build returns, apart from TuningConsideration and ConstantWeightFunction, whose descriptions list the
+///     attributes WeightValues holds. What is asserted here is that the description holds what was made through the
+///     builder, in the order it was made, and that a builder which has handed its description out takes nothing more.
 /// </remarks>
 [TestFixture]
 public class DescriptionBuilderSpec

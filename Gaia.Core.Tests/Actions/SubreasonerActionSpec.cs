@@ -127,7 +127,7 @@ public class SubreasonerActionSpec
     }
 
     [Test]
-    public void PropagatesDeselection()
+    public void PropagatesDeselectionToTheContainedReasoner()
     {
         _reasoner.Update();
 
@@ -153,7 +153,7 @@ public class SubreasonerActionSpec
     }
 
     [Test]
-    public void SupportsReselection()
+    public void RestartsTheContainedReasonerWhenItsOptionIsSelectedAgain()
     {
         _reasoner.Update();
 
@@ -224,7 +224,8 @@ public class SubreasonerActionSpec
     [Test]
     public void IsNotDoneBeforeItsReasonerHasChosen()
     {
-        // Nothing has run yet, so the subreasoner has no selected option, and nothing selected is not completion.
+        // Nothing has run yet, so the subreasoner has no selected option, and having no selected option does not count
+        // as done.
         Assert.That(_subreasonerAction1.IsDone, Is.False);
     }
 
@@ -276,8 +277,9 @@ public class SubreasonerActionSpec
     [Test]
     public void IsNotDoneWhileItsSequenceHasStepsLeft()
     {
-        // The parent reads IsDone before the sequence thinks, so a finished step must not end the step holding the
-        // sequence while the sequence has options left to run.
+        // A parent sequence reads this action's IsDone in its Think, before its Act runs the sequence this action holds
+        // past the finished step. A finished step must therefore not make the action report done while the sequence has
+        // steps left.
         SequenceReasoner sequence = new();
         RecordAction firstStepAction = new("FirstStep", _executed, false);
         RecordAction secondStepAction = new("SecondStep", _executed, false);
@@ -327,9 +329,9 @@ public class SubreasonerActionSpec
 
         Assert.Multiple(() =>
         {
-            // Disabling the root reasoner, which is what Brain.Disable forwards to, is a different entry point from an
-            // option becoming invalid, and it has to reach the same way down the tree. The last group comes from
-            // Disable rather than from a cycle.
+            // Brain.Disable forwards to the root reasoner's Disable, which this test calls directly. That call is a
+            // different path from a veto, and it has to deselect every level beneath the root as a veto does. The last
+            // two entries come from Disable rather than from a cycle.
             Assert.That(_executed, Is.EqualTo(new[]
             {
                 // @formatter:off
@@ -457,7 +459,7 @@ public class SubreasonerActionSpec
     }
 
     [Test]
-    public void NeverReportsDoneUnderTheReasonerDoneRuleWhileItContainsAScoringReasoner()
+    public void IsNotDoneUnderTheReasonerDoneRuleWhileItContainsAScoringReasoner()
     {
         _subreasonerAction1.DoneWhen = SubreasonerCompletion.ReasonerDone;
 
@@ -627,7 +629,8 @@ public class SubreasonerActionSpec
     [Test]
     public void RefusesANothingEligibleCycleLimitUnderAnotherRule()
     {
-        // No DoneWhen, so the rule is the default, which reads no limit.
+        // No DoneWhen is set, so the rule defaults to SelectedOptionDone, and only NothingEligible takes a cycle
+        // limit.
         const string snippet = """
                                <Action Type="Subreasoner" Name="Investigate" NothingEligibleCycleLimit="3">
                                    <Reasoner Type="Sequence"/>

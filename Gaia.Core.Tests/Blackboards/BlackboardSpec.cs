@@ -30,8 +30,8 @@ public class BlackboardSpec
     [Test]
     public void KeepsOneCharactersValuesFromAnother()
     {
-        // This is the whole reason a character has a blackboard of its own. What one NPC believes about a target is not
-        // something another NPC should be able to read.
+        // Two characters can believe different things about the same target under the same name, since each writes to
+        // a blackboard of its own.
         _firstBrainBlackboard.SetFloat("TargetDistance", 50f);
         _secondBrainBlackboard.SetFloat("TargetDistance", 300f);
 

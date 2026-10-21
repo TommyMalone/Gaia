@@ -15,16 +15,17 @@ namespace Gaia.Core.Tests.Integration;
 /// <remarks>
 ///     <para>
 ///         Every run gets a loader, a seeded source, a manual clock and monitor settings of its own, and the runs that
-///         should match are compared monitor for monitor through <see cref="BrainMonitor.ReasonerMonitors" />. Watching
-///         the whole tree rather than attaching a history to the root is what reaches the nested reasoner, whose rolls
-///         nothing else pins.
+///         should match are compared monitor for monitor through <see cref="BrainMonitor.ReasonerMonitors" />. With
+///         monitor settings, the loader attaches a brain monitor to each brain it loads, and that monitor gives every
+///         reasoner in the tree a monitor of its own, so the nested reasoner's rolls are compared too, where a monitor set
+///         by hand on the root reasoner would record the root's rolls alone.
 ///     </para>
 ///     <para>
 ///         The brain rolls every cycle, a dual utility reasoner choosing by weight between two tuned options, and the
 ///         lighter of them runs a nested dual utility reasoner of its own. Both draw from the one stream the load derived
-///         for the brain, interleaved, so a change that adds, drops or reorders a draw separates the histories within a
-///         few cycles. A change to the generator itself alters every run alike, and
-///         <see cref="Services.Random.Xoshiro128RandomSourceSpec" /> catches that instead.
+///         for the brain, interleaved, so a draw that one run makes and the other does not offsets every later roll in
+///         that run and separates the histories within a few cycles. A change to the generator itself alters every run
+///         alike, and <see cref="Services.Random.Xoshiro128RandomSourceSpec" /> catches that instead.
 ///     </para>
 /// </remarks>
 [TestFixture]
@@ -100,8 +101,10 @@ public class DeterminismSpec
         {
             for (int age = 0; age < firstA.CycleCount; age++)
             {
-                // Two brains drawing in turn from one shared stream would also differ from each other, so the
-                // stream being the first brain's own is what the run without a neighbor shows.
+                // Two brains drawing in turn from one shared stream would differ from each other too, so the divergence
+                // asserted below does not show that the first brain has a stream of its own. The comparison with the
+                // run without a second brain does, since a stream shared with the second brain would change the first
+                // brain's rolls.
                 Assert.That(firstA.GetCycle(age).Roll, Is.EqualTo(alone.GetCycle(age).Roll),
                     $"loading a second brain changed the first brain's rolls at age {age}");
             }

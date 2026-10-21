@@ -111,8 +111,6 @@ public class DecisionHistorySpec
         DecisionHistory measured = new();
         long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
 
-        // KeepAlive holds the reference past the allocation count, so the runtime cannot treat the instance as dead
-        // before the measurement is taken. The warm-up history needs none, since nothing is measured on it.
         GC.KeepAlive(measured);
 
         TestContext.Out.WriteLine($"DecisionRecord {recordSize} B, DecisionCycle {cycleSize} B, " +

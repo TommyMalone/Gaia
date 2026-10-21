@@ -42,8 +42,8 @@ public class CurveSpec
     [Test]
     public void RefusesASecondKeyframeAtAnInputItAlreadyHolds()
     {
-        // Without the refusal the twin stops the walk at its own index and is inserted before it, so the curve
-        // reports the second value where the configuration wrote the first.
+        // Without the refusal, twin would be inserted ahead of held, so evaluating the curve at 5 would report twin's 8
+        // where the configuration wrote held's 3.
         CurveKeyframe held = new(5f, 3f);
         CurveKeyframe twin = new(5f, 8f);
 
@@ -113,7 +113,7 @@ public class CurveSpec
     }
 
     [Test]
-    public void ReportsFalseForAnInputNoKeyframeHolds()
+    public void RemovesNothingAtAnInputNoKeyframeHolds()
     {
         CurveKeyframe only = new(5f, 3f);
         _curve.AddKeyframe(only);
@@ -263,7 +263,7 @@ public class CurveSpec
     }
 
     [Test]
-    public void SetsLinearTangentsOnACurveWithTooFewKeyframesToHaveASlope()
+    public void ThrowsNothingSettingLinearTangentsWithFewerThanTwoKeyframes()
     {
         Curve emptyCurve = new();
 

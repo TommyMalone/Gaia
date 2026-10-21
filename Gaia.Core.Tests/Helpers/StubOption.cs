@@ -9,12 +9,6 @@ namespace Gaia.Core.Tests.Helpers;
 ///     A concrete option for specs to build by hand, finished with the default <see cref="TuningConsideration" />
 ///     that <see cref="OptionBase.Init" /> would otherwise have supplied.
 /// </summary>
-/// <remarks>
-///     The option is assembled rather than loaded, so it never runs Init. It calls EnsureTuningConsideration itself
-///     so that a spec can read the option's weight before any reasoner has enabled it. The OnInit override exists because
-///     <see cref="OptionBase" /> requires one of every concrete option, and it refuses, the way the other hand-built
-///     helpers do.
-/// </remarks>
 internal sealed class StubOption : OptionBase
 {
     /// <summary>Creates an option holding the given considerations and actions, ready to be scored.</summary>

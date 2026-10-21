@@ -16,11 +16,11 @@ namespace Gaia.Core.Tests.Integration;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The guard fights at rank 10 when a threat exists, investigates a noise or an alarm at rank 5 while either is
-///         recent, and patrols at rank 0 otherwise. The reason to investigate fades a few seconds after the noise, so
-///         without retention the guard turns back halfway to it. Retaining part of the rank keeps the walk going, while
-///         still letting an alarm of the same rank, or a threat of a higher one, interrupt. Retaining all of it raises the
-///         walk back to the alarm's own rank, where the alarm can tie the walk but no longer outranks it.
+///         The guard fights at rank 10 when a threat exists, investigates a noise or answers an alarm, each at rank 5
+///         while it is recent, and patrols at rank 0 otherwise. The reason to investigate fades a few seconds after the
+///         noise, so without retention the guard turns back halfway to it. Retaining part of the rank keeps the walk
+///         going, while still letting an alarm of the same rank, or a threat of a higher one, interrupt. Retaining all of
+///         it keeps the walk at the full rank 5, which an alarm can tie but can no longer outrank.
 ///     </para>
 ///     <para>
 ///         The spec stands in for the game's sensors, writing how long ago the noise and the alarm happened onto the
@@ -241,7 +241,7 @@ public class GuardSpec
     }
 
     [Test]
-    public void AlwaysDropsTheWalkForAThreat()
+    public void DropsTheWalkForAThreatWithAllOfItsRankRetained()
     {
         // Rank 10 sits above anything retention can keep.
         _investigateHistory.RankRetentionFactor = 1f;

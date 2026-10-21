@@ -5,9 +5,9 @@ namespace Gaia.Core.Tests.Services.Random;
 
 /// <summary>Covers <see cref="Xoshiro128RandomSource" />, the seed that reproduces runs and the sequence the seed pins.</summary>
 /// <remarks>
-///     The pinned-draw tests hold the generator to exact values, so a change to the algorithm, the seeding or the
-///     draw mechanics fails here before it silently invalidates every recorded run. The expected floats are written as
-///     draws over 2^24, the form NextFloat produces them in.
+///     The pinned-roll tests hold the generator to exact values, so a change to the algorithm, the seeding or the way
+///     a roll is drawn fails here before it silently invalidates every recorded run. Each expected float is written as a
+///     24-bit integer over 2^24, because NextFloat produces a roll by dividing the top 24 bits of a 32-bit value by 2^24.
 /// </remarks>
 [TestFixture]
 public class Xoshiro128RandomSourceSpec
@@ -49,9 +49,9 @@ public class Xoshiro128RandomSourceSpec
     }
 
     [Test]
-    public void ProducesTheSameSequenceOnEveryRuntime()
+    public void ReproducesTheReferenceFloatsOfSeedSeven()
     {
-        // These are the first three draws of seed 7, computed from the published xoshiro128** and splitmix64
+        // These are the first three rolls of seed 7, computed from the published xoshiro128** and splitmix64
         // definitions outside this codebase. They hold on any runtime because this codebase implements the generator.
         Assert.Multiple(() =>
         {
@@ -62,7 +62,7 @@ public class Xoshiro128RandomSourceSpec
     }
 
     [Test]
-    public void BoundsItsDrawsExactly()
+    public void BoundsItsRollsExactly()
     {
         Assert.Multiple(() =>
         {

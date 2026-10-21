@@ -218,7 +218,7 @@ public class XmlSpecificationReaderSpec
     }
 
     [Test]
-    public void ReportsNothingToReadTheSameWay()
+    public void ReportsEmptyAndBlankTextAndYieldsNoTree()
     {
         bool wasEmptyRead = _reader.TryRead(string.Empty, SourceName, out SpecificationNode? emptyRoot);
         bool wasBlankRead = _reader.TryRead("   ", SourceName, out SpecificationNode? blankRoot);
@@ -416,7 +416,7 @@ public class XmlSpecificationReaderSpec
     }
 
     [Test]
-    public void DoesNotTakeAPrefixedTypeForTheType()
+    public void RefusesATypeWrittenWithAPrefix()
     {
         const string snippet = """
                                <Region xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="Circle"/>
@@ -517,9 +517,11 @@ public class XmlSpecificationReaderSpec
         // SweepShapes. The shapes cover an element name, an attribute name, a prefix, a value and a Type as the
         // character and as a character reference, a comment in each place the reader keeps one, stray text, an
         // attribute name beside k and beside Type that may be the other's in another casing, and an attribute name
-        // and an entity that a document type declares. A read that refuses has to say why, and not through the guard
-        // that catches a node's own exception, which would mean the reader called a member without asking its
-        // question.
+        // and an entity that a document type declares. A refused read has to log an error that names the reason. That
+        // error must not come from the catch in TryRead, which reports an ArgumentException a SpecificationNode member
+        // threw. Reaching that catch means the parser accepted something a member refuses and the reader called the
+        // member without checking first, the way it checks NameProblem before the constructor and IndexOfAttribute
+        // before SetAttribute.
         ConcurrentQueue<string> failures = new();
 
         Parallel.For(0, SweepShapes.Length * 0x10000, index =>

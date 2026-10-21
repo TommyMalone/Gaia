@@ -7,14 +7,13 @@ using Gaia.Core.WeightFunctions;
 namespace Gaia.Core.Tests.Options;
 
 /// <summary>
-///     Covers how the considerations an option takes learn which option they belong to, and the lists an option
-///     reports what it holds through.
+///     Covers how the considerations an option takes learn which option they belong to, and the Considerations and
+///     Actions lists through which an option reports what it holds, in the order they were added.
 /// </summary>
 /// <remarks>
-///     The rest of <see cref="OptionBase" />, combining, screening and the lifecycle, is covered through the reasoner
-///     specs. What is asserted here is the Option back-reference a consideration needs when it evaluates its own option
-///     rather than the world, and that Considerations and Actions report what was added to the option, in order, which is
-///     the walk a reader outside the library makes down a loaded tree.
+///     The rest of <see cref="OptionBase" /> is covered elsewhere. The Name read in Init, the default tuning
+///     consideration and the fixed-values warning are covered in ConsiderationAndActionOptionSpec, and combining,
+///     screening and the lifecycle through the reasoner specs.
 /// </remarks>
 [TestFixture]
 public class OptionBaseSpec
@@ -36,7 +35,7 @@ public class OptionBaseSpec
     }
 
     [Test]
-    public void TellsAConsiderationAddedLaterAsWell()
+    public void TellsAConsiderationAddedAfterConstructionWhichOptionItBelongsTo()
     {
         StubConsideration lateConsideration = new(WeightValues.Neutral);
 
@@ -46,7 +45,7 @@ public class OptionBaseSpec
     }
 
     [Test]
-    public void TellsTheConsiderationsInsideANestedGroup()
+    public void TellsTheConsiderationsInsideAGroupWhichOptionTheyBelongTo()
     {
         StubConsideration innerConsideration = new(WeightValues.Neutral);
         GroupConsideration nestedGroup = new([innerConsideration]);

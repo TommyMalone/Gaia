@@ -109,7 +109,8 @@ public class FloatSequenceWeightFunctionSpec
         FloatSequenceWeightFunction weightFunction = new(WeightValues.Vetoed);
         weightFunction.RandomSource = new FixedRandomSource(0.9f);
 
-        // Threshold is ThresholdMin, 50, until the entry joins a function, so 100 falls past it.
+        // Threshold is ThresholdMin, 50, until the entry joins a function. An input of 100 is above 50 and at or below
+        // the 140 the roll gives, so the in-range weights it gets below show the roll has moved the threshold.
         Assert.That(_randomizedEntry.Threshold, Is.EqualTo(50f));
 
         weightFunction.AddEntry(_randomizedEntry);
@@ -151,9 +152,10 @@ public class FloatSequenceWeightFunctionSpec
     }
 
     [Test]
-    public void RejectsAnEntryOutOfOrder()
+    public void ThrowsForAnEntryAddedOutOfOrder()
     {
-        // The entries are tested first to last, so one added out of order would shadow everything after it.
+        // The entries are tested first to last, so an entry whose threshold is below the one before it would never
+        // answer, since the entries before it already take every input at or below its threshold.
         FloatSequenceEntry earlierEntry = new(100f, _inRangeWeights);
 
         Assert.That(() => _weightFunction.AddEntry(earlierEntry), Throws.ArgumentException);
@@ -169,7 +171,7 @@ public class FloatSequenceWeightFunctionSpec
     }
 
     [Test]
-    public void RejectsARolledRangeThatOverlapsTheEntryBefore()
+    public void ThrowsForARolledRangeThatOverlapsTheEntryBefore()
     {
         // An entry rolling between 250 and 350 would sometimes land below the 300 entry and sometimes above it.
         FloatSequenceEntry overlappingEntry = new(250f, 350f, WeightValues.Vetoed);
@@ -178,7 +180,7 @@ public class FloatSequenceWeightFunctionSpec
     }
 
     [Test]
-    public void RejectsAnEntryThatCouldRollBelowTheRangeBefore()
+    public void ThrowsForAnEntryThatCouldRollBelowTheRangeBefore()
     {
         FloatSequenceWeightFunction weightFunction = new(WeightValues.Vetoed);
 
@@ -195,7 +197,7 @@ public class FloatSequenceWeightFunctionSpec
     }
 
     [Test]
-    public void RejectsARangeWhoseMaximumIsBelowItsMinimum()
+    public void ThrowsForARangeWhoseMaximumIsBelowItsMinimum()
     {
         Assert.That(() => new FloatSequenceEntry(150f, 50f, _inRangeWeights), Throws.ArgumentException);
     }
@@ -484,7 +486,7 @@ public class FloatSequenceWeightFunctionSpec
     }
 
     [Test]
-    public void RefusesARangeWhoseMaxIsBelowItsMin()
+    public void RefusesARangeWhoseMaximumIsBelowItsMinimum()
     {
         const string snippet = """
                                <WeightFunction Type="FloatSequence">

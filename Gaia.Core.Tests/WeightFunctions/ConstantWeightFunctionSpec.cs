@@ -75,8 +75,6 @@ public class ConstantWeightFunctionSpec
     [Test]
     public void ContributesNothingBeforeAnythingSetsIt()
     {
-        // The struct's own default would be a multiplier of 0 and a rank of 0, a veto that also claims a rank
-        // above the identity, which is not what a function the host never configured should report.
         ConstantWeightFunction built = new();
 
         Assert.That(built.CalculateFloat(1f), Is.EqualTo(WeightValues.Neutral));
@@ -168,8 +166,8 @@ public class ConstantWeightFunctionSpec
     [Test]
     public void RefusesANegativeMultiplier()
     {
-        // Two multipliers of -1 would cancel to a positive weight and turn strongly discouraged into selected, so a
-        // negative multiplier is refused where text becomes values.
+        // Two multipliers of -1 would cancel to a positive weight, so a negative multiplier is refused where text
+        // becomes values.
         const string snippet = """
                                <WeightFunction Type="Constant" Multiplier="-1"/>
                                """;

@@ -96,16 +96,16 @@ public class WeightValuesSpec
         {
             Assert.That(WeightValues.Neutral.Addend, Is.EqualTo(0f), "the summing identity");
             Assert.That(WeightValues.Neutral.Multiplier, Is.EqualTo(1f), "the multiplying identity");
-            Assert.That(WeightValues.Neutral.Rank, Is.EqualTo(float.MinValue), "beneath every real rank");
+            Assert.That(WeightValues.Neutral.Rank, Is.EqualTo(float.MinValue), "beneath every configured rank");
         });
     }
 
     [Test]
-    public void ReportsNoRankAsNeutralAndVetoed()
+    public void GivesNeutralAndVetoedNoRank()
     {
         Assert.Multiple(() =>
         {
-            Assert.That(WeightValues.NoRank, Is.EqualTo(float.MinValue), "beneath every real rank");
+            Assert.That(WeightValues.NoRank, Is.EqualTo(float.MinValue), "beneath every configured rank");
             Assert.That(WeightValues.Neutral.Rank, Is.EqualTo(WeightValues.NoRank));
             Assert.That(WeightValues.Vetoed.Rank, Is.EqualTo(WeightValues.NoRank));
         });

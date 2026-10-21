@@ -7,9 +7,9 @@ namespace Gaia.Core.Tests.Spatial;
 ///     equality.
 /// </summary>
 /// <remarks>
-///     The rotations under test are built from single-axis half-angle quaternions and combined with a hand-rolled
-///     Hamilton product at the bottom of the fixture, so the Euler report and FromEulerAngles are each checked against an
-///     independent construction, and one test besides closes the round trip by feeding the report back into the
+///     The rotations under test are built from single-axis half-angle quaternions and combined with a Hamilton
+///     product written out at the bottom of the fixture, so the Euler report and FromEulerAngles are each checked against
+///     an independent construction, and one test besides closes the round trip by feeding the report back into the
 ///     construction. Angle and direction asserts are tolerant because the trigonometry does not come out exact in floats.
 /// </remarks>
 [TestFixture]
@@ -114,7 +114,7 @@ public class RotationSpec
     }
 
     [Test]
-    public void FoldsRollIntoYawWhenPointingStraightDown()
+    public void CombinesRollIntoYawWhenPointingStraightDown()
     {
         // Pitched a quarter turn down, the roll axis lies along the world vertical, where rolling turns against the
         // yaw. A yaw of 30 and a roll of 20 amount to one turn of 10, reported entirely as yaw.
@@ -125,7 +125,7 @@ public class RotationSpec
     }
 
     [Test]
-    public void BuildsTheSameTurnTheHandRolledProductComposes()
+    public void BuildsTheTurnTheHamiltonProductOfYawPitchAndRollComposes()
     {
         // Yaw, then pitch, then roll, the order the report describes and the constructor promises to apply.
         Rotation composed = Multiply(Multiply(YawOf(30f), PitchOf(40f)), RollOf(25f));

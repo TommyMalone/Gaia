@@ -50,10 +50,11 @@ internal sealed class RecordingWeightFunction : WeightFunctionBase
         return Result;
     }
 
-    /// <summary>
-    ///     Overridden rather than left to the base, whose CalculateInt forwards to CalculateFloat, so that a spec can
-    ///     tell an int apart from a float.
-    /// </summary>
+    /// <summary>Remembers the value as LastInt, counts the call and reports Result.</summary>
+    /// <remarks>
+    ///     Overridden because the base's CalculateInt forwards to CalculateFloat, which would record the value as
+    ///     LastFloat and leave a spec unable to tell an int apart from a float.
+    /// </remarks>
     public override WeightValues CalculateInt(int value)
     {
         LastInt = value;

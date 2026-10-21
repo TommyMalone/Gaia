@@ -170,7 +170,7 @@ public class RuleBasedReasonerSpec
     }
 
     [Test]
-    public void KeepsAFinishedOptionSelectedUntilAConsiderationVetoesIt()
+    public void KeepsAFinishedOptionSelectedWhileItStaysValid()
     {
         // The reasoner takes no notice of the option's actions finishing. An action that is done the moment it runs
         // leaves its option selected, being updated every cycle, the same as one that never finishes.
@@ -195,10 +195,10 @@ public class RuleBasedReasonerSpec
     [Test]
     public void LetsAFinishedOptionEndItselfThroughItsConsiderations()
     {
-        // The Is Done pattern, cited on ExecutionHistoryConsideration. FinishedWeightFunction
-        // vetoes once the option IsDone, which is what deselects it. With nothing keeping it out afterwards, it is
-        // first valid again on the cycle after and starts over. A cooldown on SinceLastRunWeightFunction is what would
-        // hold it back.
+        // The Is Done pattern. ExecutionHistoryConsideration's FinishedWeightFunction vetoes once the option's IsDone
+        // is true, which is what deselects it. With no SinceLastRunWeightFunction to veto it afterwards, it is valid
+        // again on the next cycle and, being added first, is selected over the fallback and starts over. A cooldown on
+        // SinceLastRunWeightFunction is what would hold it back.
         ManualTimeSource timeSource = new();
         ConstantWeightFunction vetoWhenFinished = new() { Weights = WeightValues.Vetoed };
 
@@ -305,7 +305,7 @@ public class RuleBasedReasonerSpec
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Warning  Line 2, the Option element's fixed values sum to a weight of 0 or less, a reasoner that selects by weight can never select it",
-            }), "the vetoing tuning is the deliberate off switch shape, which accepts its one warning");
+            }), "a Tuning with Multiplier 0 is one way a file switches an option off, so the one warning is expected");
 
             loaded.Enable();
             loaded.Update();

@@ -15,9 +15,11 @@ namespace Gaia.Core.Tests.Factories;
 
 /// <summary>Covers <see cref="GaiaLoader" />, the brains it builds and the loads it refuses.</summary>
 /// <remarks>
-///     A whole brain loading and running lives in <see cref="Integration.LoadedSniperSpec" />, which loads the sniper
-///     through this surface. What is covered here is the loader's own contract, a refused load reported under the source
-///     name and the seed reported when the host supplies no random source.
+///     A whole brain loading and running lives in <see cref="Integration.LoadedSniperSpec" /> and
+///     <see cref="Integration.LoadedGuardSpec" />, which load the sniper and the guard through this surface. The brains
+///     loaded here hold a single reasoner and none is run, so what these tests assert is the loader's own behavior rather
+///     than any brain's decisions. That is what it refuses and reports, what it attaches to each brain and the stream it
+///     gives each one.
 /// </remarks>
 [TestFixture]
 public class GaiaLoaderSpec
@@ -149,7 +151,7 @@ public class GaiaLoaderSpec
     }
 
     [Test]
-    public void StampsItsFaultPolicyOnEveryBrainItLoads()
+    public void SetsItsFaultPolicyOnEveryBrainItLoads()
     {
         const string snippet = """
                                <Brain>
@@ -317,7 +319,7 @@ public class GaiaLoaderSpec
             Assert.That(firstReasoner.RandomSource, Is.Not.SameAs(masterStream),
                 "the master seeds streams rather than being handed out");
             Assert.That(firstReasoner.RandomSource, Is.Not.SameAs(secondReasoner.RandomSource),
-                "one character's draws never shift another's");
+                "one character's rolls never shift another's");
             Assert.That(firstReasoner.RandomSource.NextFloat(), Is.Not.EqualTo(secondReasoner.RandomSource.NextFloat()),
                 "the two sources were seeded from different draws of the master, so their streams differ");
         });

@@ -101,7 +101,7 @@ public class Vector2Spec
             Assert.That(edge.Perpendicular, Is.EqualTo(new Vector2(-1f, 2f)));
             Assert.That(Vector2.Dot(edge, edge.Perpendicular), Is.EqualTo(0f), "a quarter turn is at right angles");
             Assert.That(Vector2.Dot(edge.Perpendicular, point), Is.EqualTo(Vector2.Cross(edge, point)),
-                "which is why a containment test can ask either way");
+                "the dot with the perpendicular is the cross product, so the sign of either says which side of the edge the point lies on");
         });
     }
 }

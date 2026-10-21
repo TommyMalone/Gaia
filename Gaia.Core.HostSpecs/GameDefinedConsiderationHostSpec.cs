@@ -15,23 +15,15 @@ namespace Gaia.Core.HostSpecs;
 
 /// <summary>
 ///     Proves a game-defined consideration built against the public surface alone can hold a game-defined weight
-///     function and score an option with it.
+///     function and score an option with it. The same surface lets the loader build the components a game registers,
+///     holding each element to the description registered with its type, and lets a game's own group pass its option to
+///     the considerations it holds.
 /// </summary>
 /// <remarks>
 ///     The shipped weight functions are made by loading, so a consideration assembled in code brings a function of
-///     the game's own. What is covered here is a derived consideration that sets its own WeightFunction and hands its
-///     distance to the function's CalculateFloat. The option's weight comes from its default tuning consideration, and the
-///     function's neutral values or veto decide whether the option is selected.
-///     SelectsAnOptionBuiltFromComponentsThatWriteNoOnInit covers the other way a game reaches the bases, a consideration,
-///     a weight function, a target and an action the loader builds, each of which overrides only what it answers with.
-///     RefusesAChildOfAComponentThatWritesNoOnInit covers what the factory does with a child element such a component's
-///     description has no slot for. LoadsAGameWeightedConsiderationThroughTheSharedSlot covers a game's weighted
-///     consideration adding the WeightFunction slot its base reads. PassesItsOptionToTheConsiderationsAGameGroupHolds
-///     covers a game's own group, which passes its option to what it holds through OnAttach and AttachChild, and
-///     PassesItsOptionThroughAGameGroupHeldByAnother covers a game's group held by another, where AttachChild runs the
-///     held group's OnAttach, so the option reaches what the held group holds. LoadsAGameGroupThatDerivesTheGroupBase
-///     covers a game's group built on GroupConsiderationBase, loaded through the shared slot, reading an attribute of its
-///     own, combining by its own rule and counting the Tuning it holds.
+///     the game's own. The reasoner the setup assembles holds a derived consideration that sets its own WeightFunction and
+///     hands its distance to the function's CalculateFloat. The option's weight comes from its default tuning
+///     consideration, and the function's neutral values or veto decide whether the option is selected.
 /// </remarks>
 [TestFixture]
 public class GameDefinedConsiderationHostSpec
@@ -158,7 +150,7 @@ public class GameDefinedConsiderationHostSpec
     }
 
     [Test]
-    public void LoadsAGameWeightedConsiderationThroughTheSharedSlot()
+    public void LoadsAGameWeightedConsiderationThroughTheWeightFunctionSlotItsBaseReads()
     {
         ListLogSink logSink = new();
 

@@ -13,8 +13,7 @@ namespace Gaia.Core.Tests.Services.Diagnostics;
 /// <remarks>
 ///     Histories are driven through the internal recording surface the monitor uses, so a test says what is in one
 ///     without running a brain. The brain test is the exception and runs one, since the order its reasoners come out in is
-///     the walk's rather than this writer's. Each test writes into a StringWriter of its own, which holds a StringBuilder
-///     and nothing else, so there is no teardown here and no state carried between tests.
+///     the walk's rather than this writer's.
 /// </remarks>
 [TestFixture]
 public class DecisionHistoryWriterSpec

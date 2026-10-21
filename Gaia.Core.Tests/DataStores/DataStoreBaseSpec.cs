@@ -495,7 +495,7 @@ public class DataStoreBaseSpec
             Assert.That(_logSink.Entries, Is.EqualTo(new[]
             {
                 "Warning Guard the Ammo name was written as Int and used as Float",
-            }), "the report survives every build and each name warns once");
+            }), "each name warns once");
         });
     }
 

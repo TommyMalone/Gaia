@@ -98,7 +98,7 @@ public class FactorySetSpec
     private RecordingLogSink _logSink;
 
     [Test]
-    public void EnumeratesEachAbstractionInRegistrationOrder()
+    public void ListsEachAbstractionsTypesInRegistrationOrder()
     {
         FactorySet factories = new();
 
@@ -308,8 +308,8 @@ public class FactorySetSpec
     [Test]
     public void LoadsAnOriginTargetOnEveryRegion()
     {
-        // The target is written first, as the design's wedge writes it, so a reader of the shape's own children that
-        // stops at the first child that is not its own reads none of them.
+        // The target is written first, so a reader of the shape's own children that stops at the first child that is
+        // not its own reads none of them.
         AssertEachLoadsItsOriginTarget(BuiltInRegions, OriginTargetChild, "");
     }
 
@@ -518,9 +518,11 @@ public class FactorySetSpec
     [Test]
     public void RefusesAMissingRequiredAttributeInEveryRegion()
     {
-        // Origin, Rotation, Scale and the two flags are optional on every shape, so a bare round shape names Radius.
-        // The capsule and the cylinder name HalfHeight once given a Radius, the extruded polygon names HalfHeight, the
-        // box and the rectangle name Extents, and the sector names Angle, then Range, then HalfHeight.
+        // Origin, Rotation, Scale and the two flags are optional on every shape, so none of them is the attribute a
+        // bare element is refused for. The circle, the sphere, the capsule and the cylinder name Radius, and the
+        // capsule and the cylinder name HalfHeight once given a Radius. The extruded polygon names HalfHeight, the
+        // box and the rectangle name Extents, and the sector names Angle, then Range once given an Angle, then
+        // HalfHeight.
         AssertMissingAttributeRefused("Region", new[]
         {
             ("Box", "", "Extents"), ("Capsule", "", "Radius"), ("Capsule", " Radius=\"2\"", "HalfHeight"),
