@@ -56,9 +56,10 @@ namespace Gaia.Core.Spatial
 
         /// <summary>The cross product of two vectors, which in two dimensions is a number rather than a vector.</summary>
         /// <remarks>
-        ///     The signed area of the parallelogram the two span, which is the Z component of the three-dimensional cross
-        ///     product of the same two vectors laid in a plane. It is positive when right lies counterclockwise of left, so its
-        ///     sign is which side of left the other falls on.
+        ///     The signed area of the parallelogram the two vectors span. It equals the Z component of the three-dimensional
+        ///     cross product of the same two vectors, each given a Z of 0. It is positive when right lies counterclockwise of
+        ///     left, negative when right lies clockwise of left, and 0 when the two are parallel, so the sign identifies the side
+        ///     of left on which right lies.
         /// </remarks>
         public static float Cross(Vector2 left, Vector2 right)
         {

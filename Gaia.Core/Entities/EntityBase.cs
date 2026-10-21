@@ -6,8 +6,8 @@ namespace Gaia.Core.Entities
 {
     /// <summary>Something in the world that the AI can reason about.</summary>
     /// <remarks>
-    ///     Name, Position, Rotation, Scale and IsValid are written by the game from outside this assembly, every tick in
-    ///     the case of Position, Rotation and Scale, so their setters are public where a configured value's would be internal.
+    ///     The game writes Name, Position, Rotation, Scale and IsValid from outside this assembly, so their setters are
+    ///     public.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.4.3</seealso>
     public abstract class EntityBase : DataStoreBase

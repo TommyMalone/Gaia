@@ -10,26 +10,14 @@ namespace Gaia.Core.Regions
     /// <remarks>
     ///     <para>
     ///         Containment is one dot product per plane with no ray casting, since a position is inside a convex volume
-    ///         exactly when it is behind every plane. A normal pointing the wrong way turns the hull inside out, and a
-    ///         symmetric hull hides that, so a test should include a shape that is not symmetric.
+    ///         exactly when it is behind every plane. Neither OnInit nor AddPlane checks which way a normal faces. A plane
+    ///         whose normal points into the volume has the volume in front of it, so IsInRegion rejects the positions the hull
+    ///         was meant to hold and accepts only those past that plane that the other planes allow.
     ///     </para>
     ///     <para>
     ///         The planes are written in the hull's own coordinates, each Distance measured along its normal from Origin, so
     ///         a hull left at the world's origin, unturned and unscaled, reads them as world planes. Nothing about the hull is
     ///         stored in the world's coordinates, so moving or turning it changes no plane and no bound.
-    ///     </para>
-    ///     <para>
-    ///         Random positions are guessed inside the box around the hull's corners, in its own coordinates, and the first
-    ///         one behind every plane is kept. The box is worked out from the hull's own corners, which are wherever three of
-    ///         its planes meet at a point that is behind all the others. EnsureBounds does that once, the first time it is
-    ///         needed after AddPlane, since it visits every triple of planes.
-    ///     </para>
-    ///     <para>
-    ///         Planes alone can describe an unbounded volume, such as a slab between two parallel planes, and a volume with
-    ///         no corners at all has no box, so TryGetRandomPosition fails. A volume that is open on one side but still has
-    ///         corners, such as a box with no lid, cannot be told apart from a closed one by its corners. Its box covers only
-    ///         the closed part, so samples come from there. That is a misconfiguration rather than something the region can
-    ///         report.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
@@ -163,6 +151,17 @@ namespace Gaia.Core.Regions
         }
 
         /// <inheritdoc />
+        /// <remarks>
+        ///     <para>
+        ///         The point is guessed inside the box <see cref="TryGetLocalBounds" /> finds, in the hull's own coordinates,
+        ///         and the first guess behind every plane is kept.
+        ///     </para>
+        ///     <para>
+        ///         A hull whose planes meet at no corner has no box, so the pick fails. A hull open on one side can still have
+        ///         corners, and then its box spans those corners alone, so every guess comes from the closed end. A box with no
+        ///         lid is one. Its corners do not show that it is open, so the region cannot report the mistake.
+        ///     </para>
+        /// </remarks>
         protected override bool TryGetRandomLocalPosition(out Vector3 local)
         {
             if (!TryGetLocalBounds(out Vector3 min, out Vector3 max))
@@ -221,8 +220,7 @@ namespace Gaia.Core.Regions
         {
             // Each plane is the equation Dot(Normal, point) = Distance, so a meeting point solves three linear
             // equations at once with the cited closed form. The determinant is zero when the normals are coplanar,
-            // which is when two of the planes are parallel or all three share a line, and then no single meeting
-            // point exists.
+            // and then the planes have no single meeting point.
             Vector3 secondCrossThird = Vector3.Cross(second.Normal, third.Normal);
             float determinant = Vector3.Dot(first.Normal, secondCrossThird);
 

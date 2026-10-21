@@ -4,7 +4,6 @@ using Gaia.Core.Spatial;
 namespace Gaia.Core.Regions
 {
     /// <summary>A footprint of any shape in its own plane, one ring of corners in either winding, which ignores height.</summary>
-    /// <remarks>A random position lies in the footprint's own plane.</remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class PolygonRegion : PolygonRegionBase
     {
@@ -24,6 +23,7 @@ namespace Gaia.Core.Regions
         }
 
         /// <inheritdoc />
+        /// <remarks>The point lies in the footprint's own plane, since the footprint ignores height.</remarks>
         protected override bool TryGetRandomLocalPosition(out Vector3 local)
         {
             if (!TryGetRandomFootprintPoint(out Vector2 point))

@@ -5,11 +5,7 @@ using Gaia.Core.Specifications;
 namespace Gaia.Core.Targets
 {
     /// <summary>A fixed position, written into the configuration or set by the host.</summary>
-    /// <remarks>
-    ///     <see cref="TargetBase.HasEntity" /> is always false and <see cref="TargetBase.IsValid" /> is always true.
-    ///     Section 8.5.5 leaves it to the author not to use one where an entity is needed, and HasEntity is how a component
-    ///     can check.
-    /// </remarks>
+    /// <remarks><see cref="TargetBase.HasEntity" /> is always false and <see cref="TargetBase.IsValid" /> is always true.</remarks>
     /// <seealso>"Modular AI", Section 8.5.5</seealso>
     public sealed class PositionTarget : TargetBase
     {

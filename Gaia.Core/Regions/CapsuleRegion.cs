@@ -7,17 +7,10 @@ namespace Gaia.Core.Regions
 {
     /// <summary>A ball swept along a segment on its own up axis, which takes height into account.</summary>
     /// <remarks>
-    ///     <para>
-    ///         HalfHeight is half the capsule's full height, caps included, so the segment runs along local Y from Radius -
-    ///         HalfHeight to HalfHeight - Radius. A position is inside if it is within Radius of the nearest point of the
-    ///         segment, which caps the ends with hemispheres rather than cutting them flat. A HalfHeight under Radius leaves
-    ///         no segment, and the capsule is the ball of Radius.
-    ///     </para>
-    ///     <para>
-    ///         A random position is found by guessing inside the box around the capsule and keeping the first guess inside
-    ///         it, as for <see cref="SphereRegion" />. A capsule fills at least as much of its box as a ball fills of its
-    ///         cube, since a HalfHeight of Radius leaves exactly that ball, so the attempts are no more likely to run out.
-    ///     </para>
+    ///     HalfHeight is half the capsule's full height, caps included, so for a HalfHeight of at least Radius the
+    ///     segment runs along local Y from Radius - HalfHeight to HalfHeight - Radius, and a smaller HalfHeight leaves no
+    ///     segment, so the capsule is the ball of Radius. A position is inside if it is within Radius of the nearest point of
+    ///     the segment, which caps the ends with hemispheres rather than cutting them flat.
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class CapsuleRegion : RegionBase
@@ -78,6 +71,12 @@ namespace Gaia.Core.Regions
         }
 
         /// <inheritdoc />
+        /// <remarks>
+        ///     Guesses inside the box around the capsule and keeps the first guess inside it, as <see cref="SphereRegion" />
+        ///     does. A capsule is a ball of the same Radius cut in half with a cylinder between the halves, and a cylinder fills
+        ///     more of its box than a ball fills of its cube. A capsule therefore fills at least as much of its box as a ball
+        ///     fills of its cube, so the attempts are no more likely to run out than for a SphereRegion.
+        /// </remarks>
         protected override bool TryGetRandomLocalPosition(out Vector3 local)
         {
             Vector3 reach = new(Radius, MathF.Max(HalfHeight, Radius), Radius);

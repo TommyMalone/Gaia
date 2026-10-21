@@ -3,18 +3,15 @@
 namespace Gaia.Core.Entities
 {
     /// <summary>Something a character knows about and should consider reacting to.</summary>
-    /// <remarks>
-    ///     Section 8.4.3.5 names enemy characters alongside explosions and bullet impacts, so a threat always has a
-    ///     position but only sometimes has an entity behind it. Threats live on the <see cref="BrainBlackboard" /> like
-    ///     contacts.
-    /// </remarks>
+    /// <remarks>Threats live on the <see cref="BrainBlackboard" /> of the brain that holds them, as contacts do.</remarks>
     /// <seealso>"Modular AI", Section 8.4.3.5</seealso>
     public class Threat : EntityBase
     {
         /// <summary>The entity this threat came from, or null if it has none, such as an explosion.</summary>
         /// <remarks>
-        ///     The position is the threat's own rather than being read through the source, because the point a round landed
-        ///     is not where the shooter is, and because it has to survive the source going away.
+        ///     The host writes the threat's <see cref="EntityBase.Position" /> separately from the source's, so for a bullet
+        ///     impact it holds the point where the round landed rather than the shooter's position. It stays the same when the
+        ///     source becomes invalid or Source is set to null.
         /// </remarks>
         public EntityBase? Source { get; set; }
 

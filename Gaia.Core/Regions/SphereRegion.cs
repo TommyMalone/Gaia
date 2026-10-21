@@ -5,14 +5,7 @@ using Gaia.Core.Specifications;
 namespace Gaia.Core.Regions
 {
     /// <summary>A ball around an origin, which takes height into account.</summary>
-    /// <remarks>
-    ///     <para>A turn leaves the ball as it was, and a Scale that differs along its axes stretches it into an ellipsoid.</para>
-    ///     <para>
-    ///         A random position is found by guessing inside the cube around the ball and keeping the first guess inside the
-    ///         ball, so it can fail, though a ball fills over half its cube and <see cref="MathHelpers.MaxSampleAttempts" />
-    ///         is generous.
-    ///     </para>
-    /// </remarks>
+    /// <remarks>A turn leaves the ball as it was, and a Scale that differs along its axes stretches it into an ellipsoid.</remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class SphereRegion : RegionBase
     {
@@ -47,6 +40,11 @@ namespace Gaia.Core.Regions
         }
 
         /// <inheritdoc />
+        /// <remarks>
+        ///     Guesses inside the cube around the ball and keeps the first guess inside it. The pick fails when the attempts
+        ///     <see cref="RegionBase.TryRejectionSample" /> makes run out, which is unlikely, since a ball fills over half its
+        ///     cube.
+        /// </remarks>
         protected override bool TryGetRandomLocalPosition(out Vector3 local)
         {
             Vector3 reach = new(Radius, Radius, Radius);

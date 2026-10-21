@@ -5,7 +5,6 @@ using Gaia.Core.Spatial;
 namespace Gaia.Core.Regions
 {
     /// <summary>A box around its Origin, reaching Extents along its own right, up and forward.</summary>
-    /// <remarks>TryGetRandomLocalPosition never fails, since every point of the box is inside it.</remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class BoxRegion : RegionBase
     {
@@ -66,6 +65,7 @@ namespace Gaia.Core.Regions
         }
 
         /// <inheritdoc />
+        /// <remarks>Never fails, since the point is picked inside Extents directly rather than guessed and checked.</remarks>
         protected override bool TryGetRandomLocalPosition(out Vector3 local)
         {
             local = MathHelpers.RandomInBox(RandomSource, Vector3.Zero - Extents, Extents);

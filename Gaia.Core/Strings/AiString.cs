@@ -6,8 +6,7 @@ namespace Gaia.Core.Strings
     /// <remarks>
     ///     <para>
     ///         The text is hashed once in the constructor, so a comparison is a single integer test and a lookup never walks
-    ///         the characters. The text is lower cased before hashing, which makes every comparison case insensitive. The
-    ///         original text is kept by <see cref="AiStringTable" /> for debug output.
+    ///         the characters. The text is lower cased before hashing, which makes every comparison case insensitive.
     ///     </para>
     ///     <para>A default AiString, which a field or an out parameter holds before anything assigns it, is Empty.</para>
     /// </remarks>

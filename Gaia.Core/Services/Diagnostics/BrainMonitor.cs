@@ -8,19 +8,17 @@ using Gaia.Core.Strings;
 namespace Gaia.Core.Services.Diagnostics
 {
     /// <summary>
-    ///     Watches one brain, keeping the cycle every reasoner monitor in its tree stamps its records with, and the
-    ///     monitors themselves in tree order.
+    ///     Watches one brain. Holds the monitor on each of its reasoners, in tree order, and the cycle count those
+    ///     monitors stamp their recorded cycles with.
     /// </summary>
     /// <remarks>
     ///     <para>
     ///         A host attaches one through <see cref="Brains.Brain.Monitor" />, and <see cref="Factories.GaiaLoader" />
-    ///         attaches one to every brain it loads when it carries a <see cref="MonitorSettings" />. Attaching walks the
-    ///         tree, the root reasoner, its options, and the reasoners their subreasoner actions hold, and gives each reasoner
-    ///         a <see cref="ReasonerMonitor" /> of this monitor's own, so a nested reasoner's history is read through
-    ///         <see cref="ReasonerMonitors" /> without the tree being opened to the host. A monitor this one already made is
-    ///         kept along with what it has recorded, and any other is replaced, so a monitor a host attached by hand does not
-    ///         survive attaching a brain monitor. The walk runs again when the brain is enabled, so a tree finished after
-    ///         attaching is still covered.
+    ///         attaches one to every brain it loads when it carries a <see cref="MonitorSettings" />. Each reasoner in the
+    ///         tree gets a <see cref="ReasonerMonitor" /> of this monitor's own, and <see cref="ReasonerMonitors" /> lists
+    ///         them with their paths, so a nested reasoner's history is read without walking the tree. A monitor a host
+    ///         attached to a reasoner by hand is replaced, so it does not survive attaching a brain monitor. Attaching runs
+    ///         again when the brain is enabled, so a tree finished after attaching is still covered.
     ///     </para>
     ///     <para>
     ///         The brain's cycle is what lines the histories up. A nested reasoner runs only while its option is selected

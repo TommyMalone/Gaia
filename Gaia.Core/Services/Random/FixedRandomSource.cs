@@ -15,12 +15,12 @@ namespace Gaia.Core.Services.Random
         {
         }
 
-        /// <summary>Creates a source that answers every ask with the given value.</summary>
+        /// <summary>Creates a source whose NextFloat always returns the given value.</summary>
         /// <param name="value">
         ///     The value NextFloat returns. Should be in the range [0, 1), the range
         ///     <see cref="IRandomSource.NextFloat" /> promises. The bounded NextInt overloads return it truncated to an int and
         ///     clamped into their range, and the parameterless NextInt returns it truncated, so a value in [0, 1) makes every one
-        ///     of them return its lower bound.
+        ///     of them return 0 clamped into its range.
         /// </param>
         public FixedRandomSource(float value)
         {

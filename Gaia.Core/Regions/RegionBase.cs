@@ -11,23 +11,13 @@ namespace Gaia.Core.Regions
     /// <summary>An area of the world that a configuration can name, such as a kill zone or a line of retreat.</summary>
     /// <remarks>
     ///     <para>
-    ///         A region answers two questions, whether a position is inside it and where a random position inside it would
-    ///         be. The second is allowed to fail, because a shape that has to guess and check can run out of attempts, and the
-    ///         caller has to be told rather than handed a position outside the region.
-    ///     </para>
-    ///     <para>
     ///         Every shape is described in its own coordinates, as the same shape standing unturned at the world's origin
     ///         would be, and Origin, Rotation and Scale place it in the world, or inside its target's transform while it
     ///         follows OriginTarget.
     ///     </para>
     ///     <para>
-    ///         RandomSource is injected the same way it is for <see cref="DualUtilityReasoner" />, so a test can make
-    ///         sampling deterministic.
-    ///     </para>
-    ///     <para>
-    ///         Regions are built in code as well as loaded, so their values and RandomSource are public and a host may build
-    ///         its shapes in code, the way a game sorts contacts into the entity lists its considerations read. Loading fills
-    ///         the same members.
+    ///         A host may build a region in code rather than load it, so each shape's settings and RandomSource are set
+    ///         through public members. Loading fills the same members.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.6, Listing 8.6</seealso>
@@ -176,6 +166,10 @@ namespace Gaia.Core.Regions
         public TargetBase? OriginTarget { get; set; }
 
         /// <summary>Where the region draws the numbers that pick a random position.</summary>
+        /// <remarks>
+        ///     Set as <see cref="DualUtilityReasoner.RandomSource" /> is, so a test gives it a seeded source and the
+        ///     positions it picks are deterministic.
+        /// </remarks>
         public IRandomSource RandomSource { get; set; } = new Xoshiro128RandomSource();
 
         /// <summary>
@@ -334,6 +328,11 @@ namespace Gaia.Core.Regions
         }
 
         /// <summary>Picks a random position inside the region.</summary>
+        /// <remarks>
+        ///     The pick fails when a shape that guesses and checks runs out of attempts, when a footprint or a hull has
+        ///     nothing to pick from, when OriginTarget cannot give its transform, and when a component of the shape's scale in the
+        ///     world is zero. The caller is told rather than handed a position outside the region.
+        /// </remarks>
         /// <returns>True if a position was found. Some shapes can fail, and then the position is unspecified.</returns>
         public bool TryGetRandomPosition(out Vector3 position)
         {

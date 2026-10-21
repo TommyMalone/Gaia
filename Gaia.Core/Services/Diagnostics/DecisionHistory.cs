@@ -15,14 +15,12 @@ namespace Gaia.Core.Services.Diagnostics
     ///     </para>
     ///     <para>
     ///         All storage is allocated at construction and written in place, so recording costs no allocation however long
-    ///         it runs. Once the ring is full each new cycle overwrites the oldest, and a cycle with more options than
-    ///         OptionCapacity records the first OptionCapacity of them.
+    ///         it runs.
     ///     </para>
     ///     <para>
-    ///         That storage is the cost of attaching one. The default capacities cost 56 KiB per history, 57,344 bytes
-    ///         across the two arrays, a figure DecisionHistorySpec measures. A host that attaches one to every reasoner of
-    ///         five hundred characters pays that once per reasoner, most of it recording nothing that is read. Monitors are
-    ///         for the brains under investigation.
+    ///         That storage is the cost of attaching one. At the default capacities the two arrays cost 56 KiB per history,
+    ///         allocated whether or not anything reads them, so a monitor is meant for the brains under investigation rather
+    ///         than every brain a host runs. DecisionHistorySpec measures that figure.
     ///     </para>
     /// </remarks>
     public sealed class DecisionHistory
@@ -34,10 +32,6 @@ namespace Gaia.Core.Services.Diagnostics
         private int _recordsInOpenCycle;
 
         /// <summary>Creates a history holding the given number of cycles of the given number of options each.</summary>
-        /// <remarks>
-        ///     <see cref="MonitorSettings" /> refuses the same two values, and a <see cref="ReasonerMonitor" /> builds its
-        ///     history from settings, so the refusal here is for a history built directly, which the public constructor allows.
-        /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException">cycleCapacity or optionCapacity is below 1.</exception>
         public DecisionHistory(int cycleCapacity = 256, int optionCapacity = 8)
         {
@@ -69,16 +63,23 @@ namespace Gaia.Core.Services.Diagnostics
         /// <summary>How many cycles are currently recorded, from 0 up to CycleCapacity.</summary>
         public int CycleCount { get; private set; }
 
-        /// <summary>
-        ///     One recorded cycle, by age. An age of 0 is the newest cycle and CycleCount - 1 the oldest. Ages outside that
-        ///     range are not checked.
-        /// </summary>
+        /// <summary>One recorded cycle, by age. An age of 0 is the newest cycle and CycleCount - 1 the oldest.</summary>
+        /// <remarks>
+        ///     The age is not checked. An age from CycleCount to CycleCapacity - 1 reads a slot nothing has written, a
+        ///     default DecisionCycle. A larger age wraps around the ring, so it reads the cycle CycleCapacity younger than it
+        ///     names, until the slot it works out is below 0, where the array throws IndexOutOfRangeException, except at an age a
+        ///     whole multiple of CycleCapacity beyond the last that wraps, which works out to slot 0 and reads it.
+        /// </remarks>
         public DecisionCycle GetCycle(int age)
         {
             return _cycles[CycleSlot(age)];
         }
 
-        /// <summary>One option's record within the cycle of the given age, by position. Neither argument is checked.</summary>
+        /// <summary>One option's record within the cycle of the given age, by position.</summary>
+        /// <remarks>
+        ///     Neither argument is checked. The age reads as GetCycle reads it, and an optionIndex of OptionCapacity or more
+        ///     reads the records of the slots after it in the array, or throws IndexOutOfRangeException past its end.
+        /// </remarks>
         public DecisionRecord GetRecord(int age, int optionIndex)
         {
             return _records[CycleSlot(age) * OptionCapacity + optionIndex];

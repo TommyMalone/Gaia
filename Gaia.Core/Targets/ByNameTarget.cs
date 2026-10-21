@@ -14,8 +14,8 @@ namespace Gaia.Core.Targets
     /// <remarks>
     ///     <para>
     ///         The chapter's ByName target searches the actors or the contacts depending on its configuration. Its contacts
-    ///         already live on the brain's blackboard, while its actors are held by a manager singleton, and there are no
-    ///         singletons here. Both cases therefore read the same way, as a data store and the name of an entity list on it,
+    ///         already live on the brain's blackboard, while its actors are held by a manager singleton, and there is no
+    ///         manager here. Both cases therefore read the same way, as a data store and the name of an entity list on it,
     ///         which is the same pair <see cref="EntityExistsConsideration" /> reads. A contact list on the
     ///         <see cref="BrainBlackboard" /> and an actor list on the <see cref="WorldBlackboard" /> are the two cases the
     ///         chapter describes.
@@ -23,7 +23,8 @@ namespace Gaia.Core.Targets
     ///     <para>
     ///         Find runs on every ask rather than once. An entity can leave the list, or be replaced by a new one under the
     ///         same name, and a cached reference would keep pointing at the old one. An entity that is in the list but no
-    ///         longer valid is skipped, so IsValid is false rather than Entity handing back a corpse.
+    ///         longer valid is skipped, so Entity is the first valid entity of the name further along the list, and when there
+    ///         is none IsValid is false and Entity is null rather than that entity.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.5.5</seealso>

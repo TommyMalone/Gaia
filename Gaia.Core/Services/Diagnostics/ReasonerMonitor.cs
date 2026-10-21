@@ -14,13 +14,13 @@ namespace Gaia.Core.Services.Diagnostics
     ///     <para>
     ///         A monitor is engineer-facing and is attached from code, never from configuration. A
     ///         <see cref="Diagnostics.BrainMonitor" /> makes one for every reasoner in a brain's tree, and a host debugging a
-    ///         bare reasoner sets <see cref="ReasonerBase.Monitor" /> by hand. The reasoner calls <see cref="OnCycle" /> once
-    ///         per cycle after it has chosen, and pays one null check per cycle when it has no monitor.
+    ///         bare reasoner sets <see cref="ReasonerBase.Monitor" /> by hand.
     ///     </para>
     ///     <para>
-    ///         The monitor also names two shapes the cycle cannot refuse and loading cannot see. One is an option left done
-    ///         for a whole window with nothing ending it, and the other is a reasoner that has selected nothing for a whole
-    ///         window. The two windows are <see cref="MonitorSettings.DoneWarningWindow" /> and
+    ///         The monitor also warns about two states that the cycle allows and loading cannot detect, each of which
+    ///         usually means a mistake in the tree. One is a selected option left done for a whole window with nothing ending
+    ///         it, and the other is a reasoner with work left that has selected nothing for a whole window. The two windows
+    ///         are <see cref="MonitorSettings.DoneWarningWindow" /> and
     ///         <see cref="MonitorSettings.NothingEligibleForSelectionWarningWindow" />, so a run is watched as closely as its
     ///         host asks and a run with no monitor is not watched at all.
     ///     </para>
@@ -52,7 +52,10 @@ namespace Gaia.Core.Services.Diagnostics
         /// <summary>The ring of recent cycles this monitor has recorded.</summary>
         public DecisionHistory History { get; }
 
-        /// <summary>The brain monitor that made this one, whose cycle stamps each record, or null for a monitor attached by hand.</summary>
+        /// <summary>
+        ///     The brain monitor that made this one, whose cycle index stamps each recorded cycle, or null for a monitor
+        ///     attached by hand.
+        /// </summary>
         public BrainMonitor? BrainMonitor { get; internal set; }
 
         /// <summary>
@@ -63,9 +66,10 @@ namespace Gaia.Core.Services.Diagnostics
 
         /// <summary>Records the cycle the reasoner has just decided. Called by the reasoner after Think.</summary>
         /// <remarks>
-        ///     Everything here iterates the concrete option list and writes into storage allocated at construction, so a
-        ///     recorded cycle allocates nothing and AllocationSpec holds it to that. The truncation warning builds its line once,
-        ///     for a sink enabled at warning severity.
+        ///     Everything here iterates the concrete option list and writes into storage allocated at construction, so
+        ///     recording a cycle allocates nothing beyond its warnings, and AllocationSpec holds it to that. The truncation
+        ///     warning builds its line once, and the two window warnings build theirs on the cycle a window fills, each only when
+        ///     the sink is enabled at warning severity.
         /// </remarks>
         internal void OnCycle(ReasonerBase reasoner)
         {
@@ -133,9 +137,10 @@ namespace Gaia.Core.Services.Diagnostics
 
         /// <summary>Warns when a reasoner with work left has had options and no selection for a whole window.</summary>
         /// <remarks>
-        ///     A reasoner that ran out of work, a finished sequence, selects nothing by design until its parent ends it, so
-        ///     nothing selected is only worth a warning while there is work left. The count runs over the cycles the reasoner
-        ///     actually ran, so for a nested reasoner one window spans the activations of its option.
+        ///     A reasoner whose <see cref="ReasonerBase.IsDone" /> is true has run out of work and selects nothing by design
+        ///     until its parent ends it, so nothing selected is only worth a warning while there is work left. A
+        ///     <see cref="SequenceReasoner" /> past its last step is the library's only such reasoner. The count runs over the
+        ///     cycles the reasoner actually ran, so for a nested reasoner one window spans the activations of its option.
         /// </remarks>
         private void WarnAboutNothingSelected(ReasonerBase reasoner)
         {

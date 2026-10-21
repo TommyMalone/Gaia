@@ -12,38 +12,32 @@ namespace Gaia.Core.Services.Diagnostics
     /// <remarks>
     ///     <para>
     ///         The format is one line per thing recorded, the kind first and the fields separated by tabs, so a grep picks
-    ///         out one option's history and two dumps of two runs diff line for line. Columns are not padded, since padding
-    ///         would tie every line's bytes to the widest name and renaming one option would rewrite the whole file. Every
-    ///         line ends with a line feed alone, the way <see cref="Specifications.XmlSpecificationWriter" /> ends its lines,
-    ///         so a dump written on one platform diffs against one written on another. A name holding a tab is the one thing
-    ///         the columns cannot carry.
+    ///         out one option's history and the dumps of two runs diff line for line. Every line ends with a line feed alone,
+    ///         so a dump written on one platform diffs against one written on another. The columns cannot carry a name holding
+    ///         a tab or a line break.
     ///     </para>
     ///     <para>
-    ///         Where the text goes is the host's. A <see cref="TextWriter" /> is an abstraction over a destination rather
-    ///         than a file, so the library still opens nothing and a host writes to the file, console or buffer it already
-    ///         owns, while a spec writes into a StringWriter and reads the text back.
-    ///         <see cref="Specifications.XmlSpecificationWriter" /> returns a string instead because a specification document
-    ///         is small and is compared byte for byte, where a history is a couple of thousand lines at its default capacities
-    ///         and tens of thousands at a larger one.
+    ///         The host chooses where the text goes. The writer takes a <see cref="TextWriter" />, so the library opens no
+    ///         file and a host writes to the file, console or buffer it already owns. A history runs to a couple of thousand
+    ///         lines at the default capacities, so it is written out line by line rather than returned as one string.
     ///     </para>
     ///     <para>
-    ///         When a dump is taken matters more than where it goes. A history holds
-    ///         <see cref="DecisionHistory.CycleCapacity" /> cycles and then overwrites its oldest, 256 of them by default,
-    ///         which is about four seconds at sixty cycles a second, so the dump worth having is the one taken as a warning
-    ///         fires rather than when someone reaches for it. A warning arrives at the host's <see cref="Log.ILogSink" />,
-    ///         which is host code that already owns the destination, so a host that wants this calls the writer from its own
-    ///         sink.
+    ///         A history holds <see cref="DecisionHistory.CycleCapacity" /> cycles and then overwrites its oldest, 256 of
+    ///         them by default, which is about four seconds at sixty cycles a second, so the dump worth having is the one
+    ///         taken as a warning fires rather than when someone reaches for it. A warning arrives at the host's
+    ///         <see cref="Log.ILogSink" />, which is host code that already owns the destination, so a host that wants this
+    ///         calls the writer from its own sink.
     ///     </para>
     ///     <para>
     ///         Floats are written to nine significant digits, which is what reads back as the same float on every runtime
-    ///         this assembly loads on. Everywhere else the library prints a float the way the invariant culture would, which
-    ///         is shorter to read. A dump is compared against another run, so a rounded number here would hide the difference
-    ///         it was taken to find. An option with no rank, <see cref="WeightValues.NoRank" />, has its rank written as none.
+    ///         this assembly loads on. Everywhere else the library prints a float in its default format, which is shorter to
+    ///         read. A dump is compared against another run, so a rounded number here would hide the difference it was taken
+    ///         to find. An option with no rank, <see cref="WeightValues.NoRank" />, has its rank written as none.
     ///     </para>
     /// </remarks>
     public sealed class DecisionHistoryWriter
     {
-        /// <summary>Names the format a dump is in, so a reader can refuse one it does not know.</summary>
+        /// <summary>The name of the format, written after a # on the first line of every dump.</summary>
         private const string FormatName = "gaia decision history 1";
 
         /// <summary>

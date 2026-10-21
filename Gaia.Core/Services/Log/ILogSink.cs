@@ -6,7 +6,11 @@ namespace Gaia.Core.Services.Log
     ///     Where the AI's log entries go. Supplied by the host, so the same component code reports through whatever
     ///     console or file the game already has.
     /// </summary>
-    /// <remarks>See <see cref="LogSinkExtensions" /> for the methods call sites are expected to use.</remarks>
+    /// <remarks>
+    ///     See <see cref="LogSinkExtensions" /> for the methods call sites are expected to use. A sink may be called from
+    ///     any thread a brain ticks on, and a data store reporting a name read as another kind calls it from whichever thread
+    ///     read.
+    /// </remarks>
     /// <seealso>"Modular AI", Section 8.4.4.3</seealso>
     /// <seealso>
     ///     Logging guidance for .NET library authors, described at

@@ -8,7 +8,6 @@ namespace Gaia.Core.Regions
     ///     A rectangle around its Origin in its own plane, reaching Extents along its right and forward, which ignores
     ///     height.
     /// </summary>
-    /// <remarks>TryGetRandomLocalPosition never fails, since every point of the rectangle is inside it.</remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class RectangleRegion : PlanarRegionBase
     {
@@ -73,7 +72,10 @@ namespace Gaia.Core.Regions
         }
 
         /// <inheritdoc />
-        /// <remarks>A random point lies in the rectangle's own plane, since the rectangle ignores height.</remarks>
+        /// <remarks>
+        ///     Never fails, since the point is picked inside Extents directly rather than guessed and checked. The point lies
+        ///     in the rectangle's own plane, since the rectangle ignores height.
+        /// </remarks>
         protected override bool TryGetRandomLocalPosition(out Vector3 local)
         {
             Vector2 point = new(MathHelpers.RandomInRange(RandomSource, -Extents.X, Extents.X),

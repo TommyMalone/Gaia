@@ -6,13 +6,7 @@ using Gaia.Core.Specifications;
 namespace Gaia.Core.Regions
 {
     /// <summary>A disc extruded a half-height either side of its plane, which makes a cylinder.</summary>
-    /// <remarks>
-    ///     <para>Origin is the middle of the cylinder. Unturned, the cylinder stands upright.</para>
-    ///     <para>
-    ///         A random point is picked on the disc the way <see cref="CircleRegion" /> picks one and spread evenly along
-    ///         the height, so the cylinder's own pick never fails.
-    ///     </para>
-    /// </remarks>
+    /// <remarks>Origin is the middle of the cylinder. Unturned, the cylinder stands upright.</remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class CylinderRegion : PlanarRegionBase
     {
@@ -67,6 +61,10 @@ namespace Gaia.Core.Regions
         }
 
         /// <inheritdoc />
+        /// <remarks>
+        ///     The point is picked on the disc as <see cref="CircleRegion" /> picks one and spread evenly along the height,
+        ///     so the pick never fails.
+        /// </remarks>
         protected override bool TryGetRandomLocalPosition(out Vector3 local)
         {
             Vector2 point = MathHelpers.RandomInDisc(RandomSource, Radius);

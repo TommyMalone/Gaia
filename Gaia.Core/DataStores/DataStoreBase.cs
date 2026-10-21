@@ -14,33 +14,28 @@ namespace Gaia.Core.DataStores
     ///         without the rest of the AI knowing what is stored or what type it is.
     ///     </para>
     ///     <para>
-    ///         Each kind of value has a table of its own rather than one table of type-erased values. A single table would
-    ///         have to hold everything as object, which means allocating a "box" on the heap for every float or int written
-    ///         and "unboxing" it again on every read. A table that already knows what it holds keeps those values inside its
-    ///         own storage, so a write allocates nothing, a read is a copy rather than a cast, and neither leaves anything
-    ///         behind for the collector. Each table is also free to be sized or replaced on its own.
+    ///         Each kind of value has a table of its own rather than one table of type-erased values. A table that holds its
+    ///         own kind writes a float or an int without boxing it and reads one as a copy rather than a cast.
     ///     </para>
-    ///     <para>Names are <see cref="AiString" /> values, so a lookup compares hashes and matching ignores case.</para>
     ///     <para>
     ///         The threading contract is reads from any thread, writes synchronized by the host. A brain's own blackboard is
     ///         written and read on that brain's thread, and a shared store such as the world blackboard takes its writes at
-    ///         the host's sync points while brains only read it mid-cycle. The mismatch throttle below is the one mutation a
-    ///         read can cause, and it locks itself so concurrent readers stay safe.
+    ///         the host's sync points while brains only read it mid-cycle. The set of names already found mismatched is the
+    ///         one thing a read can change, and OnTypeMismatch adds to it under a lock so concurrent readers stay safe.
     ///     </para>
     ///     <para>
     ///         Each table allocates on its first write rather than at construction, so a store holds tables only for the
-    ///         kinds it stores. A freshly spawned entity, such as a <see cref="Entities.Threat" /> for one bullet impact,
-    ///         costs no tables at all until something is written to it, which is what keeps high-churn entities cheap to
-    ///         create.
+    ///         kinds that have been written to it. A freshly spawned entity, such as a <see cref="Entities.Threat" /> for one
+    ///         bullet impact, costs no tables at all until something is written to it, which is what keeps high-churn entities
+    ///         cheap to create.
     ///     </para>
     /// </remarks>
     /// <seealso>"Modular AI", Section 8.4.3</seealso>
     public abstract class DataStoreBase
     {
         /// <summary>
-        ///     The sink a store reports through until a host or a loader wires one. Shared, where the sinks on the components
-        ///     are per instance, because a store is the one a game allocates per entity and this sink holds no state worth an
-        ///     allocation each time.
+        ///     The sink a store reports through until a host or a loader wires one. One instance serves every store, since
+        ///     every entity is itself a store and a TraceLogSink holds no state.
         /// </summary>
         private static readonly TraceLogSink DefaultLogSink = new();
 
@@ -63,9 +58,8 @@ namespace Gaia.Core.DataStores
 
         /// <summary>Where kind mismatches are reported.</summary>
         /// <remarks>
-        ///     Public rather than internal set because a host makes stores of its own, the world blackboard and every
-        ///     entity's, as often as loading makes them. A loaded brain stamps its own blackboard's sink and channel, and a host
-        ///     wires the stores it makes itself.
+        ///     A loaded brain sets its own blackboard's sink and channel. The host makes the world blackboard and every
+        ///     entity itself, so it sets their sinks and channels.
         /// </remarks>
         public ILogSink LogSink { get; set; } = DefaultLogSink;
 
@@ -76,8 +70,7 @@ namespace Gaia.Core.DataStores
         /// <remarks>
         ///     <para>
         ///         A view over the index of names and kinds the store already keeps for <see cref="Contains" /> and
-        ///         <see cref="Remove" />, so enumerating tracks nothing further and a foreach allocates nothing. A store that
-        ///         holds no names enumerates nothing, since the index is allocated when a name is first written.
+        ///         <see cref="Remove" />, so enumerating tracks nothing further and a foreach allocates nothing.
         ///     </para>
         ///     <para>
         ///         The values are not enumerated. A reader that wants one calls the typed getter for the kind its entry reports,
@@ -330,15 +323,16 @@ namespace Gaia.Core.DataStores
         /// <summary>Called when a name is read or written as a kind other than the one it already holds.</summary>
         /// <remarks>
         ///     A data store is in effect global memory, so two unrelated sets of components can end up using the same name. A
-        ///     mismatched kind is the most detectable form of that collision.
+        ///     mismatched kind is the most detectable form of that collision. The once-per-name throttle and the warning are this
+        ///     method's, so an override that does not call the base replaces both.
         /// </remarks>
         protected virtual void OnTypeMismatch(
             AiString name,
             DataStoreValueType storedValueType,
             DataStoreValueType requestedValueType)
         {
-            // Reads may run concurrently under the store's threading contract, and a failed read lands here, so
-            // the throttle set is installed with a compare-exchange and mutated under its own lock.
+            // Reads may run concurrently under the store's threading contract, and a failed read lands here, so the set
+            // of names already found mismatched is installed with a compare-exchange and changed under its own lock.
             if (_mismatchWarnedNames == null)
             {
                 Interlocked.CompareExchange(ref _mismatchWarnedNames, new HashSet<AiString>(), null);
@@ -378,11 +372,13 @@ namespace Gaia.Core.DataStores
             _valueTypes[name] = valueType;
         }
 
-        /// <summary>Reports a mismatch if the failed read was one, rather than a name that was never written.</summary>
+        /// <summary>
+        ///     Reports a mismatch when the failed read's name holds a value of another kind, and nothing when the name holds
+        ///     no value.
+        /// </summary>
         /// <remarks>
         ///     The extra lookup this needs runs only on reads that already failed, so a read that finds its value pays
-        ///     nothing and a consideration that expects a miss pays one lookup a cycle. A name that was never written is an
-        ///     ordinary miss rather than a collision.
+        ///     nothing and a consideration that expects a miss pays one lookup a cycle.
         /// </remarks>
         private void ReportAnyTypeMismatch(AiString name, DataStoreValueType requestedValueType)
         {

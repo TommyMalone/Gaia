@@ -25,10 +25,10 @@ namespace Gaia.Core.Strings
         /// <summary>Guards Texts against a read on one thread racing a write on another.</summary>
         /// <remarks>
         ///     Register usually happens while a configuration is loading, and GetText usually happens while debug output is
-        ///     being written. The two can easily be on different threads. A Dictionary tolerates concurrent reads but not a read
-        ///     alongside a write, and a read that catches a resize part way through returns a wrong answer or loops rather than
-        ///     throwing. The lock is a private object nothing else can reach, so no caller outside this class can take it and
-        ///     deadlock against this one.
+        ///     being written. The two can run on different threads. A Dictionary tolerates concurrent reads but not a read
+        ///     alongside a write. A read that overlaps a write can miss a key that is present. A read caught in a chain the write
+        ///     is rebuilding throws on the current .NET runtimes, .NET 6 and later, which Godot 4 runs on, and Unity's current
+        ///     Mono and IL2CPP, and could loop forever on the .NET Framework's old Dictionary.
         /// </remarks>
         private static readonly object Lock = new();
 
@@ -47,14 +47,17 @@ namespace Gaia.Core.Strings
         /// <summary>Where a hash collision is reported. Replaceable so a host routes it to its own console.</summary>
         /// <remarks>
         ///     <para>
-        ///         A collision aliases two unrelated names into one, unrecoverable corruption that would otherwise show up as a
-        ///         data store answering with the wrong variable's value. It is reported in every build, because a live patch, or
-        ///         any content added after development, never runs under an assert.
+        ///         A collision gives two unrelated names the same hash, so every lookup keyed on them treats them as one name,
+        ///         and nothing afterwards can tell them apart. Without the report, it would show only in what the lookups answer,
+        ///         a data store handing back the wrong variable's value or a factory building the wrong component for an element.
+        ///         It is reported through this sink in every build rather than by an assert, because a collision depends on which
+        ///         names exist, so two names can first collide after the game ships, when a patch or downloadable content adds
+        ///         one, and a release build runs no asserts.
         ///     </para>
         ///     <para>
         ///         This is process wide, as the table is, so the sink in force is the one the most recently constructed
-        ///         <see cref="Factories.GaiaLoader" /> stamped. A host that wants the report somewhere else sets this itself, once
-        ///         its loaders are built.
+        ///         <see cref="Factories.GaiaLoader" /> set. A host that wants the report somewhere else sets this itself, once its
+        ///         loaders are built.
         ///     </para>
         /// </remarks>
         public static ILogSink LogSink { get; set; } = new TraceLogSink();
@@ -85,10 +88,9 @@ namespace Gaia.Core.Strings
         /// <remarks>
         ///     Two different texts can hash to the same value, so a hash that already belongs to other text is reported
         ///     through <see cref="LogSink" /> as an error. The same text in another casing is the same string, so the table keeps
-        ///     the casing registered first and GetText reports that one. Nothing here sits on a hot path once a name is registered
-        ///     once and kept as a static AiString. Register is called when an <see cref="AiString" /> is made, and comparing two
-        ///     of them afterwards comes down to an integer test that never touches the table, so a cycle takes the lock only where
-        ///     it reads text back through <see cref="GetText" />, which is logging.
+        ///     the casing registered first and GetText reports that one. A name registered once and kept as a static
+        ///     <see cref="AiString" /> never comes back here, and comparing two of them never touches the table, so a cycle takes
+        ///     the lock only in <see cref="GetText" />, when logging reads text back.
         /// </remarks>
         internal static ulong Register(string text)
         {

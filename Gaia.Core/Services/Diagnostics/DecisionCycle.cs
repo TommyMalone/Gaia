@@ -8,7 +8,7 @@ namespace Gaia.Core.Services.Diagnostics
     /// </summary>
     public readonly struct DecisionCycle
     {
-        /// <summary>Records what one cycle decided. The history constructs one as it opens a cycle and again as it closes one.</summary>
+        /// <summary>Records what one cycle decided.</summary>
         internal DecisionCycle(long cycleIndex, float roll, AiString selectedName, int recordCount)
         {
             CycleIndex = cycleIndex;
@@ -25,7 +25,7 @@ namespace Gaia.Core.Services.Diagnostics
 
         /// <summary>
         ///     The roll that decided the cycle, in [0, 1) before the reasoner scaled it by the options' total weight, or 0 on
-        ///     a cycle with nothing rolled.
+        ///     a cycle with nothing rolled. A roll that came out 0 reads the same as none.
         /// </summary>
         public float Roll { get; }
 

@@ -5,16 +5,15 @@ namespace Gaia.Core.Services.Time
     /// <summary>A length of time in seconds, or a moment measured as the time since the clock started.</summary>
     /// <remarks>
     ///     <para>
-    ///         Construction from a number is explicit, so a bare number can never be mistaken for a duration, and the number
-    ///         of seconds comes back out through Value. Arithmetic and comparisons stay on the type, so two times can be
-    ///         compared or taken apart without ever leaving it.
+    ///         There is no implicit conversion from a number, so a bare number cannot stand in for a duration. Arithmetic
+    ///         and comparisons stay on the type, so two times can be compared or taken apart without ever leaving it.
     ///     </para>
     ///     <para>
-    ///         The backing value is a double because absolute session time outgrows a float. Accumulating sixtieths of a
-    ///         second in a float runs several percent off from around four and a half hours of session, almost twice as fast
-    ///         from around seventy seven, and stops advancing after around a hundred and sixteen, where the step falls below
-    ///         half a unit of precision. A double holds tick precision for any session a game can run. The engine boundary
-    ///         converts once, and a float fed to the constructor widens losslessly.
+    ///         The backing value is a double because absolute session time outgrows a float. A float that accumulates
+    ///         sixtieths of a second runs several percent off from around four and a half hours into a session. From around
+    ///         seventy-seven hours it runs almost twice as fast as the time added to it, and from around a hundred and sixteen
+    ///         hours it stops advancing, because the step falls below half the gap between adjacent float values. A double
+    ///         holds tick precision for any session a game can run.
     ///     </para>
     /// </remarks>
     public readonly struct Seconds : IEquatable<Seconds>

@@ -5,8 +5,10 @@ namespace Gaia.Core.Spatial
     /// <summary>An orientation in three dimensions, held as a quaternion.</summary>
     /// <remarks>
     ///     The axes follow Unity's convention, which is Y up, Z forward and X right. An engine that arranges them
-    ///     differently converts at its boundary rather than pushing its arrangement through the AI. Every conversion here
-    ///     assumes the quaternion is unit length, which is what an engine hands over.
+    ///     differently converts to this arrangement before handing a rotation over. Every conversion here assumes the
+    ///     quaternion is unit length, as the engines require of a rotation, and nothing here normalizes one, so a quaternion
+    ///     the host built from raw components or let drift over many products is the host's to normalize before it is handed
+    ///     over.
     /// </remarks>
     public readonly struct Rotation : IEquatable<Rotation>
     {

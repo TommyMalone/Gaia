@@ -5,14 +5,7 @@ using Gaia.Core.Spatial;
 namespace Gaia.Core.Regions
 {
     /// <summary>A footprint of any shape extruded a half-height either side of its plane.</summary>
-    /// <remarks>
-    ///     <para>
-    ///         It is the only shape here that is both concave and bounded in height, which is what most level geometry is. A
-    ///         room is a footprint with a floor and a ceiling, and so is the inside of a building, with Origin halfway between
-    ///         the two.
-    ///     </para>
-    ///     <para>A random position is spread evenly along the height.</para>
-    /// </remarks>
+    /// <remarks>A room is a footprint of any shape with a floor and a ceiling, and Origin sits halfway between the two.</remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     public sealed class ExtrudedPolygonRegion : PolygonRegionBase
     {
@@ -57,6 +50,10 @@ namespace Gaia.Core.Regions
         }
 
         /// <inheritdoc />
+        /// <remarks>
+        ///     The point is a random point of the footprint spread evenly along the height, so the pick fails only when the
+        ///     footprint's does.
+        /// </remarks>
         protected override bool TryGetRandomLocalPosition(out Vector3 local)
         {
             if (!TryGetRandomFootprintPoint(out Vector2 point))

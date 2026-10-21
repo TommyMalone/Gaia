@@ -10,10 +10,6 @@ namespace Gaia.Core.Services.Random
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         The seed is kept in <see cref="Seed" /> either way, so a host that reports it can reproduce a run by
-    ///         constructing another source with the reported value.
-    ///     </para>
-    ///     <para>
     ///         The generator is implemented here rather than wrapping System.Random because that class documents its
     ///         algorithm as unspecified, and a seed reported on one runtime could then produce a different sequence on
     ///         another. The same seed produces the same sequence on every runtime this class compiles for.
@@ -26,10 +22,7 @@ namespace Gaia.Core.Services.Random
     /// <seealso>David Blackman and Sebastiano Vigna, xoshiro128**, described at https://prng.di.unimi.it</seealso>
     public sealed class Xoshiro128RandomSource : IRandomSource
     {
-        /// <summary>
-        ///     Separates default seeds taken at the same Environment.TickCount reading, so a burst of sources never
-        ///     correlates.
-        /// </summary>
+        /// <summary>A count of default constructions, mixed into each default seed.</summary>
         private static int _defaultSeedCount;
 
         private uint _state0;
@@ -41,8 +34,9 @@ namespace Gaia.Core.Services.Random
         /// <remarks>
         ///     The Environment.TickCount reading is combined with a count of default constructions, because a loop that makes
         ///     several default sources inside one millisecond would otherwise hand them all the same seed and the sources would
-        ///     move in step. The count is multiplied by 0x2545F491 first, so consecutive counts differ across the whole word
-        ///     rather than only in the low bits, which is where a clock reading already differs.
+        ///     move in step. The count is multiplied by 0x2545F491 first, so consecutive counts differ across the whole word.
+        ///     Clock readings a millisecond apart differ only in their low bits, where an unmultiplied count could cancel the
+        ///     difference.
         /// </remarks>
         public Xoshiro128RandomSource() : this(Environment.TickCount ^
                                                (Interlocked.Increment(ref _defaultSeedCount) * 0x2545F491))
@@ -50,17 +44,16 @@ namespace Gaia.Core.Services.Random
         }
 
         /// <summary>Creates a source that runs from the given seed.</summary>
-        /// <param name="seed">A seed value. The same seed produces the same sequence of values.</param>
         public Xoshiro128RandomSource(int seed)
         {
             Seed = seed;
 
             // The four state words come from a splitmix64 walk over the seed, the seeding the generator's authors
-            // recommend. The walk's increment keeps the state from ever starting all zero, the one state the generator
-            // cannot leave. The cast is part of the reported-seed contract. A seed is reported as an int and reproduced
-            // from one, and the (uint) zero-extends it, so a negative seed walks from the unsigned reading of its bits
-            // rather than from a sign-extended one. Changing the conversion would change every walk a negative seed has
-            // ever reported.
+            // recommend for their 64-bit generators, each of the walk's two outputs split into two words. The walk's
+            // increment keeps the state from ever starting all zero, the one state the generator cannot leave. The seed
+            // is cast to uint before it widens to ulong, so the widening zero-extends it. A negative seed's walk
+            // therefore starts from the unsigned reading of its bits rather than from a sign-extended one, and a run
+            // reported under a negative seed reproduces only through this same conversion.
             ulong seedingState = (uint)seed;
 
             ulong first = SplitMix64(ref seedingState);
@@ -72,14 +65,14 @@ namespace Gaia.Core.Services.Random
             _state3 = (uint)(second >> 32);
         }
 
-        /// <summary>The seed the sequence runs from.</summary>
+        /// <summary>The seed the sequence runs from, including a seed taken from the clock.</summary>
         public int Seed { get; }
 
         /// <inheritdoc />
         public float NextFloat()
         {
             // A float has a 24-bit mantissa, so every multiple of 1/2^24 below 1 is exactly representable. Dividing
-            // the draw's top 24 bits by 2^24 therefore yields at most 1 - 2^-24, with no rounding.
+            // the top 24 bits of a 32-bit value by 2^24 therefore yields at most 1 - 2^-24, with no rounding.
             const float precision = 1 << 24;
 
             return (Next32() >> 8) / precision;

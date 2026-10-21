@@ -10,21 +10,7 @@ namespace Gaia.Core.Regions
     ///     What <see cref="PolygonRegion" /> and <see cref="ExtrudedPolygonRegion" /> share, which is a footprint made of
     ///     corners in its own plane.
     /// </summary>
-    /// <remarks>
-    ///     <para>
-    ///         The footprint may be concave, which is what makes a polygon worth having over a rectangle. IsInFootprint
-    ///         counts a point on an edge or at a corner as inside, and a point within 1 millimeter of one in the world too,
-    ///         which absorbs the rounding of bringing it into the shape's plane. Any other point is judged by the PNPOLY
-    ///         even-odd crossing test, in which a ray cast from the point along X crosses the boundary an odd number of times
-    ///         if the point is inside.
-    ///     </para>
-    ///     <para>
-    ///         A random point is found by guessing inside the footprint's bounds and keeping the first guess inside the
-    ///         footprint. AddCorner keeps the bounds up to date, so reading them walks no corners. Each containment test walks
-    ///         the corners once for the crossings, and once more for the edges' tolerance only when the crossings call the
-    ///         point outside. Subclasses raise the point to the height they decide.
-    ///     </para>
-    /// </remarks>
+    /// <remarks>The footprint may be concave, which is what a polygon offers over a rectangle.</remarks>
     /// <seealso>"Modular AI", Section 8.5.6</seealso>
     /// <seealso>W. Randolph Franklin, PNPOLY, described at https://wrfranklin.org/Research/Short_Notes/pnpoly.html</seealso>
     public abstract class PolygonRegionBase : PlanarRegionBase
@@ -109,6 +95,12 @@ namespace Gaia.Core.Regions
         }
 
         /// <summary>Tests whether a point of the plane is inside the footprint.</summary>
+        /// <remarks>
+        ///     Nothing is inside a footprint with fewer than three corners. Otherwise a point on an edge or at a corner
+        ///     counts as inside, and so does a point within 1 millimeter of one in the world, which absorbs the rounding of
+        ///     bringing it into the shape's plane. Any other point is judged by the PNPOLY even-odd crossing test, in which a ray
+        ///     cast from the point along X crosses the boundary an odd number of times if the point is inside.
+        /// </remarks>
         protected bool IsInFootprint(Vector2 point)
         {
             // The on-edge walk can only turn an outside into an inside, so it runs only for the points the crossings

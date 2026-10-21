@@ -4,9 +4,8 @@ namespace Gaia.Core.Services.Diagnostics
 {
     /// <summary>What one option scored in one recorded cycle.</summary>
     /// <remarks>
-    ///     Weight is the option's weight before the screening that <see cref="Options.OptionBase.PassesScreening" />
-    ///     reports, so an option the reasoner screened out still shows what it weighed, with PassedScreening saying why it was
-    ///     not selected.
+    ///     An option the reasoner screened out still shows what it weighed, and its PassedScreening says screening is why
+    ///     it was not selected.
     /// </remarks>
     public readonly struct DecisionRecord
     {
@@ -34,7 +33,12 @@ namespace Gaia.Core.Services.Diagnostics
         /// </summary>
         public float Weight { get; }
 
-        /// <summary>False if the reasoner's screening removed the option before the pick.</summary>
+        /// <summary>
+        ///     False if Rank fell below the option's <see cref="Options.OptionBase.ScreeningRank" /> or Weight below its
+        ///     <see cref="Options.OptionBase.ScreeningWeight" />, so its reasoner counted it as weighing 0 when it selected. Only
+        ///     a DualUtilityReasoner sets the thresholds, so under any other reasoner it is false only for an option whose weight
+        ///     came out below 0.
+        /// </summary>
         public bool PassedScreening { get; }
     }
 }
