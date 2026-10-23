@@ -43,8 +43,8 @@ public class BrainSwapHostSpec
 
         Brain original = first!;
         original.Blackboard.SetBool("IsUnderFire", false);
-        original.Blackboard.SetEntityList("KillZoneContacts", new List<EntityBase>());
-        original.Blackboard.SetEntityList("RetreatRouteContacts", new List<EntityBase>());
+        original.Blackboard.SetEntityList("TargetsInKillZone", new List<EntityBase>());
+        original.Blackboard.SetEntityList("ThreatsOnRetreatRoute", new List<EntityBase>());
 
         // The swap.
         Assert.That(loader.TryLoadBrain(root!, out Brain? second, self: sniper, brainBlackboard: original.Blackboard),

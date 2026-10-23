@@ -189,14 +189,16 @@ public class LoadedBrainHostSpec
     [Test]
     public void RunsTheLoadedBrain()
     {
-        List<EntityBase> killZoneContacts = new();
-        List<EntityBase> retreatRouteContacts = new();
+        List<EntityBase> targetsInKillZone = new();
+        List<EntityBase> threatsOnRetreatRoute = new();
 
-        // An absent variable reads as neutral rather than false, so without an empty KillZoneContacts the Snipe option
-        // would not be vetoed.
+        // The host writes what it knows before the first cycle, not under fire and nothing in either list, and keeps
+        // the two list objects, so a contact added to one below is a write the brain sees on its next cycle. With
+        // nothing written the file would hide as well, since every gate carries a Missing element, but this test runs
+        // the brain as a game does, with its variables written.
         _brain.Blackboard.SetBool("IsUnderFire", false);
-        _brain.Blackboard.SetEntityList("KillZoneContacts", killZoneContacts);
-        _brain.Blackboard.SetEntityList("RetreatRouteContacts", retreatRouteContacts);
+        _brain.Blackboard.SetEntityList("TargetsInKillZone", targetsInKillZone);
+        _brain.Blackboard.SetEntityList("ThreatsOnRetreatRoute", threatsOnRetreatRoute);
 
         _brain.Enable();
 
@@ -207,11 +209,11 @@ public class LoadedBrainHostSpec
 
         Assert.That(_selections, Is.EqualTo(new[] { "Hide" }), "nothing to shoot at, so the sniper hides");
 
-        // An actor stands in for a contact in the kill zone list. The file's Snipe option asks only whether that list
-        // holds a valid entity, so the actor's position is not read. The library presently fills no contact list, so
-        // the host fills this one.
+        // An actor stands in for a target in the kill zone list. The file's Snipe option asks only whether that list
+        // holds a valid entity, so the actor's position is not read. The library presently fills no such list, so the
+        // host fills this one.
         Actor patrol = new() { Name = "Patrol", Position = new Vector3(10f, 0f, 140f) };
-        killZoneContacts.Add(patrol);
+        targetsInKillZone.Add(patrol);
 
         // The shot sequence is three instantaneous steps and a two-second aim pause, and eight one-second cycles cover
         // it.

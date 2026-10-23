@@ -3,12 +3,17 @@
         <Option Type="ConsiderationAndAction" Name="Retreat">
             <!-- Vetoes unless the game has flagged the sniper as under fire. -->
             <Consideration Type="BooleanVariable" Variable="IsUnderFire">
+                <Missing Veto="true"/>
                 <WeightFunction Type="Boolean">
                     <False Veto="true"/>
                 </WeightFunction>
             </Consideration>
-            <!-- Vetoes while any contact stands on the retreat route. -->
-            <Consideration Type="EntityExists" Variable="RetreatRouteContacts">
+            <!-- Vetoes while any threat stands on the retreat route. -->
+            <Consideration Type="EntityExists" Variable="ThreatsOnRetreatRoute">
+                <!-- The game may not have written this list yet. The empty Missing element reads an unwritten list
+                     as a clear route, and says that is intended, so the library does not warn that the list was never
+                     written. -->
+                <Missing/>
                 <WeightFunction Type="Boolean">
                     <True Veto="true"/>
                 </WeightFunction>
@@ -17,6 +22,7 @@
         </Option>
         <Option Type="ConsiderationAndAction" Name="FightBack">
             <Consideration Type="BooleanVariable" Variable="IsUnderFire">
+                <Missing Veto="true"/>
                 <WeightFunction Type="Boolean">
                     <False Veto="true"/>
                 </WeightFunction>
@@ -24,13 +30,18 @@
             <Action Type="Record" Name="FightBack" Done="false"/>
         </Option>
         <Option Type="ConsiderationAndAction" Name="Snipe">
-            <Consideration Type="EntityExists" Variable="RetreatRouteContacts">
+            <Consideration Type="EntityExists" Variable="ThreatsOnRetreatRoute">
+                <!-- The game may not have written this list yet. The empty Missing element reads an unwritten list
+                     as a clear route, and says that is intended, so the library does not warn that the list was never
+                     written. -->
+                <Missing/>
                 <WeightFunction Type="Boolean">
                     <True Veto="true"/>
                 </WeightFunction>
             </Consideration>
-            <!-- Vetoes until some contact is in the kill zone. -->
-            <Consideration Type="EntityExists" Variable="KillZoneContacts">
+            <!-- Vetoes until some target is in the kill zone. -->
+            <Consideration Type="EntityExists" Variable="TargetsInKillZone">
+                <Missing Veto="true"/>
                 <WeightFunction Type="Boolean">
                     <False Veto="true"/>
                 </WeightFunction>

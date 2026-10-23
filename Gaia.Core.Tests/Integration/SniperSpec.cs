@@ -70,12 +70,12 @@ public class SniperSpec
         };
         _sniper.Brain = _brain;
 
-        _killZoneContacts = new List<EntityBase>();
-        _retreatRouteContacts = new List<EntityBase>();
+        _targetsInKillZone = new List<EntityBase>();
+        _threatsOnRetreatRoute = new List<EntityBase>();
 
         _brain.Blackboard.SetBool("IsUnderFire", false);
-        _brain.Blackboard.SetEntityList("KillZoneContacts", _killZoneContacts);
-        _brain.Blackboard.SetEntityList("RetreatRouteContacts", _retreatRouteContacts);
+        _brain.Blackboard.SetEntityList("TargetsInKillZone", _targetsInKillZone);
+        _brain.Blackboard.SetEntityList("ThreatsOnRetreatRoute", _threatsOnRetreatRoute);
 
         RuleBasedReasoner reasoner = new()
         {
@@ -106,8 +106,8 @@ public class SniperSpec
     private RecordingLogSink _logSink;
     private RecordActionFactory _recordActionFactory;
     private List<EntityBase> _contacts;
-    private List<EntityBase> _killZoneContacts;
-    private List<EntityBase> _retreatRouteContacts;
+    private List<EntityBase> _targetsInKillZone;
+    private List<EntityBase> _threatsOnRetreatRoute;
 
     private Actor _sniper;
     private Brain _brain;
@@ -122,6 +122,46 @@ public class SniperSpec
         Cycle();
 
         Assert.That(_executed, Is.EqualTo(new[] { "Hide.Select", "Hide.Update", "Hide.Update" }));
+    }
+
+    [Test]
+    public void HidesAtSpawnBeforeTheGameHasWrittenAnything()
+    {
+        // Undoes SetUp's writes, leaving the blackboard as a sniper the game has just spawned finds it.
+        _brain.Blackboard.Clear();
+
+        Cycle();
+
+        Assert.That(Selections(), Is.EqualTo(new[] { "Hide" }));
+    }
+
+    [Test]
+    public void RetreatsUnderFireWhileTheRetreatRouteListIsUnwritten()
+    {
+        // The twin of the loaded sniper's test, against the hand-built brain, whose retreat route consideration sets
+        // the same neutral missing values the file's empty Missing element reads as.
+        _brain.Blackboard.Clear();
+        _brain.Blackboard.SetBool("IsUnderFire", true);
+        _brain.Blackboard.SetEntityList("TargetsInKillZone", _targetsInKillZone);
+
+        Cycle();
+
+        Assert.That(Selections(), Is.EqualTo(new[] { "Retreat" }));
+    }
+
+    [Test]
+    public void TakesAShotWhileTheRetreatRouteListIsUnwritten()
+    {
+        // The twin of the loaded sniper's test, against the hand-built brain, whose retreat route consideration sets
+        // the same neutral missing values the file's empty Missing element reads as.
+        _brain.Blackboard.Clear();
+        _brain.Blackboard.SetBool("IsUnderFire", false);
+        _brain.Blackboard.SetEntityList("TargetsInKillZone", _targetsInKillZone);
+        AddContact("Patrol", InKillZone);
+
+        Cycle();
+
+        Assert.That(Selections(), Is.EqualTo(new[] { "SetPose", "RaiseWeapon" }));
     }
 
     [Test]
@@ -363,10 +403,11 @@ public class SniperSpec
             DataStore = _brain.Blackboard,
             VariableName = "IsUnderFire",
             WeightFunction = allowWhenTrue,
+            MissingVariableWeights = WeightValues.Vetoed,
         };
     }
 
-    /// <summary>Vetoes while any contact stands on the retreat route.</summary>
+    /// <summary>Vetoes while any threat stands on the retreat route.</summary>
     private EntityExistsConsideration LineOfRetreatClear()
     {
         BooleanWeightFunction vetoWhenFound = new(WeightValues.Vetoed, WeightValues.Neutral);
@@ -374,12 +415,13 @@ public class SniperSpec
         return new EntityExistsConsideration
         {
             DataStore = _brain.Blackboard,
-            VariableName = "RetreatRouteContacts",
+            VariableName = "ThreatsOnRetreatRoute",
             WeightFunction = vetoWhenFound,
+            MissingVariableWeights = WeightValues.Neutral,
         };
     }
 
-    /// <summary>Vetoes until some contact is in the kill zone.</summary>
+    /// <summary>Vetoes until some target is in the kill zone.</summary>
     private EntityExistsConsideration TargetInKillZone()
     {
         BooleanWeightFunction vetoWhenEmpty = new(WeightValues.Neutral, WeightValues.Vetoed);
@@ -387,8 +429,9 @@ public class SniperSpec
         return new EntityExistsConsideration
         {
             DataStore = _brain.Blackboard,
-            VariableName = "KillZoneContacts",
+            VariableName = "TargetsInKillZone",
             WeightFunction = vetoWhenEmpty,
+            MissingVariableWeights = WeightValues.Vetoed,
         };
     }
 
@@ -460,8 +503,8 @@ public class SniperSpec
     /// <summary>Sorts the valid contacts into the kill zone and retreat route lists, as the game's sensors would.</summary>
     private void Sense()
     {
-        _killZoneContacts.Clear();
-        _retreatRouteContacts.Clear();
+        _targetsInKillZone.Clear();
+        _threatsOnRetreatRoute.Clear();
 
         foreach (EntityBase contact in _contacts)
         {
@@ -472,12 +515,12 @@ public class SniperSpec
 
             if (_killZone.IsInRegion(contact.Position))
             {
-                _killZoneContacts.Add(contact);
+                _targetsInKillZone.Add(contact);
             }
 
             if (_retreatRoute.IsInRegion(contact.Position))
             {
-                _retreatRouteContacts.Add(contact);
+                _threatsOnRetreatRoute.Add(contact);
             }
         }
     }

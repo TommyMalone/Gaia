@@ -70,12 +70,12 @@ public class LoadedSniperSpec
         _brain = brain ?? new Brain();
         _sniper.Brain = _brain;
 
-        _killZoneContacts = new List<EntityBase>();
-        _retreatRouteContacts = new List<EntityBase>();
+        _targetsInKillZone = new List<EntityBase>();
+        _threatsOnRetreatRoute = new List<EntityBase>();
 
         _brain.Blackboard.SetBool("IsUnderFire", false);
-        _brain.Blackboard.SetEntityList("KillZoneContacts", _killZoneContacts);
-        _brain.Blackboard.SetEntityList("RetreatRouteContacts", _retreatRouteContacts);
+        _brain.Blackboard.SetEntityList("TargetsInKillZone", _targetsInKillZone);
+        _brain.Blackboard.SetEntityList("ThreatsOnRetreatRoute", _threatsOnRetreatRoute);
 
         _brain.Enable();
     }
@@ -101,8 +101,8 @@ public class LoadedSniperSpec
     private List<string> _executed;
     private RecordingLogSink _logSink;
     private List<EntityBase> _contacts;
-    private List<EntityBase> _killZoneContacts;
-    private List<EntityBase> _retreatRouteContacts;
+    private List<EntityBase> _targetsInKillZone;
+    private List<EntityBase> _threatsOnRetreatRoute;
 
     private Actor _sniper;
     private Brain _brain;
@@ -129,6 +129,78 @@ public class LoadedSniperSpec
         Cycle();
 
         Assert.That(_executed, Is.EqualTo(new[] { "Hide.Select", "Hide.Update", "Hide.Update" }));
+    }
+
+    [Test]
+    public void HidesAtSpawnBeforeTheGameHasWrittenAnything()
+    {
+        // SetUp writes the under-fire flag and both lists on the brain it loads. A sniper the game has just spawned has
+        // none of them, so this test loads a brain of its own and writes nothing on its blackboard.
+        List<string> executed = new();
+        FactorySet factories = new();
+        factories.Actions.Register("Record", () => new RecordAction(executed), RecordAction.Description);
+        GaiaLoader loader = new(factories, _timeSource, new Xoshiro128RandomSource(1), _logSink);
+
+        Actor spawned = new()
+        {
+            Name = CharacterName,
+            Position = new Vector3(0f, 10f, 0f),
+        };
+
+        string configurationText = File.ReadAllText(ConfigurationPath);
+
+        Assert.That(loader.TryParse(configurationText, "sniper.xml", out SpecificationNode? root), Is.True);
+        Assert.That(loader.TryLoadBrain(root!, out Brain? brain, self: spawned), Is.True);
+
+        spawned.Brain = brain!;
+        brain!.Enable();
+        _timeSource.Advance(OneCycleTime);
+        spawned.Update();
+
+        Assert.That(executed, Is.EqualTo(new[] { "Hide.Select", "Hide.Update" }));
+    }
+
+    [Test]
+    public void DoesNotWarnAtSpawnThatAVariableWasNeverWritten()
+    {
+        // Every variable the file reads carries a Missing element, so a brain cycled with nothing written serves each
+        // one's authored missing values and warns of none of them. Without the empty Missing elements on the two
+        // retreat route considerations, the two never-written warnings would be logged here.
+        _brain.Blackboard.Clear();
+
+        Cycle();
+
+        Assert.That(_logSink.Entries, Has.None.Contains("has never been written"));
+    }
+
+    [Test]
+    public void RetreatsUnderFireWhileTheRetreatRouteListIsUnwritten()
+    {
+        // The retreat route list is the one variable left unwritten, so its consideration serves the authored neutral
+        // values and the route reads as clear. Were its Missing element a veto, Retreat would be ruled out and the
+        // sniper would fight back instead.
+        _brain.Blackboard.Clear();
+        _brain.Blackboard.SetBool("IsUnderFire", true);
+        _brain.Blackboard.SetEntityList("TargetsInKillZone", _targetsInKillZone);
+
+        Cycle();
+
+        Assert.That(Selections(), Is.EqualTo(new[] { "Retreat" }));
+    }
+
+    [Test]
+    public void TakesAShotWhileTheRetreatRouteListIsUnwritten()
+    {
+        // As above, with the sniper not under fire and a target in the kill zone: the unwritten route list does not
+        // hold the shot back. Were its Missing element a veto, the sniper would hide.
+        _brain.Blackboard.Clear();
+        _brain.Blackboard.SetBool("IsUnderFire", false);
+        _brain.Blackboard.SetEntityList("TargetsInKillZone", _targetsInKillZone);
+        AddContact("Patrol", InKillZone);
+
+        Cycle();
+
+        Assert.That(Selections(), Is.EqualTo(new[] { "SetPose", "RaiseWeapon" }));
     }
 
     [Test]
@@ -269,8 +341,8 @@ public class LoadedSniperSpec
     /// <summary>Sorts the valid contacts into the kill zone and retreat route lists, as the game's sensors would.</summary>
     private void Sense()
     {
-        _killZoneContacts.Clear();
-        _retreatRouteContacts.Clear();
+        _targetsInKillZone.Clear();
+        _threatsOnRetreatRoute.Clear();
 
         foreach (EntityBase contact in _contacts)
         {
@@ -281,12 +353,12 @@ public class LoadedSniperSpec
 
             if (_killZone.IsInRegion(contact.Position))
             {
-                _killZoneContacts.Add(contact);
+                _targetsInKillZone.Add(contact);
             }
 
             if (_retreatRoute.IsInRegion(contact.Position))
             {
-                _retreatRouteContacts.Add(contact);
+                _threatsOnRetreatRoute.Add(contact);
             }
         }
     }
