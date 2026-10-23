@@ -201,7 +201,8 @@ public class XmlSpecificationReaderSpec
     [Test]
     public void ReportsAMalformedDocumentAndYieldsNoTree()
     {
-        XmlException thrown = Assert.Throws<XmlException>(() => XDocument.Parse("<Option>", LoadOptions.SetLineInfo))!;
+        string unclosed = "<Option>";
+        XmlException thrown = Assert.Throws<XmlException>(() => XDocument.Parse(unclosed, LoadOptions.SetLineInfo))!;
 
         bool wasRead = _reader.TryRead("<Option>", SourceName, out SpecificationNode? root);
 
