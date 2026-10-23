@@ -1,6 +1,7 @@
 ﻿using Gaia.Core.Blackboards;
 using Gaia.Core.DataStores;
 using Gaia.Core.Entities;
+using Gaia.Core.Services.Log;
 using Gaia.Core.Spatial;
 using Gaia.Core.Strings;
 using Gaia.Core.Tests.Helpers;
@@ -530,6 +531,31 @@ public class DataStoreBaseSpec
         }));
     }
 
+    [Test]
+    public void WarnsAboutAMismatchMetWhileItsSinkFilteredWarningsOnceTheSinkShowsThem()
+    {
+        // A host debugging its game lowers its sink's threshold to see the warnings it had been filtering. The mismatch
+        // met while they were filtered was never reported, so it is still owed its one warning.
+        ThresholdLogSink logSink = new() { Threshold = LogSeverity.Error };
+        BrainBlackboard store = new()
+        {
+            LogSink = logSink,
+            LogChannel = "Guard",
+        };
+
+        store.SetInt("Ammo", 3);
+        store.TryGetFloat("Ammo", out _);
+
+        logSink.Threshold = LogSeverity.Warning;
+        store.TryGetFloat("Ammo", out _);
+        store.TryGetFloat("Ammo", out _);
+
+        Assert.That(logSink.Entries, Is.EqualTo(new[]
+        {
+            "Warning Guard the Ammo name was written as Int and used as Float",
+        }));
+    }
+
     /// <summary>Walks the fixture's store and describes each entry as its name and the kind it reports.</summary>
     /// <remarks>
     ///     A dictionary decides the order its names come out in, which the store does not promise, so the tests that hold
@@ -594,5 +620,32 @@ public class DataStoreBaseSpec
             DataStoreValueType.Entity => dataStore.TryGetEntity(name, out _),
             _ => dataStore.TryGetEntityList(name, out _),
         };
+    }
+
+    /// <summary>A sink that drops every entry below its threshold, as a console filtering by severity does.</summary>
+    private sealed class ThresholdLogSink : ILogSink
+    {
+        private readonly List<string> _entries = new();
+
+        /// <summary>The least severe entry the sink shows.</summary>
+        public LogSeverity Threshold { get; set; }
+
+        /// <summary>The entries shown, each one line of severity, channel, and message.</summary>
+        public IReadOnlyList<string> Entries => _entries;
+
+        /// <summary>True for a severity at or above the threshold.</summary>
+        public bool IsEnabled(LogSeverity severity)
+        {
+            return severity >= Threshold;
+        }
+
+        /// <summary>Records the entry if its severity is at or above the threshold, and drops it otherwise.</summary>
+        public void Write(LogSeverity severity, AiString channel, string message)
+        {
+            if (IsEnabled(severity))
+            {
+                _entries.Add($"{severity} {channel.Text} {message}");
+            }
+        }
     }
 }

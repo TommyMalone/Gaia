@@ -20,8 +20,8 @@ namespace Gaia.Core.DataStores
     ///     <para>
     ///         The threading contract is reads from any thread, writes synchronized by the host. A brain's own blackboard is
     ///         written and read on that brain's thread, and a shared store such as the world blackboard takes its writes at
-    ///         the host's sync points while brains only read it mid-cycle. The set of names already found mismatched is the
-    ///         one thing a read can change, and OnTypeMismatch adds to it under a lock so concurrent readers stay safe.
+    ///         the host's sync points while brains only read it mid-cycle. The set of names whose mismatch has been reported
+    ///         is the one thing a read can change, and OnTypeMismatch adds to it under a lock so concurrent readers stay safe.
     ///     </para>
     ///     <para>
     ///         Each table allocates on its first write rather than at construction, so a store holds tables only for the
@@ -331,8 +331,16 @@ namespace Gaia.Core.DataStores
             DataStoreValueType storedValueType,
             DataStoreValueType requestedValueType)
         {
+            // The sink is asked before the name is added to the set, so a mismatch met while the sink filtered warnings
+            // is still reported once the sink shows them.
+            if (!LogSink.IsEnabled(LogSeverity.Warning))
+            {
+                return;
+            }
+
             // Reads may run concurrently under the store's threading contract, and a failed read lands here, so the set
-            // of names already found mismatched is installed with a compare-exchange and changed under its own lock.
+            // of names whose mismatch has been reported is installed with a compare-exchange and changed under its own
+            // lock.
             if (_mismatchWarnedNames == null)
             {
                 Interlocked.CompareExchange(ref _mismatchWarnedNames, new HashSet<AiString>(), null);
@@ -346,11 +354,8 @@ namespace Gaia.Core.DataStores
                 }
             }
 
-            if (LogSink.IsEnabled(LogSeverity.Warning))
-            {
-                LogSink.LogWarning(LogChannel,
-                    $"the {name.Text} name was written as {storedValueType} and used as {requestedValueType}");
-            }
+            LogSink.LogWarning(LogChannel,
+                $"the {name.Text} name was written as {storedValueType} and used as {requestedValueType}");
         }
 
         /// <summary>
