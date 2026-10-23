@@ -80,9 +80,9 @@ public class HandAssembledBrainHostSpec
         Assert.Multiple(() =>
         {
             Assert.That(history.CycleCount, Is.EqualTo(1));
-            Assert.That(history.GetCycle(0).SelectedName.Text, Is.EqualTo("Patrol"));
-            Assert.That(history.GetRecord(0, 0).OptionName.Text, Is.EqualTo("Patrol"));
-            Assert.That(history.GetRecord(0, 1).OptionName.Text, Is.EqualTo("Idle"));
+            Assert.That(history.GetCycleFromNewest(0).SelectedName.Text, Is.EqualTo("Patrol"));
+            Assert.That(history.GetRecordFromNewest(0, 0).OptionName.Text, Is.EqualTo("Patrol"));
+            Assert.That(history.GetRecordFromNewest(0, 1).OptionName.Text, Is.EqualTo("Idle"));
         });
     }
 

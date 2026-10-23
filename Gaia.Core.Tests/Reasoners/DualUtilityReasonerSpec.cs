@@ -377,9 +377,9 @@ public class DualUtilityReasonerSpec
 
         _dualUtilityReasoner.Update();
 
-        DecisionCycle cycle = history.GetCycle(0);
-        DecisionRecord first = history.GetRecord(0, 0);
-        DecisionRecord second = history.GetRecord(0, 1);
+        DecisionCycle cycle = history.GetCycleFromNewest(0);
+        DecisionRecord first = history.GetRecordFromNewest(0, 0);
+        DecisionRecord second = history.GetRecordFromNewest(0, 1);
 
         AiString firstName = "First";
         AiString secondName = "Second";

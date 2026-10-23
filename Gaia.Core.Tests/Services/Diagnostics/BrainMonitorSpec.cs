@@ -83,11 +83,11 @@ public class BrainMonitorSpec
         Assert.Multiple(() =>
         {
             Assert.That(monitor.CycleIndex, Is.EqualTo(3));
-            Assert.That(root.GetCycle(0).CycleIndex, Is.EqualTo(3));
+            Assert.That(root.GetCycleFromNewest(0).CycleIndex, Is.EqualTo(3));
             Assert.That(nested.CycleCount, Is.EqualTo(2), "the nested reasoner ran on two cycles");
-            Assert.That(nested.GetCycle(0).CycleIndex, Is.EqualTo(3),
+            Assert.That(nested.GetCycleFromNewest(0).CycleIndex, Is.EqualTo(3),
                 "the nested reasoner records the brain's cycle rather than a count of its own");
-            Assert.That(nested.GetCycle(0).SelectedName.Text, Is.EqualTo("Aim"));
+            Assert.That(nested.GetCycleFromNewest(0).SelectedName.Text, Is.EqualTo("Aim"));
         });
     }
 

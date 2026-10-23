@@ -63,26 +63,38 @@ namespace Gaia.Core.Services.Diagnostics
         /// <summary>How many cycles are currently recorded, from 0 up to CycleCapacity.</summary>
         public int CycleCount { get; private set; }
 
-        /// <summary>One recorded cycle, by age. An age of 0 is the newest cycle and CycleCount - 1 the oldest.</summary>
-        /// <remarks>
-        ///     The age is not checked. An age from CycleCount to CycleCapacity - 1 reads a slot nothing has written, a
-        ///     default DecisionCycle. A larger age wraps around the ring, so it reads the cycle CycleCapacity younger than it
-        ///     names, until the slot it works out is below 0, where the array throws IndexOutOfRangeException, except at an age a
-        ///     whole multiple of CycleCapacity beyond the last that wraps, which works out to slot 0 and reads it.
-        /// </remarks>
-        public DecisionCycle GetCycle(int age)
+        /// <summary>
+        ///     One recorded cycle, the given number of cycles back from the newest. 0 is the newest cycle and CycleCount - 1
+        ///     the oldest, so a history with no cycles recorded refuses every call.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">cyclesBack is below 0, or CycleCount or more.</exception>
+        public DecisionCycle GetCycleFromNewest(int cyclesBack)
         {
-            return _cycles[CycleSlot(age)];
+            if (cyclesBack < 0 || cyclesBack >= CycleCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(cyclesBack), cyclesBack,
+                    $"a count of cycles back from the newest is at least 0 and below the {CycleCount} cycles recorded");
+            }
+
+            return _cycles[CycleSlot(cyclesBack)];
         }
 
-        /// <summary>One option's record within the cycle of the given age, by position.</summary>
-        /// <remarks>
-        ///     Neither argument is checked. The age reads as GetCycle reads it, and an optionIndex of OptionCapacity or more
-        ///     reads the records of the slots after it in the array, or throws IndexOutOfRangeException past its end.
-        /// </remarks>
-        public DecisionRecord GetRecord(int age, int optionIndex)
+        /// <summary>One option's record within the cycle the given number of cycles back from the newest, by position.</summary>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     <see cref="GetCycleFromNewest" /> refuses cyclesBack, or the optionIndex
+        ///     is below 0, or the cycle's RecordCount or more.
+        /// </exception>
+        public DecisionRecord GetRecordFromNewest(int cyclesBack, int optionIndex)
         {
-            return _records[CycleSlot(age) * OptionCapacity + optionIndex];
+            DecisionCycle cycle = GetCycleFromNewest(cyclesBack);
+
+            if (optionIndex < 0 || optionIndex >= cycle.RecordCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(optionIndex), optionIndex,
+                    $"an option index is at least 0 and below the {cycle.RecordCount} records the cycle holds");
+            }
+
+            return _records[CycleSlot(cyclesBack) * OptionCapacity + optionIndex];
         }
 
         /// <summary>Opens the next cycle, overwriting the oldest once the ring is full. Called by the monitor.</summary>
@@ -119,10 +131,10 @@ namespace Gaia.Core.Services.Diagnostics
             _cycles[_newestCycle] = new DecisionCycle(open.CycleIndex, roll, selectedName, _recordsInOpenCycle);
         }
 
-        /// <summary>The ring slot holding the cycle of the given age.</summary>
-        private int CycleSlot(int age)
+        /// <summary>The ring slot holding the cycle the given number of cycles back from the newest.</summary>
+        private int CycleSlot(int cyclesBack)
         {
-            return (_newestCycle - age + CycleCapacity) % CycleCapacity;
+            return (_newestCycle - cyclesBack + CycleCapacity) % CycleCapacity;
         }
     }
 }

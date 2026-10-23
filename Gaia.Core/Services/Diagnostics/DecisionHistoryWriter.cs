@@ -91,9 +91,9 @@ namespace Gaia.Core.Services.Diagnostics
             writer.Write(FormattableString.Invariant(
                 $"reasoner\t{path}\t{history.CycleCount}\t{history.CycleCapacity}\t{history.OptionCapacity}\n"));
 
-            for (int age = history.CycleCount - 1; age >= 0; age--)
+            for (int cyclesBack = history.CycleCount - 1; cyclesBack >= 0; cyclesBack--)
             {
-                DecisionCycle cycle = history.GetCycle(age);
+                DecisionCycle cycle = history.GetCycleFromNewest(cyclesBack);
                 string selected = cycle.SelectedName.Text;
 
                 writer.Write(FormattableString.Invariant(
@@ -101,7 +101,7 @@ namespace Gaia.Core.Services.Diagnostics
 
                 for (int optionIndex = 0; optionIndex < cycle.RecordCount; optionIndex++)
                 {
-                    DecisionRecord record = history.GetRecord(age, optionIndex);
+                    DecisionRecord record = history.GetRecordFromNewest(cyclesBack, optionIndex);
                     string option = record.OptionName.Text;
                     string rank = record.Rank == WeightValues.NoRank ? "none" : Number(record.Rank);
                     string passedScreening = record.PassedScreening ? "true" : "false";

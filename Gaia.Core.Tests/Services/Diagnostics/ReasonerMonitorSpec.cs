@@ -43,8 +43,9 @@ public class ReasonerMonitorSpec
             Assert.That(_monitor.BrainMonitor, Is.Null);
             Assert.That(_monitor.Path, Is.Empty);
             Assert.That(_monitor.History.CycleCount, Is.EqualTo(3));
-            Assert.That(_monitor.History.GetCycle(0).CycleIndex, Is.EqualTo(3), "the newest cycle is the third seen");
-            Assert.That(_monitor.History.GetCycle(2).CycleIndex, Is.EqualTo(1), "the oldest is the first");
+            Assert.That(_monitor.History.GetCycleFromNewest(0).CycleIndex, Is.EqualTo(3),
+                "the newest cycle is the third seen");
+            Assert.That(_monitor.History.GetCycleFromNewest(2).CycleIndex, Is.EqualTo(1), "the oldest is the first");
         });
     }
 

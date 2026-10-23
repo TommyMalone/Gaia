@@ -89,9 +89,10 @@ public class DeterminismSpec
 
         bool brainsDiverge = false;
 
-        for (int age = 0; age < firstA.CycleCount && !brainsDiverge; age++)
+        for (int cyclesBack = 0; cyclesBack < firstA.CycleCount && !brainsDiverge; cyclesBack++)
         {
-            brainsDiverge = !firstA.GetCycle(age).Roll.Equals(firstB.GetCycle(age).Roll);
+            brainsDiverge = !firstA.GetCycleFromNewest(cyclesBack).Roll
+                .Equals(firstB.GetCycleFromNewest(cyclesBack).Roll);
         }
 
         AssertRunsMatch(firstRunA, secondRunA);
@@ -99,14 +100,15 @@ public class DeterminismSpec
 
         Assert.Multiple(() =>
         {
-            for (int age = 0; age < firstA.CycleCount; age++)
+            for (int cyclesBack = 0; cyclesBack < firstA.CycleCount; cyclesBack++)
             {
                 // Two brains drawing in turn from one shared stream would differ from each other too, so the divergence
                 // asserted below does not show that the first brain has a stream of its own. The comparison with the
                 // run without a second brain does, since a stream shared with the second brain would change the first
                 // brain's rolls.
-                Assert.That(firstA.GetCycle(age).Roll, Is.EqualTo(alone.GetCycle(age).Roll),
-                    $"loading a second brain changed the first brain's rolls at age {age}");
+                Assert.That(firstA.GetCycleFromNewest(cyclesBack).Roll,
+                    Is.EqualTo(alone.GetCycleFromNewest(cyclesBack).Roll),
+                    $"loading a second brain changed the first brain's rolls at cyclesBack {cyclesBack}");
             }
 
             Assert.That(brainsDiverge, Is.True, "two brains from one loader do not roll alike");
@@ -136,21 +138,22 @@ public class DeterminismSpec
 
             Assert.Multiple(() =>
             {
-                for (int age = 0; age < firstHistory.CycleCount; age++)
+                for (int cyclesBack = 0; cyclesBack < firstHistory.CycleCount; cyclesBack++)
                 {
-                    DecisionCycle firstCycle = firstHistory.GetCycle(age);
-                    DecisionCycle secondCycle = secondHistory.GetCycle(age);
+                    DecisionCycle firstCycle = firstHistory.GetCycleFromNewest(cyclesBack);
+                    DecisionCycle secondCycle = secondHistory.GetCycleFromNewest(cyclesBack);
 
                     Assert.That(firstCycle.CycleIndex, Is.EqualTo(secondCycle.CycleIndex));
-                    Assert.That(firstCycle.Roll, Is.EqualTo(secondCycle.Roll), $"{where} rolls diverged at age {age}");
+                    Assert.That(firstCycle.Roll, Is.EqualTo(secondCycle.Roll),
+                        $"{where} rolls diverged at cyclesBack {cyclesBack}");
                     Assert.That(firstCycle.SelectedName, Is.EqualTo(secondCycle.SelectedName),
-                        $"{where} selections diverged at age {age}");
+                        $"{where} selections diverged at cyclesBack {cyclesBack}");
                     Assert.That(firstCycle.RecordCount, Is.EqualTo(secondCycle.RecordCount));
 
                     for (int optionIndex = 0; optionIndex < firstCycle.RecordCount; optionIndex++)
                     {
-                        DecisionRecord firstRecord = firstHistory.GetRecord(age, optionIndex);
-                        DecisionRecord secondRecord = secondHistory.GetRecord(age, optionIndex);
+                        DecisionRecord firstRecord = firstHistory.GetRecordFromNewest(cyclesBack, optionIndex);
+                        DecisionRecord secondRecord = secondHistory.GetRecordFromNewest(cyclesBack, optionIndex);
 
                         Assert.That(firstRecord.OptionName, Is.EqualTo(secondRecord.OptionName));
                         Assert.That(firstRecord.Rank, Is.EqualTo(secondRecord.Rank));

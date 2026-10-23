@@ -4,7 +4,7 @@ using Gaia.Core.Strings;
 
 namespace Gaia.Core.Tests.Services.Diagnostics;
 
-/// <summary>Covers <see cref="DecisionHistory" />, the ring it keeps and the ages it reads back.</summary>
+/// <summary>Covers <see cref="DecisionHistory" />, the ring it keeps and the cycles it reads back from the newest.</summary>
 /// <remarks>
 ///     Cycles are written through the internal recording surface the monitor uses, with small capacities so the
 ///     wrap-around cases stay readable. What a recorded cycle means is covered where it is recorded, in
@@ -31,7 +31,7 @@ public class DecisionHistorySpec
     private AiString _standName;
 
     [Test]
-    public void ReadsTheNewestCycleAtAgeZero()
+    public void ReadsTheNewestCycleAtZeroCyclesBack()
     {
         RecordCycle(0, 0.25f, _patrolName);
         RecordCycle(1, 0.75f, _standName);
@@ -39,9 +39,9 @@ public class DecisionHistorySpec
         Assert.Multiple(() =>
         {
             Assert.That(_history.CycleCount, Is.EqualTo(2));
-            Assert.That(_history.GetCycle(0).SelectedName, Is.EqualTo(_standName));
-            Assert.That(_history.GetCycle(0).Roll, Is.EqualTo(0.75f));
-            Assert.That(_history.GetCycle(1).SelectedName, Is.EqualTo(_patrolName));
+            Assert.That(_history.GetCycleFromNewest(0).SelectedName, Is.EqualTo(_standName));
+            Assert.That(_history.GetCycleFromNewest(0).Roll, Is.EqualTo(0.75f));
+            Assert.That(_history.GetCycleFromNewest(1).SelectedName, Is.EqualTo(_patrolName));
         });
     }
 
@@ -55,8 +55,8 @@ public class DecisionHistorySpec
         Assert.Multiple(() =>
         {
             Assert.That(_history.CycleCount, Is.EqualTo(CycleCount), "the ring holds its capacity and no more");
-            Assert.That(_history.GetCycle(0).CycleIndex, Is.EqualTo(2));
-            Assert.That(_history.GetCycle(1).CycleIndex, Is.EqualTo(1), "cycle 0 was overwritten");
+            Assert.That(_history.GetCycleFromNewest(0).CycleIndex, Is.EqualTo(2));
+            Assert.That(_history.GetCycleFromNewest(1).CycleIndex, Is.EqualTo(1), "cycle 0 was overwritten");
         });
     }
 
@@ -75,9 +75,9 @@ public class DecisionHistorySpec
 
         Assert.Multiple(() =>
         {
-            Assert.That(_history.GetCycle(0).RecordCount, Is.EqualTo(OptionCount));
-            Assert.That(_history.GetRecord(0, 0).OptionName, Is.EqualTo(_patrolName));
-            Assert.That(_history.GetRecord(0, 1).OptionName, Is.EqualTo(_standName));
+            Assert.That(_history.GetCycleFromNewest(0).RecordCount, Is.EqualTo(OptionCount));
+            Assert.That(_history.GetRecordFromNewest(0, 0).OptionName, Is.EqualTo(_patrolName));
+            Assert.That(_history.GetRecordFromNewest(0, 1).OptionName, Is.EqualTo(_standName));
         });
     }
 
@@ -88,6 +88,77 @@ public class DecisionHistorySpec
         {
             Assert.That(() => new DecisionHistory(0, 4), Throws.TypeOf<ArgumentOutOfRangeException>());
             Assert.That(() => new DecisionHistory(16, 0), Throws.TypeOf<ArgumentOutOfRangeException>());
+        });
+    }
+
+    [Test]
+    public void RefusesToReadACycleOutsideTheCyclesRecorded()
+    {
+        // One cycle in a ring of two, so -1 and 1 cycles back both land on the slot nothing has written.
+        RecordCycle(0, 0f, _patrolName);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => _history.GetCycleFromNewest(-1),
+                Throws.TypeOf<ArgumentOutOfRangeException>().With.Property(nameof(ArgumentException.ParamName))
+                    .EqualTo("cyclesBack"));
+            Assert.That(() => _history.GetCycleFromNewest(1),
+                Throws.TypeOf<ArgumentOutOfRangeException>().With.Property(nameof(ArgumentException.ParamName))
+                    .EqualTo("cyclesBack"));
+        });
+    }
+
+    [Test]
+    public void RefusesToReadPastTheOldestCycleOnceTheRingHasWrapped()
+    {
+        // Three cycles in a ring of two, so cycle 0 is overwritten and two cycles back names a cycle the ring no
+        // longer holds. Before the guard that call wrapped round the ring and read cycle 2, the newest, without a
+        // word. Once the ring is full CycleCount equals CycleCapacity, so no mutant dies to this test alone; the cycle
+        // and record tests on a ring not yet full already kill the guard removed and the wrong bound. What this test
+        // holds is the wrapped ring itself, against a guard rewritten to check whether a slot was written rather than
+        // CycleCount.
+        RecordCycle(0, 0f, _patrolName);
+        RecordCycle(1, 0f, _patrolName);
+        RecordCycle(2, 0f, _standName);
+
+        Assert.That(() => _history.GetCycleFromNewest(2),
+            Throws.TypeOf<ArgumentOutOfRangeException>().With.Property(nameof(ArgumentException.ParamName))
+                .EqualTo("cyclesBack"));
+    }
+
+    [Test]
+    public void RefusesToReadARecordFromACycleOutsideTheCyclesRecorded()
+    {
+        RecordCycle(0, 0f, _patrolName);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => _history.GetRecordFromNewest(-1, 0),
+                Throws.TypeOf<ArgumentOutOfRangeException>().With.Property(nameof(ArgumentException.ParamName))
+                    .EqualTo("cyclesBack"));
+            Assert.That(() => _history.GetRecordFromNewest(1, 0),
+                Throws.TypeOf<ArgumentOutOfRangeException>().With.Property(nameof(ArgumentException.ParamName))
+                    .EqualTo("cyclesBack"));
+        });
+    }
+
+    [Test]
+    public void RefusesToReadARecordAtAnOptionIndexOutsideTheRecordsItsCycleHolds()
+    {
+        // Each cycle records one option of the two it has room for, so an index of 1 is inside OptionCapacity and
+        // outside RecordCount. The newest cycle sits in the second slot, so an unchecked index of -1 stays inside the
+        // array, reading the first cycle's unwritten second record slot.
+        RecordCycle(0, 0f, _patrolName);
+        RecordCycle(1, 0f, _standName);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => _history.GetRecordFromNewest(0, -1),
+                Throws.TypeOf<ArgumentOutOfRangeException>().With.Property(nameof(ArgumentException.ParamName))
+                    .EqualTo("optionIndex"));
+            Assert.That(() => _history.GetRecordFromNewest(0, 1),
+                Throws.TypeOf<ArgumentOutOfRangeException>().With.Property(nameof(ArgumentException.ParamName))
+                    .EqualTo("optionIndex"));
         });
     }
 
